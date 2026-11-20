@@ -5,8 +5,9 @@ Terraform for every environment. Applies run only in GitHub Actions (ADR 0002); 
 | Path | What |
 | --- | --- |
 | `bootstrap/` | R2 bucket holding all Terraform state, plus a token that can only read and write that bucket |
-| `envs/dev`, `envs/prod` | One root per environment (later PRs) |
-| `modules/` | Shared modules (later PRs) |
+| `envs/dev` | Dev environment, applied by `deploy-dev.yml` on every merge to main. Also owns the GitHub repo settings, which are shared by all environments |
+| `envs/prod` | Production (later PR; applied only through `release-prod.yml`) |
+| `modules/github-repo` | Repo settings: merge commits only, delete branch on merge, Dependabot, SHA-pinned allowlisted actions, read-only workflow token |
 | `r2.tfbackend` | Shared S3-backend settings for R2; each root names its own `key` |
 
 ## Bootstrap (once)

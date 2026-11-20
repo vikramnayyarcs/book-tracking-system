@@ -1,0 +1,52 @@
+name: Deploy dev
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/envs/dev/**"
+      - "infra/modules/**"
+      - "infra/r2.tfbackend"
+      - ".github/workflows/deploy-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/envs/dev
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_github_owner: ${{ github.repository_owner }}
+      TF_VAR_github_repository: ${{ github.event.repository.name }}
+      TF_VAR_github_app_id: ${{ vars.TF_GITHUB_APP_ID }}
+      TF_VAR_github_app_installation_id: ${{ vars.TF_GITHUB_APP_INSTALLATION_ID }}
+      TF_VAR_github_app_private_key: ${{ secrets.TF_GITHUB_APP_PRIVATE_KEY }}
+      AWS_ENDPOINT_URL_S3: https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_ACCESS_KEY_ID: ${{ secrets.TF_STATE_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_STATE_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.17.1
+          terraform_wrapper: false
+
+      - run: terraform init -backend-config=../../r2.tfbackend -lockfile=readonly
+
+      - name: Plan
+        run: |
+          terraform plan -out=dev.tfplan -no-color | tee plan.txt
+          { echo '```'; tail -n 60 plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply
+        run: terraform apply dev.tfplan
