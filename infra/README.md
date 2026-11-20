@@ -11,8 +11,9 @@ Terraform for every environment. Applies run only in GitHub Actions (ADR 0002); 
 
 ## Bootstrap (once)
 
-1. Set the five values in sections 1 and 2 of `docs/secrets.md` (Cloudflare token and account ID, GitHub App ID, installation ID and private key).
-2. Actions → **Bootstrap Terraform state** → Run workflow, leaving `recover_run_id` empty.
+1. Enable R2 once: Cloudflare dashboard, R2 Object Storage, Get started. Terraform cannot do this.
+2. Set the five values in sections 1 and 2 of `docs/secrets.md` (Cloudflare token and account ID, GitHub App ID, installation ID and private key).
+3. Actions → **Bootstrap Terraform state** → Run workflow, leaving `recover_run_id` empty.
 
 The first run creates the bucket using local state, writes `TF_STATE_R2_ACCESS_KEY_ID` and `TF_STATE_R2_SECRET_ACCESS_KEY` to the repo secrets, and moves its own state into the bucket. Later runs plan and apply against R2.
 
