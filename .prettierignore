@@ -1,0 +1,9 @@
+package-lock.json
+skills-lock.json
+.claude/skills/grill-me/
+.claude/skills/grilling/
+*.tf
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+*.md
