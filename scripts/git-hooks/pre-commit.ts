@@ -33,11 +33,13 @@ export const scanStagedForSecrets = (cwd: string) => {
   if (result.error) {
     return {
       ok: false,
+      ran: false,
       output: `gitleaks could not run (${result.error.message}). Install it: winget install Gitleaks.Gitleaks`,
     };
   }
   return {
     ok: result.status === 0,
+    ran: true,
     output: `${result.stdout}${result.stderr}`,
   };
 };
@@ -64,7 +66,11 @@ export const runPreCommit = async (cwd: string) => {
   const problems: string[] = [];
   const secrets = scanStagedForSecrets(cwd);
   if (!secrets.ok) {
-    problems.push(`Possible secret in staged changes:\n${secrets.output}`);
+    problems.push(
+      secrets.ran
+        ? `Possible secret in staged changes:\n${secrets.output}`
+        : secrets.output,
+    );
   }
   const unformatted = await findUnformatted(cwd, stagedFiles(cwd));
   if (unformatted.length > 0) {

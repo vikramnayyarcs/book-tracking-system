@@ -71,6 +71,7 @@ describe("decide", () => {
     "supabase functions serve",
     "grep -r 'terraform apply' docs",
     'git commit -m "explain why terraform apply runs in CI"',
+    'gh pr create --body "only CI runs \\`terraform apply\\` or \\`wrangler deploy\\`"',
     "git commit -F - <<'EOF'\nNever run\nterraform apply\nlocally\nEOF",
     "npm test",
   ])("allows: %s", (command) => {
