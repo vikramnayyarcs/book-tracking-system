@@ -10,6 +10,10 @@ Format:
 Fix: what to do instead.
 ```
 
+## 2026-11-20: Old gh versions fail on pr edit and pr view
+**`gh` 2.51 and earlier fail on `gh pr edit` and some `gh pr view` calls with "Projects (classic) is being deprecated", because they still query a removed GraphQL field.**
+Fix: `winget upgrade GitHub.cli`. Until then, use the REST API, for example `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -f base=main`. In Git Bash, drop the leading slash from `gh api` paths, or they are rewritten as Windows file paths.
+
 ## 2026-11-20: VS Code opened from GitHub Desktop keeps an old PATH
 **VS Code launched from GitHub Desktop ("Open in Visual Studio Code") inherits GitHub Desktop's environment, so tools installed after GitHub Desktop started (winget installs, PATH edits) stay invisible to Claude Code, its hooks and its MCP servers, even after restarting VS Code.**
 Fix: quit GitHub Desktop and VS Code, then reopen. Check with `gitleaks version` in a new VS Code terminal. Symptoms: hooks report a tool as missing, or an MCP server fails with "Connection closed".
