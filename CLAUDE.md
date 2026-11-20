@@ -51,6 +51,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - After a debugging detour caused by surprising behaviour, log it in `docs/GOTCHAS.md`: the trap in one bold sentence, then the fix.
 - Ponytail is for reviewing PRs, not always on. These non-negotiables win over its advice.
 - Small PRs, one concern each. Every PR passes lint, typecheck, tests and Terraform plan.
+- Every PR with a feature change includes a Playwright video demoing what was done, and/or an explainer video with voice-over whose script is written in ASD-STE100 Simplified Technical English. Videos use seeded test data only (never real notes), and are attached to the PR, not committed.
 - Commit early and often: small commits, one logical change each, committed as soon as that change works. Don't batch unrelated changes into one commit.
 
 ## Environment
