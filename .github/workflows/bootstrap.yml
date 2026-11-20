@@ -1,0 +1,104 @@
+name: Bootstrap Terraform state
+
+on:
+  workflow_dispatch:
+    inputs:
+      recover_run_id:
+        description: Run ID of a failed first run whose local state should be recovered (see infra/README.md)
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: terraform-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/bootstrap
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_github_owner: ${{ github.repository_owner }}
+      TF_VAR_github_repository: ${{ github.event.repository.name }}
+      TF_VAR_github_app_id: ${{ vars.TF_GITHUB_APP_ID }}
+      TF_VAR_github_app_installation_id: ${{ vars.TF_GITHUB_APP_INSTALLATION_ID }}
+      TF_VAR_github_app_private_key: ${{ secrets.TF_GITHUB_APP_PRIVATE_KEY }}
+      AWS_ENDPOINT_URL_S3: https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_ACCESS_KEY_ID: ${{ secrets.TF_STATE_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_STATE_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.17.1
+          terraform_wrapper: false
+
+      - name: Check hand-set secrets and variables (docs/secrets.md)
+        run: |
+          missing=()
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing+=("secret CLOUDFLARE_API_TOKEN")
+          [ -n "$TF_VAR_cloudflare_account_id" ] || missing+=("variable CLOUDFLARE_ACCOUNT_ID")
+          [ -n "$TF_VAR_github_app_id" ] || missing+=("variable TF_GITHUB_APP_ID")
+          [ -n "$TF_VAR_github_app_installation_id" ] || missing+=("variable TF_GITHUB_APP_INSTALLATION_ID")
+          [ -n "$TF_VAR_github_app_private_key" ] || missing+=("secret TF_GITHUB_APP_PRIVATE_KEY")
+          if [ ${#missing[@]} -gt 0 ]; then
+            printf '::error::Missing %s (see docs/secrets.md)\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Recover local state from a failed first run
+        if: inputs.recover_run_id != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: bootstrap-local-state
+          path: infra/bootstrap
+          run-id: ${{ inputs.recover_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: First run - create the bucket with local state, then move state into it
+        if: env.AWS_ACCESS_KEY_ID == '' || inputs.recover_run_id != ''
+        run: |
+          printf 'terraform {\n  backend "local" {}\n}\n' > backend_override.tf
+          terraform init
+          terraform apply -auto-approve
+          key_id="$(terraform output -raw state_access_key_id)"
+          secret="$(terraform output -raw state_secret_access_key)"
+          echo "::add-mask::$key_id"
+          echo "::add-mask::$secret"
+          rm backend_override.tf
+          export AWS_ACCESS_KEY_ID="$key_id" AWS_SECRET_ACCESS_KEY="$secret"
+          for attempt in $(seq 1 12); do
+            if terraform init -migrate-state -force-copy -backend-config=../r2.tfbackend; then
+              rm -f terraform.tfstate terraform.tfstate.backup
+              exit 0
+            fi
+            echo "New R2 token not active yet (attempt $attempt of 12)"
+            sleep 5
+          done
+          echo "::error::State could not be moved to R2. The local state is attached to this run for 1 day; re-run this workflow with recover_run_id=${{ github.run_id }}."
+          exit 1
+
+      - name: Keep local state if it was not moved
+        if: failure() && hashFiles('infra/bootstrap/terraform.tfstate') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bootstrap-local-state
+          path: infra/bootstrap/terraform.tfstate
+          retention-days: 1
+
+      - name: Later runs - plan and apply against R2 state
+        if: env.AWS_ACCESS_KEY_ID != ''
+        run: |
+          terraform init -backend-config=../r2.tfbackend
+          terraform plan -out=bootstrap.tfplan
+          terraform apply bootstrap.tfplan
