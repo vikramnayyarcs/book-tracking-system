@@ -10,6 +10,15 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/protect-files.ts\""
           }
         ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/block-local-deploys.ts\""
+          }
+        ]
       }
     ]
   }
