@@ -1,0 +1,23 @@
+# Normalise text to LF in the repo and the working tree, whatever core.autocrlf says,
+# so Windows, cloud sessions and CI (Linux) all see identical files.
+* text=auto eol=lf
+
+# Windows-only scripts need CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.m4a binary
+*.webm binary
+*.wav binary

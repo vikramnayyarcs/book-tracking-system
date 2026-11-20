@@ -1,0 +1,37 @@
+# Dependencies and builds
+node_modules/
+dist/
+build/
+.astro/
+coverage/
+playwright-report/
+test-results/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+.terraform.lock.hcl.bak
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
