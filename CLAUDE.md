@@ -39,7 +39,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - **No test doubles.** Tests run against the real local stack. Paid third parties (Groq, Claude, embeddings) are intercepted at the network level with MSW, replaying recorded responses. No fixed sleeps, no test retries, no raised timeouts to make CI green.
 - **Lint with Oxlint plus Landmines** (`@interfere/landmines`, recommended config). Any exception goes in the rule's per-file allowlist with a reason, and allowlist counts only go down.
 - **Never log note text, transcripts, audio or photos**, in any environment.
-- **Secrets never in the repo.** Reference them as `${VAR}`; values live in Windows user environment variables, cloud environment settings, GitHub Environments or Supabase secrets.
+- **Secrets never in the repo.** Reference them as `${VAR}`; values live in Windows user environment variables (prefixed `BT_`), cloud environment settings, GitHub repo secrets (prefixed `DEV_` or `PROD_`; no Environments on GitHub Free) or Supabase secrets.
 - **The product name, domain and handles come only from config** (`packages/core/src/brand.ts` and the Terraform `product_name` / `domain` variables). Never hard-code "Book Vault".
 - **Accessibility target is WCAG 2.2 AA**; axe checks must pass in every Playwright test.
 - **Prompts live in versioned files**; any prompt change runs the DeepEval set before and after.
