@@ -1,14 +1,14 @@
 import { scanStagedForSecrets } from "../git-hooks/pre-commit.ts";
-import { commandPattern, stripHeredocBodies } from "./command-pattern.ts";
+import {
+  commandPattern,
+  segmentsMatching,
+  stripHeredocBodies,
+} from "./command-pattern.ts";
 import { runHook, stringField, type HookInput } from "./hook-io.ts";
 
-const GIT_COMMIT = commandPattern("git", ["commit"]);
-const HOOK_BYPASSES = [
-  /\s--no-verify(?=\s|$)/,
-  /\bgit\b[^;&|\n]*\scommit\b[^;&|\n]*\s-n(?=\s|$)/,
-  /\bSKIP_SIMPLE_GIT_HOOKS=/,
-  /\bcore\.hooksPath\b/i,
-];
+const GIT_COMMIT = commandPattern("git", ["commit"], "gi");
+const COMMIT_FLAG_BYPASS = /\s(?:--no-verify|-n)(?=\s|$)/;
+const ENVIRONMENT_BYPASS = /\bSKIP_SIMPLE_GIT_HOOKS=|\bcore\.hooksPath\b/i;
 
 export const decide = (input: HookInput, projectDir: string) => {
   const command = stringField(input, "command");
@@ -16,10 +16,14 @@ export const decide = (input: HookInput, projectDir: string) => {
     return undefined;
   }
   const visible = stripHeredocBodies(command);
-  if (!GIT_COMMIT.test(visible)) {
+  const commits = segmentsMatching(visible, GIT_COMMIT);
+  if (commits.length === 0) {
     return undefined;
   }
-  if (HOOK_BYPASSES.some((pattern) => pattern.test(visible))) {
+  if (
+    ENVIRONMENT_BYPASS.test(visible) ||
+    commits.some((segment) => COMMIT_FLAG_BYPASS.test(segment))
+  ) {
     return "Blocked: commits must run the pre-commit hook (gitleaks and Prettier). Remove --no-verify, SKIP_SIMPLE_GIT_HOOKS or the core.hooksPath override, and fix what the hook reports.";
   }
   const scan = scanStagedForSecrets(projectDir);

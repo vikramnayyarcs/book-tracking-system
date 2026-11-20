@@ -31,6 +31,8 @@ describe("decide", () => {
     'git add -A && git commit -m "x" --no-verify',
     'SKIP_SIMPLE_GIT_HOOKS=1 git commit -m "x"',
     'git -c core.hooksPath=/dev/null commit -m "x"',
+    'git push && git commit -m "x" -n',
+    'echo $(git commit --no-verify -m "x")',
   ])("blocks skipping the pre-commit hook: %s", (command) => {
     expect(decide(bash(command), repo.dir)).toContain(
       "must run the pre-commit hook",
@@ -44,6 +46,15 @@ describe("decide", () => {
     expect(decide(bash('git commit -m "add config"'), repo.dir)).toContain(
       "possible secret",
     );
+  });
+
+  it("only checks the commit's own flags, not later commands", async () => {
+    await repo.write("config.ts", 'export const name = "shelf";\n');
+    repo.stage("config.ts");
+
+    expect(
+      decide(bash('git commit -m "x" && grep -n --no-verify notes'), repo.dir),
+    ).toBeUndefined();
   });
 
   it("allows a commit of clean staged changes", async () => {
@@ -62,6 +73,14 @@ describe("decide", () => {
     expect(decide(bash("git status --short"), repo.dir)).toBeUndefined();
     expect(
       decide(bash('grep -rn "git commit --no-verify" docs'), repo.dir),
+    ).toBeUndefined();
+    expect(
+      decide(
+        bash(
+          'gh pr create --body "blocks \\`git commit --no-verify\\` and \\`-n\\`"',
+        ),
+        repo.dir,
+      ),
     ).toBeUndefined();
   });
 
