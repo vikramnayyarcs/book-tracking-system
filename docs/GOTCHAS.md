@@ -10,6 +10,10 @@ Format:
 Fix: what to do instead.
 ```
 
+## 2026-11-20: R2 must be enabled by hand, and its S3 endpoint lags
+**Creating an R2 bucket fails with 403 "Please enable R2 through the Cloudflare Dashboard" (code 10042) until R2 is switched on for the account, and right after that the account's S3 endpoint fails TLS handshakes for about 30 seconds.**
+Fix: enable R2 once in the dashboard (R2 Object Storage, Get started); it is an account sign-up step, not a setting Terraform can manage. The bootstrap workflow retries the state migration for up to a minute to ride out the endpoint delay.
+
 ## 2026-11-20: Old gh versions fail on pr edit and pr view
 **`gh` 2.51 and earlier fail on `gh pr edit` and some `gh pr view` calls with "Projects (classic) is being deprecated", because they still query a removed GraphQL field.**
 Fix: `winget upgrade GitHub.cli`. Until then, use the REST API, for example `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -f base=main`. In Git Bash, drop the leading slash from `gh api` paths, or they are rewritten as Windows file paths.
