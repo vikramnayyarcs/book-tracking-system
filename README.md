@@ -5,6 +5,7 @@ A private, AI-powered memory for the physical books you read. Log a reading sess
 - Requirements: [docs/requirements.md](docs/requirements.md)
 - Decisions: [docs/adr/](docs/adr/)
 - Gotchas: [docs/GOTCHAS.md](docs/GOTCHAS.md)
+- Secrets to set by hand: [docs/secrets.md](docs/secrets.md)
 - Working with Claude Code: [CLAUDE.md](CLAUDE.md)
 
 Status: Phase 1 (Foundations: IaC and CI/CD) not started.
