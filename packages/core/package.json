@@ -10,6 +10,8 @@
     "./limits": "./src/limits.ts"
   },
   "dependencies": {
-    "hono": "4.13.19"
+    "hono": "4.13.19",
+    "jose": "6.2.18",
+    "postgres": "4.1.1"
   }
 }

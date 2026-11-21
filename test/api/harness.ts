@@ -32,7 +32,15 @@ const lookup = (method: string, path: string, status: number) => {
     throw new Error(`No operation ${method} ${path} in the contract`);
   }
   const responses = operation["responses"] as Record<string, Json>;
-  const response = (responses[String(status)] ?? responses["default"]) as Json;
+  const chosen = (responses[String(status)] ?? responses["default"]) as Json;
+  const refName =
+    String(chosen["$ref"] ?? "")
+      .split("/")
+      .pop() ?? "";
+  const shared = (spec["components"] as Record<string, Record<string, Json>>)[
+    "responses"
+  ];
+  const response = refName === "" ? chosen : (shared?.[refName] ?? chosen);
   const content = (response["content"] ?? {}) as Record<
     string,
     { schema: Json }

@@ -22,6 +22,21 @@ paths:
                 $ref: "#/components/schemas/Health"
         default:
           $ref: "#/components/responses/Problem"
+  /me:
+    get:
+      operationId: getMe
+      summary: Get the signed-in user, creating the account on the first call
+      responses:
+        "200":
+          description: The signed-in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -36,6 +51,15 @@ components:
         status:
           type: string
           const: ok
+    Me:
+      type: object
+      required: [id, tier]
+      properties:
+        id:
+          type: string
+        tier:
+          type: string
+          enum: [free, plus]
     Problem:
       type: object
       required: [type, title, status, code]
