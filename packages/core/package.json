@@ -1,0 +1,9 @@
+{
+  "name": "@book-tracking-system/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./brand": "./src/brand.ts"
+  }
+}

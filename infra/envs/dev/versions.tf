@@ -2,6 +2,22 @@ terraform {
   required_version = "~> 1.17"
 
   required_providers {
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.29"
+    }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 4.55"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.7"
+    }
+    supabase = {
+      source  = "supabase/supabase"
+      version = "~> 1.11"
+    }
     github = {
       source  = "integrations/github"
       version = "~> 6.13"
@@ -12,6 +28,20 @@ terraform {
     bucket = "tfstate"
     key    = "dev/terraform.tfstate"
   }
+}
+
+provider "cloudflare" {}
+
+provider "supabase" {}
+
+provider "grafana" {
+  alias = "cloud"
+}
+
+provider "grafana" {
+  alias           = "sm"
+  sm_access_token = module.grafana.sm_access_token
+  sm_url          = module.grafana.sm_url
 }
 
 provider "github" {

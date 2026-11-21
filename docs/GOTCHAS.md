@@ -14,6 +14,14 @@ Fix: what to do instead.
 **In cloud sessions `/opt/node22/bin` comes before `/usr/local/bin` on PATH, and npm's `#!/usr/bin/env node` shebang picks that Node 22 even when you call `/usr/local/bin/npm`, so `npm ci` failed the `engines` check and stopped the setup script.**
 Fix: `scripts/cloud-setup.sh` puts `/usr/local/bin` first on its own PATH, links `node`, `npm`, `npx` and `corepack` in any earlier folder to the pinned ones, and adds `/usr/local/bin` to the front of PATH through `CLAUDE_ENV_FILE`.
 
+## 2026-11-21: Supabase provider orphans a project when legacy_api_keys_enabled is set
+**With `legacy_api_keys_enabled = true`, `supabase_project` creates the project, then fails a second call ("JWT based legacy (anon, service_role) API keys are already enabled"), so Terraform never records the project and the next apply fails with "already exists".**
+Fix: leave `legacy_api_keys_enabled` unset (it is deprecated, and legacy keys are on by default for new projects). Adopt an orphaned project with an `import` block using its project ref; resources created earlier in the failed apply, such as `random_password`, are already in state.
+
+## 2026-11-21: Cloud sessions can use GitHub tools that Bash hooks never see
+**Claude Code cloud sessions have built-in GitHub MCP tools (`mcp__github__*`, including merge and workflow tools), and a PreToolUse hook matched on `Bash|PowerShell` does not run for them.**
+Fix: guard MCP tools separately. `block-github-tool-merges` matches `mcp__github__.*`, and `permissions.deny` in `.claude/settings.json` lists the merge and workflow tools.
+
 ## 2026-11-20: R2 must be enabled by hand, and its S3 endpoint lags
 **Creating an R2 bucket fails with 403 "Please enable R2 through the Cloudflare Dashboard" (code 10042) until R2 is switched on for the account, and right after that the account's S3 endpoint fails TLS handshakes for about 30 seconds.**
 Fix: enable R2 once in the dashboard (R2 Object Storage, Get started); it is an account sign-up step, not a setting Terraform can manage. The bootstrap workflow retries the state migration for up to a minute to ride out the endpoint delay.
@@ -33,3 +41,7 @@ Fix: after a lower PR merges, retarget the next one with `gh pr edit <n> --base 
 ## 2026-11-21: Storage blocks direct deletes from `storage.objects`
 **A `delete from storage.objects` in SQL raises "Direct deletion from storage tables is not allowed" (trigger `storage.protect_delete`), so a pgTAP test of the delete policy fails before RLS is even checked.**
 Fix: in the test, run `set local storage.allow_delete_query = 'true';` before the delete. The API deletes objects through the Storage API, never with SQL. The storage policies check only the first path segment, so a name such as `alice/../bob/x` stays in alice's folder; the Phase 3 API must reject `.` and `..` segments.
+
+## 2026-11-21: `astro preview` backgrounds itself in agent sessions
+**Astro 7 starts `astro preview` as a background daemon when it detects an AI agent session (for example Claude Code), so the command exits at once and Playwright's `webServer` fails with "Process from config.webServer exited early".**
+Fix: pass `--ignore-lock` (`playwright.config.ts` does), which keeps the server in the foreground. Stop a stray daemon with `npx astro preview stop` from `apps/site`.
