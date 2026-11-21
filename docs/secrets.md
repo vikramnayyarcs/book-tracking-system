@@ -24,6 +24,11 @@ On GitHub Free private repos there are no Environments, so everything is repo-le
 | When you have a Supabase account (PR 13) | `DEV_SUPABASE_ORG_ID` | Variable | GitHub repo |
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` | Secret | GitHub repo |
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_REGION` | Variable | GitHub repo |
+| When you have a Grafana Cloud account (PR 14) | `GRAFANA_STACK_SLUG` | Variable | GitHub repo |
+| Before Phase 2 (ADR 0003) | `DEV_CLERK_FRONTEND_API_URL` | Variable | GitHub repo |
+| Before Phase 2 (ADR 0003) | `DEV_CLERK_SECRET_KEY` | Secret | GitHub repo |
+| Before Phase 2 (ADR 0003); used in Phase 4 | `DEV_CLERK_PUBLISHABLE_KEY` | Variable | GitHub repo |
+| Before Phase 3 (needs its own ADR) | Groq, Anthropic and embeddings API keys | Secrets | Supabase secrets, set through Terraform from repo secrets |
 | When the GitHub MCP server is added | `BT_GITHUB_MCP_TOKEN` | Env var | Windows user env and cloud session settings |
 | When the Grafana MCP server is added | `BT_GRAFANA_DEV_TOKEN` | Env var | Windows user env and cloud session settings |
 | At launch only | `PROD_ENABLED` = `true` | Variable | GitHub repo; leave unset until then |
@@ -73,7 +78,19 @@ Supabase personal tokens reach every project in your account, prod included once
 3. **Add token** → copy it. `gh secret set GRAFANA_CLOUD_ACCESS_POLICY_TOKEN`.
 4. Pick the region closest to London from the stack-creation page and save its slug: `gh variable set GRAFANA_REGION`.
 
-## 5. Local and cloud-session variables
+## 5. Clerk (development instance)
+
+Clerk has no Terraform provider; its settings are recorded in `infra/clerk-checklist.md` (ADR 0003).
+
+1. Clerk dashboard → your application → **Development** instance.
+2. **Configure → API keys**: copy the **Frontend API URL** (`https://…clerk.accounts.dev`) and run `gh variable set DEV_CLERK_FRONTEND_API_URL`. Terraform registers it with Supabase; do not paste it into Supabase's dashboard.
+3. Same page: copy the **Secret key** (`sk_test_…`) and run `gh secret set DEV_CLERK_SECRET_KEY`. The CI checklist check uses it.
+4. Same page: copy the **Publishable key** (`pk_test_…`) and run `gh variable set DEV_CLERK_PUBLISHABLE_KEY`. It is public by design and first used by the PWA build.
+5. **Integrations → Supabase → Activate**, so tokens carry `role: authenticated`.
+
+For Grafana, also run `gh variable set GRAFANA_STACK_SLUG` with the stack name (the part before `.grafana.net`); Terraform imports that stack instead of creating one.
+
+## 6. Local and cloud-session variables
 
 Only needed when the matching MCP server is added; nothing is needed today. Set them on Windows with:
 
