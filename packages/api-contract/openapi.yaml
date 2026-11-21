@@ -395,6 +395,41 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /sessions/{id}/process:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: processSession
+      summary: Transcribe (voice only) and extract insights in the background
+      description: >
+        Returns 202 at once. The session moves through `transcribing` (voice
+        only) and `extracting` to `ready`, or to `failed` with an `errorCode`.
+        Clients poll `GET /sessions/{id}`. A failed session can be processed
+        again.
+      responses:
+        "202":
+          description: Processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /books/{id}/insights:
     parameters:
       - name: id
