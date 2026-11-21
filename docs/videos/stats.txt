@@ -1,8 +1,8 @@
 This video shows the stats endpoint.
 All data in this test run is seeded test data.
 First, log two sessions, one with a voice note, and add two insights and one quote.
-Next, finish the book with a rating of five.
-Then ask the API for the stats.
+Next, finish the book and give it five stars.
+Next, ask the API for the stats.
 The response lists the sessions for each of the last 12 weeks.
 It lists the books finished and the voice minutes for each of the last 12 months.
 A week or month with no data shows a zero.
