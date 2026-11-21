@@ -19,7 +19,7 @@ const failure = (status: number) =>
 
 export const groqSpeech = ({
   apiKey,
-  fetch: f = fetch,
+  fetch: f = (input, init) => fetch(input, init),
   baseUrl = GROQ_URL,
 }: Options) =>
   ({
@@ -43,7 +43,7 @@ export const groqSpeech = ({
 export const groqText = ({
   apiKey,
   model,
-  fetch: f = fetch,
+  fetch: f = (input, init) => fetch(input, init),
   baseUrl = GROQ_URL,
 }: Options & { model: string }) =>
   ({
