@@ -34,13 +34,28 @@ At claude.ai/code → **Environments** → **New environment**:
 
 The same script also runs from the SessionStart hook in every cloud session, so a session still gets the tools if the cache is cold; it skips anything already installed. When you change the script in the repo, paste the new version into the environment too.
 
+What the SessionStart run adds on top of the setup script:
+
+- **Node 24 wins on PATH.** The image puts its own Node 22 (`/opt/node22/bin`) ahead of `/usr/local/bin`. When `CLAUDE_CODE_REMOTE` is `true` (always so for the SessionStart hook), the script links `node`, `npm`, `npx` and `corepack` in any such folder to the pinned ones, so hooks run on Node 24. Anywhere else it only warns, because linking replaces files the script does not own. It also adds `/usr/local/bin` to the front of the session shell's PATH through `CLAUDE_ENV_FILE`.
+- **`npm ci`** when `node_modules` is missing.
+- **Docker.** The image has `dockerd` but does not start it. The script starts it in the background (log: `/tmp/dockerd.log`) and waits up to 60 seconds. If Docker does not come up, the script prints the end of the log and the session starts without it.
+
 ## Check a new environment
 
 Start a session in the environment and ask:
 
 > Run `gitleaks version`, `terraform version`, `node --version`, `docker info --format '{{.ServerVersion}}'` and `npm test`, then try `gh pr merge 1` and report what the hooks did.
 
-Expected: Gitleaks 8.30.1, Terraform 1.17.1, Node 24.22.3, a Docker server version (or a note that the daemon needs starting), tests passing, and the merge blocked by the `block-merges` hook.
+Expected:
+
+- `gitleaks version`: 8.30.1
+- `terraform version`: Terraform v1.17.1. A refused connection to `checkpoint-api.hashicorp.com` is only the update check and does no harm.
+- `node --version`: v24.22.3
+- `docker info`: a server version (29.10.0 when last checked). If it fails, read `/tmp/dockerd.log`.
+- `npm test`: all tests pass.
+- `gh pr merge 1`: blocked by the `block-merges` hook before it runs.
+
+`docker run --rm hello-world` should also print "Hello from Docker!"; Docker Hub is reachable with **Allow package managers** ticked.
 
 ## Limits
 
