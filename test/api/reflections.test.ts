@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -12,7 +12,12 @@ import {
 import extraction from "../../packages/core/src/ai/fixtures/groq-chat-extraction.json" with { type: "json" };
 import chat from "../../packages/core/src/ai/fixtures/groq-chat-questions.json" with { type: "json" };
 import { sessionTokenFor } from "./clerk.ts";
-import { call, expectMatchesContract, gatewaySecret } from "./harness.ts";
+import {
+  baseUrl,
+  call,
+  expectMatchesContract,
+  gatewaySecret,
+} from "./harness.ts";
 
 const databaseUrl = process.env["DATABASE_URL"] ?? "";
 const admin = postgres(databaseUrl, { prepare: false, max: 1 });
@@ -22,7 +27,10 @@ let alice: TestUser;
 let bob: TestUser;
 const as = (user: TestUser) => ({ authorization: `Bearer ${user.token}` });
 
-const server = setupServer();
+const server = setupServer(
+  http.all(`${baseUrl}/*`, () => passthrough()),
+  http.all(`${process.env["CLERK_ISSUER"] ?? ""}/*`, () => passthrough()),
+);
 const pending: Promise<unknown>[] = [];
 
 const unused = () => Promise.reject(new Error("not used by these routes"));
