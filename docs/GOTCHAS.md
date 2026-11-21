@@ -68,3 +68,5 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 ## 2026-11-21: DeepEval usefulness scores swing between judges
 
 **The same extraction scored 0.3 to 1.0 per sample on usefulness depending on the Groq judge, while faithfulness stayed at 1.0 everywhere.** `packages/core/evals/run_evals.py` fails a run on any faithfulness, count, quote or verbatim-quote miss, and on a usefulness mean below 0.5, not on single usefulness scores. The Groq free tier also answers 429 often during a run; the judge waits for `Retry-After` and continues.
+
+**Supabase signed upload URLs are valid for two hours and the time cannot be changed.** The API reports `expiresInSeconds: 7200` and the real limit on how long a client may upload is the tier's longest note, checked when the URL is requested.

@@ -1,0 +1,26 @@
+meta {
+  name: Update session
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/v1/sessions/{{sessionId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "chapter": "Chapter 1"
+  }
+}
+
+docs {
+  operationId: updateSession
+}
+

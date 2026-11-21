@@ -131,10 +131,313 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List the reading sessions of one book, newest first */
+        get: operations["listBookSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a reading session; a retry with the same id returns the same session */
+        post: operations["createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get one session; clients poll this while it is processed */
+        get: operations["getSession"];
+        put?: never;
+        post?: never;
+        /** Delete a session with its insights and stored audio */
+        delete: operations["deleteSession"];
+        options?: never;
+        head?: never;
+        /** Change a session */
+        patch: operations["updateSession"];
+        trace?: never;
+    };
+    "/sessions/{id}/audio-upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a signed URL to upload the audio of a session */
+        post: operations["createAudioUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/{id}/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List the insights and quotes of one book, pinned first */
+        get: operations["listBookInsights"];
+        put?: never;
+        /** Add an insight or quote written by the user */
+        post: operations["createInsight"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{id}/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List the insights and quotes of one session */
+        get: operations["listSessionInsights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/insights/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an insight */
+        delete: operations["deleteInsight"];
+        options?: never;
+        head?: never;
+        /** Edit, pin or unpin an insight; the first AI wording is kept in originalText */
+        patch: operations["updateInsight"];
+        trace?: never;
+    };
+    "/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the caller's session notes, insights, quotes and reviews, best match first */
+        get: operations["searchVault"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export the caller's books, sessions, insights, reviews and reflections as one file (no audio or photos) */
+        get: operations["exportVault"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Export: {
+            /** Format: date-time */
+            exportedAt: string;
+            books: components["schemas"]["ExportBook"][];
+        };
+        ExportBook: components["schemas"]["Book"] & {
+            review: components["schemas"]["ExportReview"] | null;
+            sessions: components["schemas"]["Session"][];
+            insights: components["schemas"]["Insight"][];
+            reflections: components["schemas"]["ExportReflection"][];
+        };
+        ExportReview: {
+            rating: number | null;
+            text: string | null;
+            summary: string | null;
+        };
+        ExportReflection: {
+            /** @enum {string} */
+            stage: "mid" | "end" | "recall";
+            position: number;
+            question: string;
+            answer: string | null;
+        };
+        SearchResult: {
+            /** @enum {string} */
+            kind: "session" | "insight" | "quote" | "review";
+            /**
+             * Format: uuid
+             * @description The session or insight ID; for a review, the book ID
+             */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            bookTitle: string;
+            /** @description A short excerpt around the match, with matches wrapped in square brackets */
+            snippet: string;
+            rank: number;
+        };
+        Insight: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            /** Format: uuid */
+            sessionId: string | null;
+            /** @enum {string} */
+            kind: "insight" | "quote";
+            text: string;
+            originalText: string | null;
+            /** @enum {string} */
+            source: "ai" | "user";
+            page: number | null;
+            pinned: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        InsightList: {
+            items: components["schemas"]["Insight"][];
+        };
+        InsightCreate: {
+            text: string;
+            /**
+             * @default insight
+             * @enum {string}
+             */
+            kind: "insight" | "quote";
+            page?: number;
+            /** Format: uuid */
+            sessionId?: string;
+            pinned?: boolean;
+        };
+        InsightUpdate: {
+            text?: string;
+            page?: number | null;
+            pinned?: boolean;
+        };
+        Session: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            /** Format: date */
+            date: string;
+            pageFrom: number | null;
+            pageTo: number | null;
+            chapter: string | null;
+            noteText: string | null;
+            /** @enum {string} */
+            noteSource: "typed" | "voice";
+            audioSeconds: number | null;
+            hasAudio: boolean;
+            /** @enum {string} */
+            status: "draft" | "uploaded" | "transcribing" | "extracting" | "ready" | "failed";
+            errorCode: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        SessionCreate: {
+            /**
+             * Format: uuid
+             * @description Chosen by the client so a retry is safe
+             */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            /** Format: date */
+            date: string;
+            pageFrom?: number;
+            pageTo?: number;
+            chapter?: string;
+            noteText?: string;
+        };
+        SessionUpdate: {
+            /** Format: date */
+            date?: string;
+            pageFrom?: number | null;
+            pageTo?: number | null;
+            chapter?: string | null;
+            noteText?: string | null;
+        };
+        AudioUploadCreate: {
+            durationSeconds: number;
+            /**
+             * @default m4a
+             * @enum {string}
+             */
+            extension: "m4a" | "mp3" | "wav" | "webm" | "ogg";
+        };
+        AudioUpload: {
+            /** @description Send the audio bytes to this URL with PUT */
+            uploadUrl: string;
+            path: string;
+            expiresInSeconds: number;
+        };
         Health: {
             /** @constant */
             status: "ok";
@@ -525,6 +828,366 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listBookSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Session"][];
+                    };
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionCreate"];
+            };
+        };
+        responses: {
+            /** @description A session with this id already exists and is returned unchanged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            /** @description The new session */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session is deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionUpdate"];
+            };
+        };
+        responses: {
+            /** @description The changed session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createAudioUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioUploadCreate"];
+            };
+        };
+        responses: {
+            /** @description The signed upload URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioUpload"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listBookInsights: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The insights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InsightList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createInsight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InsightCreate"];
+            };
+        };
+        responses: {
+            /** @description The new insight */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insight"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listSessionInsights: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The insights */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InsightList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteInsight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The insight is deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateInsight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InsightUpdate"];
+            };
+        };
+        responses: {
+            /** @description The changed insight */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insight"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    searchVault: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matches */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["SearchResult"][];
+                    };
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    exportVault: {
+        parameters: {
+            query: {
+                format: "json" | "markdown";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The export, sent as a download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                    "text/markdown": string;
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

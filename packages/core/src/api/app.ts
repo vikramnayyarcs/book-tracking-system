@@ -24,6 +24,31 @@ import {
   revokeToken,
   type TokenScope,
 } from "../tokens.ts";
+import {
+  createInsight,
+  deleteInsight,
+  listBookInsights,
+  listSessionInsights,
+  parseInsightCreate,
+  parseInsightUpdate,
+  updateInsight,
+} from "../insights.ts";
+import {
+  audioPath,
+  createSession,
+  deleteSession,
+  getSession,
+  listBookSessions,
+  mayUploadAudio,
+  parseAudioUpload,
+  parseSessionCreate,
+  parseSessionUpdate,
+  sessionAudioPath,
+  setSessionAudio,
+  updateSession,
+} from "../sessions.ts";
+import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
+import { parseSearch, searchVault } from "../search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -249,6 +274,219 @@ export const createApp = (deps: ApiDeps) => {
     }
     await c.var.withUser((sql) => deleteBook(sql, id));
     return c.body(null, 204);
+  });
+
+  app.get("/books/:id/sessions", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser(async (sql) =>
+      (await getBook(sql, id)) === undefined
+        ? undefined
+        : listBookSessions(sql, id),
+    );
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.post("/sessions", auth("sessions:write"), async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseSessionCreate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      createSession(sql, parsed.session),
+    );
+    return result.kind === "missing"
+      ? notFound(c.get("requestId"))
+      : c.json(result.session, result.kind === "created" ? 201 : 200);
+  });
+
+  app.get("/sessions/:id", auth("sessions:write"), async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getSession(sql, id));
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.patch("/sessions/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseSessionUpdate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      updateSession(sql, id, parsed.fields),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.delete("/sessions/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: path } = await c.var.withUser(async (sql) =>
+      (await getSession(sql, id)) === undefined
+        ? undefined
+        : { audio: await sessionAudioPath(sql, id) },
+    );
+    if (path === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (path.audio !== null) {
+      await deps.objects.remove("audio", [path.audio]);
+    }
+    await c.var.withUser((sql) => deleteSession(sql, id));
+    return c.body(null, 204);
+  });
+
+  app.post("/sessions/:id/audio-upload", auth("sessions:write"), async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseAudioUpload(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result: session, tier } = await c.var.withUser((sql) =>
+      getSession(sql, id),
+    );
+    if (session === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (!mayUploadAudio(tier, parsed.durationSeconds)) {
+      return problemResponse(
+        403,
+        "tier_limit_reached",
+        "This note is longer than your plan allows",
+        c.get("requestId"),
+      );
+    }
+    const path = audioPath(c.var.userId, id, parsed.extension);
+    const upload = await deps.objects.signedUploadUrl("audio", path);
+    await c.var.withUser((sql) =>
+      setSessionAudio(sql, id, path, parsed.durationSeconds),
+    );
+    return c.json({
+      uploadUrl: upload.url,
+      path,
+      expiresInSeconds: upload.expiresInSeconds,
+    });
+  });
+
+  app.get("/books/:id/insights", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => listBookInsights(sql, id));
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.post("/books/:id/insights", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseInsightCreate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      createInsight(sql, id, parsed.insight),
+    );
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json(result, 201);
+  });
+
+  app.get("/sessions/:id/insights", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      listSessionInsights(sql, id),
+    );
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.patch("/insights/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseInsightUpdate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      updateInsight(sql, id, parsed.fields),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.delete("/insights/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => deleteInsight(sql, id));
+    return result ? c.body(null, 204) : notFound(c.get("requestId"));
+  });
+
+  app.get("/search", authenticated, async (c) => {
+    const parsed = parseSearch(c.req.query("q"), c.req.query("limit"));
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      searchVault(sql, parsed.query, parsed.limit),
+    );
+    return c.json({ items: result });
+  });
+
+  app.get("/export", authenticated, async (c) => {
+    const format = parseExportFormat(c.req.query("format"));
+    if (format === undefined) {
+      return invalid("format must be json or markdown", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      collectExport(sql, new Date(deps.now())),
+    );
+    const day = result.exportedAt.slice(0, 10);
+    if (format === "json") {
+      return new Response(JSON.stringify(result), {
+        headers: {
+          "content-type": "application/json",
+          "content-disposition": `attachment; filename="vault-${day}.json"`,
+        },
+      });
+    }
+    return new Response(renderMarkdown(result), {
+      headers: {
+        "content-type": "text/markdown; charset=utf-8",
+        "content-disposition": `attachment; filename="vault-${day}.md"`,
+      },
+    });
   });
 
   app.get("/tokens", authenticated, async (c) => {

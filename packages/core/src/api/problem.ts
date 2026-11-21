@@ -6,7 +6,8 @@ export type ProblemCode =
   | "insufficient_scope"
   | "validation_failed"
   | "isbn_invalid"
-  | "isbn_not_found";
+  | "isbn_not_found"
+  | "tier_limit_reached";
 
 export type Problem = {
   type: string;

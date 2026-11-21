@@ -1,0 +1,19 @@
+meta {
+  name: Search vault
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/search?q=habits&limit=10
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+docs {
+  operationId: searchVault
+}

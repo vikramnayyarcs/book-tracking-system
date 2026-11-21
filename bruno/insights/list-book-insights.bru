@@ -1,0 +1,20 @@
+meta {
+  name: List book insights
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/books/{{bookId}}/insights
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+docs {
+  operationId: listBookInsights
+}
+

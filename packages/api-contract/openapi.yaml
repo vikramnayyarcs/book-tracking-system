@@ -240,6 +240,343 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/sessions:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listBookSessions
+      summary: List the reading sessions of one book, newest first
+      responses:
+        "200":
+          description: The sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions:
+    post:
+      operationId: createSession
+      summary: Create a reading session; a retry with the same id returns the same session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionCreate"
+      responses:
+        "200":
+          description: A session with this id already exists and is returned unchanged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "201":
+          description: The new session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getSession
+      summary: Get one session; clients poll this while it is processed
+      responses:
+        "200":
+          description: The session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateSession
+      summary: Change a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionUpdate"
+      responses:
+        "200":
+          description: The changed session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteSession
+      summary: Delete a session with its insights and stored audio
+      responses:
+        "204":
+          description: The session is deleted
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions/{id}/audio-upload:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: createAudioUpload
+      summary: Get a signed URL to upload the audio of a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AudioUploadCreate"
+      responses:
+        "200":
+          description: The signed upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudioUpload"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /books/{id}/insights:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listBookInsights
+      summary: List the insights and quotes of one book, pinned first
+      responses:
+        "200":
+          description: The insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createInsight
+      summary: Add an insight or quote written by the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsightCreate"
+      responses:
+        "201":
+          description: The new insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Insight"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions/{id}/insights:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listSessionInsights
+      summary: List the insights and quotes of one session
+      responses:
+        "200":
+          description: The insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /insights/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: updateInsight
+      summary: Edit, pin or unpin an insight; the first AI wording is kept in originalText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsightUpdate"
+      responses:
+        "200":
+          description: The changed insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Insight"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteInsight
+      summary: Delete an insight
+      responses:
+        "204":
+          description: The insight is deleted
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /search:
+    get:
+      operationId: searchVault
+      summary: Search the caller's session notes, insights, quotes and reviews, best match first
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: The matches
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SearchResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /export:
+    get:
+      operationId: exportVault
+      summary: Export the caller's books, sessions, insights, reviews and reflections as one file (no audio or photos)
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [json, markdown]
+      responses:
+        "200":
+          description: The export, sent as a download
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+            text/markdown:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -247,6 +584,285 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Export:
+      type: object
+      required: [exportedAt, books]
+      properties:
+        exportedAt:
+          type: string
+          format: date-time
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportBook"
+    ExportBook:
+      allOf:
+        - $ref: "#/components/schemas/Book"
+        - type: object
+          required: [review, sessions, insights, reflections]
+          properties:
+            review:
+              oneOf:
+                - $ref: "#/components/schemas/ExportReview"
+                - type: "null"
+            sessions:
+              type: array
+              items:
+                $ref: "#/components/schemas/Session"
+            insights:
+              type: array
+              items:
+                $ref: "#/components/schemas/Insight"
+            reflections:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportReflection"
+    ExportReview:
+      type: object
+      required: [rating, text, summary]
+      properties:
+        rating:
+          type: [integer, "null"]
+        text:
+          type: [string, "null"]
+        summary:
+          type: [string, "null"]
+    ExportReflection:
+      type: object
+      required: [stage, position, question, answer]
+      properties:
+        stage:
+          type: string
+          enum: [mid, end, recall]
+        position:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: [string, "null"]
+    SearchResult:
+      type: object
+      required: [kind, id, bookId, bookTitle, snippet, rank]
+      properties:
+        kind:
+          type: string
+          enum: [session, insight, quote, review]
+        id:
+          type: string
+          format: uuid
+          description: The session or insight ID; for a review, the book ID
+        bookId:
+          type: string
+          format: uuid
+        bookTitle:
+          type: string
+        snippet:
+          type: string
+          description: A short excerpt around the match, with matches wrapped in square brackets
+        rank:
+          type: number
+    Insight:
+      type: object
+      required:
+        - id
+        - bookId
+        - sessionId
+        - kind
+        - text
+        - originalText
+        - source
+        - page
+        - pinned
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookId:
+          type: string
+          format: uuid
+        sessionId:
+          type: [string, "null"]
+          format: uuid
+        kind:
+          type: string
+          enum: [insight, quote]
+        text:
+          type: string
+        originalText:
+          type: [string, "null"]
+        source:
+          type: string
+          enum: [ai, user]
+        page:
+          type: [integer, "null"]
+        pinned:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    InsightList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Insight"
+    InsightCreate:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        kind:
+          type: string
+          enum: [insight, quote]
+          default: insight
+        page:
+          type: integer
+          minimum: 1
+        sessionId:
+          type: string
+          format: uuid
+        pinned:
+          type: boolean
+    InsightUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        page:
+          type: [integer, "null"]
+          minimum: 1
+        pinned:
+          type: boolean
+    Session:
+      type: object
+      required:
+        - id
+        - bookId
+        - date
+        - pageFrom
+        - pageTo
+        - chapter
+        - noteText
+        - noteSource
+        - audioSeconds
+        - hasAudio
+        - status
+        - errorCode
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        pageFrom:
+          type: [integer, "null"]
+        pageTo:
+          type: [integer, "null"]
+        chapter:
+          type: [string, "null"]
+        noteText:
+          type: [string, "null"]
+        noteSource:
+          type: string
+          enum: [typed, voice]
+        audioSeconds:
+          type: [integer, "null"]
+        hasAudio:
+          type: boolean
+        status:
+          type: string
+          enum: [draft, uploaded, transcribing, extracting, ready, failed]
+        errorCode:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+    SessionCreate:
+      type: object
+      additionalProperties: false
+      required: [id, bookId, date]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Chosen by the client so a retry is safe
+        bookId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        pageFrom:
+          type: integer
+          minimum: 1
+        pageTo:
+          type: integer
+          minimum: 1
+        chapter:
+          type: string
+          maxLength: 300
+        noteText:
+          type: string
+          maxLength: 20000
+    SessionUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        date:
+          type: string
+          format: date
+        pageFrom:
+          type: [integer, "null"]
+          minimum: 1
+        pageTo:
+          type: [integer, "null"]
+          minimum: 1
+        chapter:
+          type: [string, "null"]
+          maxLength: 300
+        noteText:
+          type: [string, "null"]
+          maxLength: 20000
+    AudioUploadCreate:
+      type: object
+      additionalProperties: false
+      required: [durationSeconds]
+      properties:
+        durationSeconds:
+          type: integer
+          minimum: 1
+        extension:
+          type: string
+          enum: [m4a, mp3, wav, webm, ogg]
+          default: m4a
+    AudioUpload:
+      type: object
+      required: [uploadUrl, path, expiresInSeconds]
+      properties:
+        uploadUrl:
+          type: string
+          description: Send the audio bytes to this URL with PUT
+        path:
+          type: string
+        expiresInSeconds:
+          type: integer
     Health:
       type: object
       required: [status]
