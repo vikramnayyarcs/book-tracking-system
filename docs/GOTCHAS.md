@@ -82,3 +82,9 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 ## 2026-11-21: MSW cannot catch a `fetch` that a client captured before `server.listen()`
 
 **A client built with `fetch: f = fetch` keeps the original `fetch`, so tests that construct it at module or `describe` level skip the MSW handlers and hit the real network.** The Groq clients now default to `(input, init) => fetch(input, init)`, which reads the global at call time.
+
+## 2026-11-21: ask the vault retrieves with an OR query and a similarity floor
+
+**`websearch_to_tsquery` ANDs every word, so a natural question like "what have I read about leadership?" matches nothing, and a vector ranker with no floor always returns its nearest rows.** `packages/core/src/ask.ts` builds an OR `to_tsquery` from the question words, and the vector ranker keeps only insights with cosine similarity of at least 0.8 (`VECTOR_MIN_SIMILARITY`, untuned for gte-small; tune it with real data). When the Edge function cannot embed the question, retrieval falls back to full-text only.
+
+**The model passed the faithfulness and citation evals only after the prompt asked for one claim per note with a verbatim `evidence` phrase.** Free-text answers with `[n]` markers dropped citations, and a note that shared one word with the question still produced an answer (gpt-oss-20b failed 3 of 7 cases). The server now checks each evidence phrase against its note, drops claims that fail, and builds the `[n]` markers itself.

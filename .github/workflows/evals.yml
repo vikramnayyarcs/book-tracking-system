@@ -47,3 +47,9 @@ jobs:
 
       - name: Score recall prompts with DeepEval
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/recall.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/recall-scores.json"
+
+      - name: Generate vault answers with the prompt and model in the code
+        run: node packages/core/evals/generate-ask.ts "$RUNNER_TEMP/ask.json"
+
+      - name: Score vault answers with DeepEval
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/ask.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/ask-scores.json"

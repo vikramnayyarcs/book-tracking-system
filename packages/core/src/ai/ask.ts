@@ -3,29 +3,47 @@ import { AiError, type TextModel } from "./types.ts";
 
 export const NOT_IN_NOTES = "This is not in your notes.";
 
-export const parseAnswer = (json: unknown, noteCount: number) => {
-  if (typeof json !== "object" || json === null) {
-    throw new AiError("ai_bad_output");
+const squash = (value: string) =>
+  value.toLowerCase().replace(/\s+/g, " ").trim();
+
+export const MAX_CLAIMS = 5;
+
+export const parseAnswer = (json: unknown, notes: { text: string }[]) => {
+  const claims = (json as { claims?: unknown } | null)?.claims;
+  if (!Array.isArray(claims)) throw new AiError("ai_bad_output");
+  const kept: { text: string; note: number }[] = [];
+  for (const item of claims.slice(0, MAX_CLAIMS)) {
+    const { text, note, evidence } = (item ?? {}) as Record<string, unknown>;
+    if (
+      typeof text !== "string" ||
+      typeof evidence !== "string" ||
+      typeof note !== "number" ||
+      !Number.isInteger(note)
+    ) {
+      continue;
+    }
+    const source = notes[note - 1];
+    const proof = squash(evidence);
+    if (
+      source === undefined ||
+      text.trim() === "" ||
+      proof.length < 3 ||
+      !squash(source.text).includes(proof)
+    ) {
+      continue;
+    }
+    const sentence = text.trim().replace(/[.\s]+$/, "");
+    kept.push({
+      text: `${sentence.charAt(0).toUpperCase()}${sentence.slice(1)}`,
+      note,
+    });
   }
-  const { found, answer, citations } = json as Record<string, unknown>;
-  if (typeof found !== "boolean") throw new AiError("ai_bad_output");
-  if (!found) return { found: false } as const;
-  const text = typeof answer === "string" ? answer.trim() : "";
-  const cited = Array.isArray(citations)
-    ? [
-        ...new Set(
-          citations.filter(
-            (n): n is number =>
-              typeof n === "number" &&
-              Number.isInteger(n) &&
-              n >= 1 &&
-              n <= noteCount,
-          ),
-        ),
-      ]
-    : [];
-  if (text === "" || cited.length === 0) return { found: false } as const;
-  return { found: true, answer: text, cited } as const;
+  if (kept.length === 0) return { found: false } as const;
+  return {
+    found: true,
+    answer: kept.map((claim) => `${claim.text} [${claim.note}].`).join(" "),
+    cited: [...new Set(kept.map((claim) => claim.note))],
+  } as const;
 };
 
 export const answerFromNotes = async (
@@ -37,5 +55,5 @@ export const answerFromNotes = async (
     system: askVaultV1.system,
     user: askVaultV1.user(question, notes),
   });
-  return { parsed: parseAnswer(json, notes.length), usage };
+  return { parsed: parseAnswer(json, notes), usage };
 };
