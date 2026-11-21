@@ -9,6 +9,7 @@ import {
   createDb,
   jsonLogger,
 } from "../../packages/core/src/api/index.ts";
+import extraction from "../../packages/core/src/ai/fixtures/groq-chat-extraction.json" with { type: "json" };
 import chat from "../../packages/core/src/ai/fixtures/groq-chat-questions.json" with { type: "json" };
 import { sessionTokenFor } from "./clerk.ts";
 import { call, expectMatchesContract, gatewaySecret } from "./harness.ts";
@@ -22,6 +23,7 @@ let bob: TestUser;
 const as = (user: TestUser) => ({ authorization: `Bearer ${user.token}` });
 
 const server = setupServer();
+const pending: Promise<unknown>[] = [];
 
 const unused = () => Promise.reject(new Error("not used by these routes"));
 const inProcess = createApp({
@@ -37,7 +39,9 @@ const inProcess = createApp({
   openLibraryUrl: "http://127.0.0.1:9",
   speech: groqSpeech({ apiKey: "test" }),
   text: groqText({ apiKey: "test", model: "recorded" }),
-  waitUntil: () => undefined,
+  waitUntil: (work) => {
+    pending.push(work);
+  },
 });
 
 const inProcessCall = (path: string, user: TestUser, json?: unknown) =>
@@ -171,7 +175,7 @@ describe("reflections", () => {
     const bad = await call(`/books/${bookId}/reflections`, {
       method: "POST",
       headers: as(alice),
-      json: { stage: "recall" },
+      json: { stage: "later" },
     });
     expect(bad.status).toBe(400);
     const anonymous = await call(`/books/${bookId}/reflections`);
@@ -186,5 +190,78 @@ describe("reflections", () => {
       json: { stage: "mid" },
     });
     expect(response.status).toBe(502);
+  });
+});
+
+describe("past books", () => {
+  it("writes 3 recall prompts from the title alone, and turns the remembered note into insights", async () => {
+    server.listen({ onUnhandledFrame: "error" });
+    server.use(
+      http.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        async ({ request }) =>
+          HttpResponse.json(
+            (await request.text()).includes("remember a book")
+              ? chat
+              : extraction,
+          ),
+      ),
+    );
+    try {
+      const book = await call("/books", {
+        method: "POST",
+        headers: as(alice),
+        json: {
+          title: "Invented reflections test past book",
+          status: "finished",
+          finishedOn: "2019-01-01",
+          finishedPrecision: "year",
+          addedRetrospectively: true,
+        },
+      });
+      expect(book.status).toBe(201);
+      const bookId = ((await book.json()) as { id: string }).id;
+
+      const recall = await inProcessCall(
+        `/books/${bookId}/reflections`,
+        alice,
+        {
+          stage: "recall",
+        },
+      );
+      expect(recall.status).toBe(201);
+      const prompts = (await recall.json()) as { items: { stage: string }[] };
+      expect(prompts.items).toHaveLength(3);
+      expect(prompts.items.every((item) => item.stage === "recall")).toBe(true);
+
+      const sessionId = crypto.randomUUID();
+      const created = await call("/sessions", {
+        method: "POST",
+        headers: as(alice),
+        json: {
+          id: sessionId,
+          bookId,
+          date: "2026-03-01",
+          noteText: "An invented memory: routine is a form of attention.",
+        },
+      });
+      expect(created.status).toBe(201);
+      const started = await inProcessCall(
+        `/sessions/${sessionId}/process`,
+        alice,
+        {},
+      );
+      expect(started.status).toBe(202);
+      await Promise.all(pending);
+
+      const insights = await call(`/sessions/${sessionId}/insights`, {
+        headers: as(alice),
+      });
+      const body = (await insights.json()) as { items: { source: string }[] };
+      expect(body.items.length).toBeGreaterThanOrEqual(3);
+      expect(body.items.every((item) => item.source === "ai")).toBe(true);
+    } finally {
+      server.close();
+    }
   });
 });

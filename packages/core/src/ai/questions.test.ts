@@ -40,12 +40,13 @@ describe("reflection questions", () => {
 });
 
 describe("reflection input", () => {
-  it("accepts only mid or end", () => {
+  it("accepts mid, end or recall", () => {
     expect(parseReflectionCreate({ stage: "mid" })).toEqual({
       ok: true,
       stage: "mid",
     });
-    expect(parseReflectionCreate({ stage: "recall" }).ok).toBe(false);
+    expect(parseReflectionCreate({ stage: "recall" }).ok).toBe(true);
+    expect(parseReflectionCreate({ stage: "later" }).ok).toBe(false);
     expect(parseReflectionCreate({ stage: "end", extra: 1 }).ok).toBe(false);
   });
 

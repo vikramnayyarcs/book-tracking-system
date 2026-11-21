@@ -4,6 +4,8 @@ import { groqText } from "../src/ai/groq.ts";
 import { INSIGHT_MODEL } from "../src/ai/models.ts";
 
 const args = process.argv.slice(2);
+const recall = args[0] === "--recall";
+if (recall) args.shift();
 const out = args.pop();
 const model = args[0] ?? INSIGHT_MODEL;
 if (!out) throw new Error("usage: generate-questions.ts [model] <out.json>");
@@ -11,7 +13,13 @@ const apiKey = process.env.GROQ_API_KEY;
 if (!apiKey) throw new Error("GROQ_API_KEY is not set");
 
 const samples = JSON.parse(
-  readFileSync(new URL("./reflection-samples.json", import.meta.url), "utf8"),
+  readFileSync(
+    new URL(
+      recall ? "./recall-samples.json" : "./reflection-samples.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
 ) as {
   id: string;
   stage: "mid" | "end";
@@ -40,5 +48,5 @@ for (const sample of samples) {
 }
 writeFileSync(
   out,
-  `${JSON.stringify({ model, task: "questions", results }, null, 2)}\n`,
+  `${JSON.stringify({ model, task: "questions", set: recall ? "recall" : "reflection", results }, null, 2)}\n`,
 );

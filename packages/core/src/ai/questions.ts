@@ -1,4 +1,5 @@
 import { reflectionQuestionsV1 } from "../../prompts/reflection-questions.v1.ts";
+import { recallPromptsV1 } from "../../prompts/recall-prompts.v1.ts";
 import { AiError, type TextModel } from "./types.ts";
 
 export const QUESTION_COUNT = 3;
@@ -22,13 +23,17 @@ export const parseQuestions = (json: unknown) => {
 
 export const askReflectionQuestions = async (
   model: TextModel,
-  stage: "mid" | "end",
+  stage: "mid" | "end" | "recall",
   book: { title: string; author: string | null },
   notes: string[],
 ) => {
-  const { json, usage } = await model.completeJson({
-    system: reflectionQuestionsV1.system,
-    user: reflectionQuestionsV1.user(stage, book, notes),
-  });
+  const { json, usage } = await model.completeJson(
+    stage === "recall"
+      ? { system: recallPromptsV1.system, user: recallPromptsV1.user(book) }
+      : {
+          system: reflectionQuestionsV1.system,
+          user: reflectionQuestionsV1.user(stage, book, notes),
+        },
+  );
   return { questions: parseQuestions(json), usage };
 };
