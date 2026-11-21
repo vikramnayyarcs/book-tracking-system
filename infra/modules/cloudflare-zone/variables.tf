@@ -1,21 +1,11 @@
-variable "account_id" {
-  description = "Cloudflare account that owns the zone and the Pages projects."
-  type        = string
-}
-
 variable "domain" {
   description = "Apex domain of the zone, which must already exist in the account."
   type        = string
 }
 
-variable "site_pages_project" {
-  description = "Name of the Pages project that serves the marketing site."
-  type        = string
-}
-
-variable "site_pages_subdomain" {
-  description = "pages.dev host name of the marketing site project, the target of its DNS records."
-  type        = string
+variable "site_hostnames" {
+  description = "Host names of the marketing site. The method rule applies only to these, so other hosts such as a future api subdomain are unaffected."
+  type        = list(string)
 }
 
 variable "blocked_paths" {

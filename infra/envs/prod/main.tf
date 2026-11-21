@@ -9,10 +9,19 @@ module "zone" {
   count  = var.domain == "" ? 0 : 1
   source = "../../modules/cloudflare-zone"
 
-  account_id           = var.cloudflare_account_id
-  domain               = var.domain
-  site_pages_project   = module.site_prod.name
-  site_pages_subdomain = module.site_prod.subdomain
+  domain         = var.domain
+  site_hostnames = [var.domain, "www.${var.domain}"]
+}
+
+module "site_prod_domain" {
+  for_each = var.domain == "" ? toset([]) : toset(["apex", "www"])
+  source   = "../../modules/cloudflare-site-domain"
+
+  account_id      = var.cloudflare_account_id
+  domain          = var.domain
+  hostname        = each.key == "apex" ? var.domain : "www.${var.domain}"
+  pages_project   = module.site_prod.name
+  pages_subdomain = module.site_prod.subdomain
 }
 
 module "supabase_prod" {

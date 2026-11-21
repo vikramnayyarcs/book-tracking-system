@@ -18,14 +18,15 @@ module "site_dev" {
   name       = "site-dev"
 }
 
-module "zone" {
+module "site_dev_domain" {
   count  = var.domain == "" ? 0 : 1
-  source = "../../modules/cloudflare-zone"
+  source = "../../modules/cloudflare-site-domain"
 
-  account_id           = var.cloudflare_account_id
-  domain               = var.domain
-  site_pages_project   = module.site_dev.name
-  site_pages_subdomain = module.site_dev.subdomain
+  account_id      = var.cloudflare_account_id
+  domain          = var.domain
+  hostname        = "dev.${var.domain}"
+  pages_project   = module.site_dev.name
+  pages_subdomain = module.site_dev.subdomain
 }
 
 import {
