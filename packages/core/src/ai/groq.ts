@@ -1,22 +1,34 @@
 import { AiError, type SpeechToText, type TextModel } from "./types.ts";
 
-const BASE = "https://api.groq.com/openai/v1";
+export const GROQ_URL = "https://api.groq.com/openai/v1";
 
 export const SPEECH_MODEL = "whisper-large-v3-turbo";
 
-type Options = { apiKey: string; fetch?: typeof fetch };
+type Options = { apiKey: string; fetch?: typeof fetch; baseUrl?: string };
+
+const send = async (f: typeof fetch, url: string, init: RequestInit) => {
+  try {
+    return await f(url, init);
+  } catch {
+    throw new AiError("ai_provider_error");
+  }
+};
 
 const failure = (status: number) =>
   new AiError(status === 429 ? "ai_rate_limited" : "ai_provider_error");
 
-export const groqSpeech = ({ apiKey, fetch: f = fetch }: Options) =>
+export const groqSpeech = ({
+  apiKey,
+  fetch: f = fetch,
+  baseUrl = GROQ_URL,
+}: Options) =>
   ({
     transcribe: async (audio: Blob, filename: string) => {
       const form = new FormData();
       form.set("file", audio, filename);
       form.set("model", SPEECH_MODEL);
       form.set("response_format", "json");
-      const res = await f(`${BASE}/audio/transcriptions`, {
+      const res = await send(f, `${baseUrl}/audio/transcriptions`, {
         method: "POST",
         headers: { authorization: `Bearer ${apiKey}` },
         body: form,
@@ -32,6 +44,7 @@ export const groqText = ({
   apiKey,
   model,
   fetch: f = fetch,
+  baseUrl = GROQ_URL,
 }: Options & { model: string }) =>
   ({
     completeJson: async ({
@@ -41,7 +54,7 @@ export const groqText = ({
       system: string;
       user: string;
     }) => {
-      const res = await f(`${BASE}/chat/completions`, {
+      const res = await send(f, `${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${apiKey}`,

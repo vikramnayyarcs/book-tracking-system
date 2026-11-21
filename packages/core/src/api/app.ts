@@ -52,6 +52,13 @@ import { parseSearch, searchVault } from "../search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
+import type { SpeechToText, TextModel } from "../ai/types.ts";
+import {
+  loadProcessInfo,
+  markStatus,
+  planProcessing,
+  runProcessing,
+} from "../processing.ts";
 import { problemResponse } from "./problem.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
@@ -68,6 +75,9 @@ export type ApiDeps = {
   objects: ObjectStore;
   fetch: typeof fetch;
   openLibraryUrl: string;
+  speech: SpeechToText;
+  text: TextModel;
+  waitUntil: (work: Promise<unknown>) => void;
 };
 
 type Env = {
@@ -384,6 +394,65 @@ export const createApp = (deps: ApiDeps) => {
       path,
       expiresInSeconds: upload.expiresInSeconds,
     });
+  });
+
+  app.post("/sessions/:id/process", auth("sessions:write"), async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: info, tier } = await c.var.withUser((sql) =>
+      loadProcessInfo(sql, id),
+    );
+    if (info === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    const plan = planProcessing(info, tier);
+    if (plan.kind === "conflict") {
+      return problemResponse(
+        409,
+        "already_processed",
+        "This session is already processed or being processed",
+        c.get("requestId"),
+      );
+    }
+    if (plan.kind === "nothing") {
+      return problemResponse(
+        422,
+        "nothing_to_process",
+        "The session has no note text and no uploaded audio",
+        c.get("requestId"),
+      );
+    }
+    if (plan.kind === "denied") {
+      return problemResponse(
+        403,
+        "tier_limit_reached",
+        "Your plan does not allow this voice note",
+        c.get("requestId"),
+        plan.reason,
+      );
+    }
+    await c.var.withUser((sql) =>
+      markStatus(sql, id, plan.transcribe ? "transcribing" : "extracting"),
+    );
+    const userId = c.var.userId;
+    deps.waitUntil(
+      runProcessing({
+        withUser: async (work) =>
+          (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+        objects: deps.objects,
+        speech: deps.speech,
+        text: deps.text,
+        tier,
+        info,
+        transcribe: plan.transcribe,
+      }),
+    );
+    const { result: session } = await c.var.withUser((sql) =>
+      getSession(sql, id),
+    );
+    return c.json(session, 202);
   });
 
   app.get("/books/:id/insights", authenticated, async (c) => {
