@@ -28,10 +28,29 @@ On GitHub Free private repos there are no Environments, so everything is repo-le
 | Before Phase 2 (ADR 0003) | `DEV_CLERK_FRONTEND_API_URL` | Variable | GitHub repo |
 | Before Phase 2 (ADR 0003) | `DEV_CLERK_SECRET_KEY` | Secret | GitHub repo |
 | Before Phase 2 (ADR 0003); used in Phase 4 | `DEV_CLERK_PUBLISHABLE_KEY` | Variable | GitHub repo |
-| Before Phase 3 (needs its own ADR) | Groq, Anthropic and embeddings API keys | Secrets | Supabase secrets, set through Terraform from repo secrets |
+| Before Phase 3 (ADR 0007) | `DEV_GROQ_API_KEY` | Secret | GitHub repo; Terraform passes it to Supabase secrets |
 | When the GitHub MCP server is added | `BT_GITHUB_MCP_TOKEN` | Env var | Windows user env and cloud session settings |
 | When the Grafana MCP server is added | `BT_GRAFANA_DEV_TOKEN` | Env var | Windows user env and cloud session settings |
 | At launch only | `PROD_ENABLED` = `true` | Variable | GitHub repo; leave unset until then |
+
+## Key register
+
+Every credential you created by hand, and what to do when it expires or leaks. The `key-check` workflow tests each one nightly against its provider and opens one issue, **Key check failed**, when a key is rejected or expires within 14 days. When you roll a key: create the new one, set it with `gh secret set NAME`, revoke the old one, and note the date below.
+
+| Secret | Provider | Expires | Roll it at | Check calls |
+| --- | --- | --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare | The date you chose; the check reads it | My Profile → API Tokens → Roll | Token verify |
+| `TF_GITHUB_APP_PRIVATE_KEY` | GitHub App | Never | App settings → Private keys → Generate | `GET /app` with an app JWT |
+| `TF_STATE_R2_ACCESS_KEY_ID`, `TF_STATE_R2_SECRET_ACCESS_KEY` | Cloudflare R2 (made by `infra/bootstrap`) | Never | Re-run bootstrap | List the state bucket |
+| `DEV_SUPABASE_ACCESS_TOKEN` | Supabase | The date you chose | Account → Access Tokens | `GET /v1/projects` |
+| `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` | Grafana Cloud | The date you chose; the check reads it | Access Policies → token | Access policy read |
+| `DEV_CLERK_SECRET_KEY` | Clerk | Never (roll if leaked) | API keys → Secret keys | `GET /v1/instance` |
+| `DEV_GROQ_API_KEY` | Groq | Never (roll if leaked) | console.groq.com → API Keys | `GET /openai/v1/models` |
+| `BT_GITHUB_MCP_TOKEN` (env var, not checked by CI) | GitHub fine-grained PAT | The date you chose | Settings → Developer settings → PATs | None; MCP fails to start |
+
+Last rolled: `CLOUDFLARE_API_TOKEN` 2026-11-21 (after it leaked in chat). Everything else: first set 2026-11-20 or 2026-11-21.
+
+Secrets made by Terraform (Supabase keys, Grafana OTLP, the gateway secret) are not listed: Terraform replaces them.
 
 ## 1. Cloudflare API token
 
