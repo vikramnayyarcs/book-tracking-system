@@ -10,6 +10,10 @@ Format:
 Fix: what to do instead.
 ```
 
+## 2026-11-21: Cloud image's Node 22 shadows the pinned Node 24
+**In cloud sessions `/opt/node22/bin` comes before `/usr/local/bin` on PATH, and npm's `#!/usr/bin/env node` shebang picks that Node 22 even when you call `/usr/local/bin/npm`, so `npm ci` failed the `engines` check and stopped the setup script.**
+Fix: `scripts/cloud-setup.sh` puts `/usr/local/bin` first on its own PATH, links `node`, `npm`, `npx` and `corepack` in any earlier folder to the pinned ones, and adds `/usr/local/bin` to the front of PATH through `CLAUDE_ENV_FILE`.
+
 ## 2026-11-20: R2 must be enabled by hand, and its S3 endpoint lags
 **Creating an R2 bucket fails with 403 "Please enable R2 through the Cloudflare Dashboard" (code 10042) until R2 is switched on for the account, and right after that the account's S3 endpoint fails TLS handshakes for about 30 seconds.**
 Fix: enable R2 once in the dashboard (R2 Object Storage, Get started); it is an account sign-up step, not a setting Terraform can manage. The bootstrap workflow retries the state migration for up to a minute to ride out the endpoint delay.
