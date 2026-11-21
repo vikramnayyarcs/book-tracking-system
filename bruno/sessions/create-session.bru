@@ -1,0 +1,36 @@
+meta {
+  name: Create session
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/sessions
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "id": "{{sessionId}}",
+    "bookId": "{{bookId}}",
+    "date": "2026-03-01",
+    "pageFrom": 1,
+    "pageTo": 12,
+    "noteText": "An invented note about a sample chapter."
+  }
+}
+
+docs {
+  operationId: createSession
+}
+
+script:pre-request {
+  if (!bru.getVar("sessionId")) {
+    bru.setVar("sessionId", require("crypto").randomUUID());
+  }
+}
