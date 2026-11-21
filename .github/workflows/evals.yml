@@ -1,0 +1,37 @@
+name: AI evals
+
+on:
+  pull_request:
+    paths:
+      - "packages/core/prompts/**"
+      - "packages/core/evals/**"
+      - "packages/core/src/ai/**"
+      - ".github/workflows/evals.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deepeval:
+    runs-on: ubuntu-latest
+    env:
+      GROQ_API_KEY: ${{ secrets.DEV_GROQ_API_KEY }}
+      DEEPEVAL_TELEMETRY_OPT_OUT: "YES"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - run: python3 -m pip install -r packages/core/evals/requirements.txt requests
+
+      - name: Generate outputs with the prompt and model in the code
+        run: node packages/core/evals/generate.ts "$RUNNER_TEMP/outputs.json"
+
+      - name: Score with DeepEval
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/outputs.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/scores.json"

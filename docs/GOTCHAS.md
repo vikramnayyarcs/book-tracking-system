@@ -64,3 +64,7 @@ Fix: after editing the wrapper, check every identifier it uses is imported; the 
 ## 2026-11-21: `npm:postgres` does not work in Supabase Edge Functions
 **postgres.js from npm fails in the Edge Runtime with `ERR_NOT_IMPLEMENTED: LibuvStreamWrap.prototype.useUserBuffer`, so every query returns a 500.**
 Fix: the function's `deno.json` import map points `postgres` at the Deno build, `https://deno.land/x/postgresjs`, which has the same API. Node (tests, tooling) still uses the npm package.
+
+## DeepEval usefulness scores swing between judges
+
+**The same extraction scored 0.3 to 1.0 per sample on usefulness depending on the Groq judge, while faithfulness stayed at 1.0 everywhere.** `packages/core/evals/run_evals.py` fails a run on any faithfulness, count, quote or verbatim-quote miss, and on a usefulness mean below 0.5, not on single usefulness scores. The Groq free tier also answers 429 often during a run; the judge waits for `Retry-After` and continues.
