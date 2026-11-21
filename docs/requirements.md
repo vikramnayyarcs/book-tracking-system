@@ -172,7 +172,7 @@ Cloudflare only protects traffic that passes through it, and Supabase Edge Funct
 - Thresholds fail the run: p95 latency and error rate on each endpoint, agreed once there is a baseline
 - Results land in Grafana next to normal telemetry
 
-**Ask the vault flow:** when an insight is saved, a function stores its embedding. A question is embedded, the closest insights are found with pgvector, and Claude answers from only those, citing book and session.
+**Ask the vault flow:** when an insight is saved, a function stores its embedding. A question is embedded, the closest insights are found with pgvector, and the AI module's model answers from only those, citing book and session. Providers are set in ADR 0007: Groq for speech and text, Supabase `gte-small` for embeddings.
 
 **Later, only if needed:** containers, Kubernetes, microservices.
 

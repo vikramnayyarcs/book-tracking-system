@@ -111,4 +111,4 @@ Then restart VS Code. Add the same names, with the same dev-only values, in the 
 | `DEV_SUPABASE_URL`, `DEV_SUPABASE_ANON_KEY`, `DEV_SUPABASE_SERVICE_ROLE_KEY`, `DEV_SUPABASE_DB_PASSWORD` | `infra/envs/dev` |
 | `GRAFANA_OTLP_ENDPOINT`, `GRAFANA_OTLP_INSTANCE_ID`, `GRAFANA_OTLP_TOKEN` | `infra/envs/dev` |
 
-Groq, Claude and embeddings keys arrive in Phase 3 and go into Supabase secrets.
+Phase 3 needs only `DEV_GROQ_API_KEY` (ADR 0007), set as a repo secret; Terraform passes it to Supabase secrets. Embeddings use Supabase's built-in model, so there is no key. A Claude key is added only if no Groq model passes the evals.
