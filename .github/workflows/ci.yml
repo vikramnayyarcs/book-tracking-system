@@ -256,6 +256,10 @@ jobs:
         if: steps.changed.outputs.api == 'true'
         run: npm run test:api
 
+      - name: Show the function log
+        if: failure() && steps.changed.outputs.api == 'true'
+        run: tail -n 60 "$RUNNER_TEMP/functions.log"
+
       - name: Stop the stack
         if: always() && steps.changed.outputs.api == 'true'
         run: npx supabase stop --no-backup
