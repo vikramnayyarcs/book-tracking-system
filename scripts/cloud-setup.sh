@@ -62,6 +62,10 @@ if ! has_version node "v$NODE_VERSION" --version; then
   tar -xJf "$archive" -C "$PREFIX" --strip-components=1 --exclude='*.md' --exclude=LICENSE
 fi
 
+# npm, npx and corepack start with `#!/usr/bin/env node`, so they run on whichever node
+# comes first on PATH. Put the pinned one first for everything this script runs.
+export PATH="$PREFIX/bin:$PATH"
+
 install_zip() {
   local name="$1" url="$2" sha="$3"
   local archive
