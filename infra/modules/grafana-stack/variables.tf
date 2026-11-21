@@ -29,3 +29,9 @@ variable "check_frequency_ms" {
   type        = number
   default     = 300000
 }
+
+variable "api_health_url" {
+  description = "Address of the API health endpoint for the synthetic check. Empty skips the check."
+  type        = string
+  default     = ""
+}

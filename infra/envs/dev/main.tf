@@ -61,4 +61,32 @@ module "grafana" {
   github_repository = var.github_repository
   site_url          = module.site_dev.url
   env               = "dev"
+  api_health_url    = var.workers_subdomain == "" ? "" : "https://${module.api_gateway.script_name}.${var.workers_subdomain}.workers.dev/v1/health"
+}
+
+resource "random_password" "gateway_secret" {
+  length  = 48
+  special = false
+}
+
+module "api_gateway" {
+  source = "../../modules/cloudflare-api-gateway"
+
+  account_id     = var.cloudflare_account_id
+  name           = "api-gateway-dev"
+  upstream_url   = "${module.supabase_dev.url}/functions/v1/api"
+  gateway_secret = random_password.gateway_secret.result
+}
+
+resource "supabase_edge_function_secrets" "api" {
+  project_ref = module.supabase_dev.project_ref
+
+  secrets = concat(
+    [
+      { name = "GATEWAY_SECRET", value = random_password.gateway_secret.result },
+      { name = "DEFAULT_TIER", value = "plus" },
+    ],
+    var.clerk_frontend_api_url == "" ? [] : [{ name = "CLERK_ISSUER", value = var.clerk_frontend_api_url }],
+    var.groq_api_key == "" ? [] : [{ name = "GROQ_API_KEY", value = var.groq_api_key }],
+  )
 }
