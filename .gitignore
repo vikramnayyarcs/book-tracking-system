@@ -35,3 +35,6 @@ supabase/.temp/
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
+
+# PR videos downloaded by npm run pr-video
+.pr-videos/

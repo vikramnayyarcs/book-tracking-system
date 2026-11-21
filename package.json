@@ -16,7 +16,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p packages/core/tsconfig.json && tsc -p test/e2e/tsconfig.json",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "pr-video": "node scripts/pr-video/download.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
