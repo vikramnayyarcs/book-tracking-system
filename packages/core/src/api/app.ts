@@ -47,6 +47,15 @@ import {
   setSessionAudio,
   updateSession,
 } from "../sessions.ts";
+import {
+  currentPhotoPath,
+  finishBook,
+  getReview,
+  parseFinish,
+  parsePhotoUpload,
+  photoPath,
+  setFinishPhoto,
+} from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
@@ -486,6 +495,62 @@ export const createApp = (deps: ApiDeps) => {
         "content-type": "text/markdown; charset=utf-8",
         "content-disposition": `attachment; filename="vault-${day}.md"`,
       },
+    });
+  });
+
+  app.post("/books/:id/finish", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseFinish(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const today = new Date(deps.now()).toISOString().slice(0, 10);
+    const { result } = await c.var.withUser((sql) =>
+      finishBook(sql, id, parsed.finish, today),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.get("/books/:id/review", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getReview(sql, id));
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.post("/books/:id/finish-photo", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parsePhotoUpload(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result: book } = await c.var.withUser((sql) => getBook(sql, id));
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    const path = photoPath(c.var.userId, id, parsed.extension);
+    const { result: previous } = await c.var.withUser((sql) =>
+      currentPhotoPath(sql, id),
+    );
+    if (previous !== null && previous !== path) {
+      await deps.objects.remove("photos", [previous]);
+    }
+    const upload = await deps.objects.signedUploadUrl("photos", path);
+    await c.var.withUser((sql) => setFinishPhoto(sql, id, path));
+    return c.json({
+      uploadUrl: upload.url,
+      path,
+      expiresInSeconds: upload.expiresInSeconds,
     });
   });
 
