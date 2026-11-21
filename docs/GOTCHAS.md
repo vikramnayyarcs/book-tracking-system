@@ -10,6 +10,10 @@ Format:
 Fix: what to do instead.
 ```
 
+## 2026-11-21: Supabase CLI v3 `db push` targets the local database by default
+**In CLI v3, `supabase db push` pushes to the local stack unless told otherwise, so after `supabase link` in CI it fails with "connect ECONNREFUSED 127.0.0.1:54322".**
+Fix: `supabase db push --remote --yes`. `--remote` targets the linked project (`--linked` is deprecated) and `--yes` confirms the hosted change in a non-interactive run. Seed files are pushed only with `--include-seed`.
+
 ## 2026-11-21: Cloud image's Node 22 shadows the pinned Node 24
 **In cloud sessions `/opt/node22/bin` comes before `/usr/local/bin` on PATH, and npm's `#!/usr/bin/env node` shebang picks that Node 22 even when you call `/usr/local/bin/npm`, so `npm ci` failed the `engines` check and stopped the setup script.**
 Fix: `scripts/cloud-setup.sh` puts `/usr/local/bin` first on its own PATH, links `node`, `npm`, `npx` and `corepack` in any earlier folder to the pinned ones, and adds `/usr/local/bin` to the front of PATH through `CLAUDE_ENV_FILE`.

@@ -55,6 +55,30 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - Every PR with a feature change includes a Playwright video demoing what was done, and/or an explainer video with voice-over whose script is written in ASD-STE100 Simplified Technical English. Videos use seeded test data only (never real notes), and are attached to the PR, not committed.
 - Commit early and often: small commits, one logical change each, committed as soon as that change works. Don't batch unrelated changes into one commit.
 
+## Saving tokens
+
+- One topic per session. Carry state in ADRs, briefs, issues and memory, not in one ever-growing conversation: every turn re-sends the whole context.
+- Read summaries before details: `git diff --stat`, `gh ... --json --jq`, `gh run view --log-failed`, then only the lines around an error.
+- Wait with one blocking command, never repeated status checks.
+- Broad reading (reviewing many PRs, researching docs) goes to a subagent or a scheduled run; the desk session decides.
+- Scheduled runs use Sonnet and the `terse` skill; save Opus for decisions with the owner.
+
+## What enforces what
+
+Kept by the `correct` skill. A rule with nothing in the right-hand column is a candidate for `/correct`.
+
+| Rule | Enforced by |
+| --- | --- |
+| No local apply, destroy or deploy | `block-local-deploys` hook |
+| No edits to `.env*` or applied migrations | `protect-files` hook |
+| Secrets scan before every commit, no skipping the git hook | `guard-commits` hook, git pre-commit hook, CI gitleaks |
+| Lint and typecheck after edits | `lint-after-edit` hook, CI |
+| Claude never merges, runs workflows or pushes to `main` | `block-merges` and `block-github-tool-merges` hooks, `permissions.deny` |
+| Only green PRs merge without the owner | `PR risk` and `Merge green PRs` workflows (ADR 0005) |
+| No test doubles, fixed sleeps, retries, raised timeouts or prose comments | Oxlint with Landmines, CI |
+| Infrastructure only through Terraform | nightly `drift.yml` |
+| Every table has RLS and a cross-user test | pgTAP tests in CI (one per table); nothing yet fails a table without one |
+
 ## Environment
 
 - Native Windows at the desk (Claude Code with `cmd /c npx` for stdio MCP servers); Claude Code cloud sessions from the phone.
