@@ -7,7 +7,8 @@
     "./brand": "./src/brand.ts",
     "./api": "./src/api/index.ts",
     "./plans": "./src/plans.ts",
-    "./limits": "./src/limits.ts"
+    "./limits": "./src/limits.ts",
+    "./ai": "./src/ai/index.ts"
   },
   "dependencies": {
     "hono": "4.13.19",

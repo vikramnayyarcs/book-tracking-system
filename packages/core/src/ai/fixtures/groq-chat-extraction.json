@@ -1,0 +1,37 @@
+{
+  "id": "chatcmpl-4c69fd92-98ae-4dbe-9c84-9d1101e04677",
+  "object": "chat.completion",
+  "created": 1795295981,
+  "model": "openai/gpt-oss-20b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"insights\":[{\"text\":\"Routine is a form of attention.\"},{\"text\":\"The habit of looking matters more than the log.\"},{\"text\":\"I want to try a five minute morning walk and write down one thing I notice.\"}],\"quotes\":[{\"text\":\"A tide table is a promise the sea never made.\",\"page\":41}]}",
+        "reasoning": "We need to produce insights and quotes from the note. The note says:\n\n- \"Chapter three of the Lighthouse Keeper's Almanac argues that routine is a form of attention.\"\n- \"Keeper Ada logs the tide every dawn, and the author says the log matters less than the habit of looking.\"\n- \"I want to try a five minute morning walk and write down one thing I notice.\"\n- \"Page 41 says: 'A tide table is a promise the sea never made.'\"\n- \"I love that line.\"\n\nWe need to produce 1-5 insights. Use only what the reader said. Write each insight in the reader's voice, short sentences. Provide quotes exactly as in note. The quote is \"A tide table is a promise the sea never made.\" Page 41. So quotes array with that text and page 41.\n\nInsights: maybe 3 insights.\n\nPossible insights:\n\n1. Routine is a form of attention.\n2. The habit of looking matters more than the log itself.\n3. I plan to do a five minute morning walk and note one observation.\n\nWe need to phrase in reader's voice. So \"Routine is a form of attention.\" \"The habit of looking matters more than the log.\" \"I want to try a five minute morning walk and write down one thing I notice.\"\n\nReturn JSON with insights array and quotes array.\n\nCheck JSON validity. Use compact formatting. Ensure no trailing commas. Provide page number as integer? The spec says \"page\": null or page number. Use 41. So page: 41.\n\nReturn:\n\n{\"insights\":[{\"text\":\"Routine is a form of attention.\"},{\"text\":\"The habit of looking matters more than the log.\"},{\"text\":\"I want to try a five minute morning walk and write down one thing I notice.\"}],\"quotes\":[{\"text\":\"A tide table is a promise the sea never made.\",\"page\":41}]}\n\nCheck that it's valid JSON. Yes."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "queue_time": 0.220009847,
+    "prompt_tokens": 388,
+    "prompt_time": 0.020117018,
+    "completion_tokens": 475,
+    "completion_time": 0.49759895,
+    "total_tokens": 863,
+    "total_time": 0.517715968,
+    "completion_tokens_details": {
+      "reasoning_tokens": 396
+    }
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_e23fc997ca",
+  "x_groq": {
+    "id": "req_01m7zznarbemzs64zkqmj1sa67",
+    "seed": 445383312
+  },
+  "service_tier": "on_demand"
+}
