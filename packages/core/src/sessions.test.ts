@@ -24,6 +24,9 @@ describe("session parsing", () => {
       false,
     );
     expect(parseSessionCreate({ id, bookId }).ok).toBe(false);
+    expect(parseSessionCreate({ id, bookId, date: "2026-13-01" }).ok).toBe(
+      false,
+    );
     expect(
       parseSessionCreate({ id, bookId, date: "2026-03-01", x: 1 }).ok,
     ).toBe(false);

@@ -1,0 +1,19 @@
+meta {
+  name: Get book review
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/books/{{bookId}}/review
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+docs {
+  operationId: getBookReview
+}

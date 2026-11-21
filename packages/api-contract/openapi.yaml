@@ -612,6 +612,94 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/finish:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: finishBook
+      summary: Mark a book finished, with an optional rating and review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinishCreate"
+      responses:
+        "200":
+          description: The finished book and its review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinishResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /books/{id}/review:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getBookReview
+      summary: Get the rating, review and finish photo flag of a book
+      responses:
+        "200":
+          description: The review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /books/{id}/finish-photo:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: createFinishPhotoUpload
+      summary: Get a signed URL to upload the finish photo of a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhotoUploadCreate"
+      responses:
+        "200":
+          description: The signed upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhotoUpload"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -619,6 +707,62 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Review:
+      type: object
+      required: [rating, text, summary, hasPhoto]
+      properties:
+        rating:
+          type: [integer, "null"]
+        text:
+          type: [string, "null"]
+        summary:
+          type: [string, "null"]
+        hasPhoto:
+          type: boolean
+    FinishCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review:
+          type: string
+          maxLength: 20000
+        finishedOn:
+          type: string
+          format: date
+          description: Defaults to today
+        finishedPrecision:
+          $ref: "#/components/schemas/FinishedPrecision"
+    FinishResult:
+      type: object
+      required: [book, review]
+      properties:
+        book:
+          $ref: "#/components/schemas/Book"
+        review:
+          $ref: "#/components/schemas/Review"
+    PhotoUploadCreate:
+      type: object
+      additionalProperties: false
+      required: [extension]
+      properties:
+        extension:
+          type: string
+          enum: [jpg, png, webp]
+    PhotoUpload:
+      type: object
+      required: [uploadUrl, path, expiresInSeconds]
+      properties:
+        uploadUrl:
+          type: string
+          description: Send the image bytes to this URL with PUT
+        path:
+          type: string
+        expiresInSeconds:
+          type: integer
     Export:
       type: object
       required: [exportedAt, books]
