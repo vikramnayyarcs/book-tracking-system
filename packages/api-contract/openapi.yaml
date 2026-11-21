@@ -240,6 +240,161 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/sessions:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listBookSessions
+      summary: List the reading sessions of one book, newest first
+      responses:
+        "200":
+          description: The sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions:
+    post:
+      operationId: createSession
+      summary: Create a reading session; a retry with the same id returns the same session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionCreate"
+      responses:
+        "200":
+          description: A session with this id already exists and is returned unchanged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "201":
+          description: The new session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getSession
+      summary: Get one session; clients poll this while it is processed
+      responses:
+        "200":
+          description: The session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateSession
+      summary: Change a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionUpdate"
+      responses:
+        "200":
+          description: The changed session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteSession
+      summary: Delete a session with its insights and stored audio
+      responses:
+        "204":
+          description: The session is deleted
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions/{id}/audio-upload:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: createAudioUpload
+      summary: Get a signed URL to upload the audio of a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AudioUploadCreate"
+      responses:
+        "200":
+          description: The signed upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudioUpload"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -247,6 +402,125 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Session:
+      type: object
+      required:
+        - id
+        - bookId
+        - date
+        - pageFrom
+        - pageTo
+        - chapter
+        - noteText
+        - noteSource
+        - audioSeconds
+        - hasAudio
+        - status
+        - errorCode
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        pageFrom:
+          type: [integer, "null"]
+        pageTo:
+          type: [integer, "null"]
+        chapter:
+          type: [string, "null"]
+        noteText:
+          type: [string, "null"]
+        noteSource:
+          type: string
+          enum: [typed, voice]
+        audioSeconds:
+          type: [integer, "null"]
+        hasAudio:
+          type: boolean
+        status:
+          type: string
+          enum: [draft, uploaded, transcribing, extracting, ready, failed]
+        errorCode:
+          type: [string, "null"]
+        createdAt:
+          type: string
+          format: date-time
+    SessionCreate:
+      type: object
+      additionalProperties: false
+      required: [id, bookId, date]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Chosen by the client so a retry is safe
+        bookId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        pageFrom:
+          type: integer
+          minimum: 1
+        pageTo:
+          type: integer
+          minimum: 1
+        chapter:
+          type: string
+          maxLength: 300
+        noteText:
+          type: string
+          maxLength: 20000
+    SessionUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        date:
+          type: string
+          format: date
+        pageFrom:
+          type: [integer, "null"]
+          minimum: 1
+        pageTo:
+          type: [integer, "null"]
+          minimum: 1
+        chapter:
+          type: [string, "null"]
+          maxLength: 300
+        noteText:
+          type: [string, "null"]
+          maxLength: 20000
+    AudioUploadCreate:
+      type: object
+      additionalProperties: false
+      required: [durationSeconds]
+      properties:
+        durationSeconds:
+          type: integer
+          minimum: 1
+        extension:
+          type: string
+          enum: [m4a, mp3, wav, webm, ogg]
+          default: m4a
+    AudioUpload:
+      type: object
+      required: [uploadUrl, path, expiresInSeconds]
+      properties:
+        uploadUrl:
+          type: string
+          description: Send the audio bytes to this URL with PUT
+        path:
+          type: string
+        expiresInSeconds:
+          type: integer
     Health:
       type: object
       required: [status]
