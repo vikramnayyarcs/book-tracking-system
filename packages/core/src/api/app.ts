@@ -25,6 +25,15 @@ import {
   type TokenScope,
 } from "../tokens.ts";
 import {
+  createInsight,
+  deleteInsight,
+  listBookInsights,
+  listSessionInsights,
+  parseInsightCreate,
+  parseInsightUpdate,
+  updateInsight,
+} from "../insights.ts";
+import {
   audioPath,
   createSession,
   deleteSession,
@@ -373,6 +382,73 @@ export const createApp = (deps: ApiDeps) => {
       path,
       expiresInSeconds: upload.expiresInSeconds,
     });
+  });
+
+  app.get("/books/:id/insights", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => listBookInsights(sql, id));
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.post("/books/:id/insights", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseInsightCreate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      createInsight(sql, id, parsed.insight),
+    );
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json(result, 201);
+  });
+
+  app.get("/sessions/:id/insights", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      listSessionInsights(sql, id),
+    );
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.patch("/insights/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseInsightUpdate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      updateInsight(sql, id, parsed.fields),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.delete("/insights/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => deleteInsight(sql, id));
+    return result ? c.body(null, 204) : notFound(c.get("requestId"));
   });
 
   app.get("/tokens", authenticated, async (c) => {
