@@ -14,6 +14,16 @@ import {
   BOOK_STATUSES,
   type BookStatus,
 } from "../books.ts";
+import {
+  createToken,
+  hasScope,
+  hashToken,
+  isPersonalToken,
+  listTokens,
+  parseTokenCreate,
+  revokeToken,
+  type TokenScope,
+} from "../tokens.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -72,24 +82,42 @@ const invalid = (detail: string, requestId: string) =>
 export const createApp = (deps: ApiDeps) => {
   const app = new Hono<Env>().basePath("/v1");
 
-  const authenticated = createMiddleware<Env>(async (c, next) => {
-    const token = bearerToken(c.req.header("authorization"));
-    const caller =
-      token === undefined ? undefined : await deps.verifyToken(token);
-    if (caller === undefined) {
-      return problemResponse(
-        401,
-        "unauthorized",
-        "Missing or invalid token",
-        c.get("requestId"),
+  const auth = (scope?: TokenScope) =>
+    createMiddleware<Env>(async (c, next) => {
+      const token = bearerToken(c.req.header("authorization"));
+      const caller =
+        token === undefined
+          ? undefined
+          : isPersonalToken(token)
+            ? await deps.db.lookupToken(await hashToken(token))
+            : await deps.verifyToken(token);
+      if (caller === undefined) {
+        return problemResponse(
+          401,
+          "unauthorized",
+          "Missing or invalid token",
+          c.get("requestId"),
+        );
+      }
+      const personal = token !== undefined && isPersonalToken(token);
+      if (
+        personal &&
+        (scope === undefined || !hasScope(caller.scopes, scope))
+      ) {
+        return problemResponse(
+          403,
+          "insufficient_scope",
+          "This token cannot use this route",
+          c.get("requestId"),
+        );
+      }
+      c.set("userId", caller.userId);
+      c.set("withUser", (work) =>
+        deps.db.asUser(caller.userId, deps.defaultTier, work),
       );
-    }
-    c.set("userId", caller.userId);
-    c.set("withUser", (work) =>
-      deps.db.asUser(caller.userId, deps.defaultTier, work),
-    );
-    await next();
-  });
+      await next();
+    });
+  const authenticated = auth();
 
   app.use("*", async (c, next) => {
     const requestId = deps.newRequestId();
@@ -145,7 +173,7 @@ export const createApp = (deps: ApiDeps) => {
     return c.json({ id: c.var.userId, tier });
   });
 
-  app.get("/books", authenticated, async (c) => {
+  app.get("/books", auth("books:read"), async (c) => {
     const status = c.req.query("status");
     if (
       status !== undefined &&
@@ -176,7 +204,7 @@ export const createApp = (deps: ApiDeps) => {
     return c.json(result, 201);
   });
 
-  app.get("/books/:id", authenticated, async (c) => {
+  app.get("/books/:id", auth("books:read"), async (c) => {
     const id = c.req.param("id");
     if (!uuid.test(id)) {
       return notFound(c.get("requestId"));
@@ -221,6 +249,32 @@ export const createApp = (deps: ApiDeps) => {
     }
     await c.var.withUser((sql) => deleteBook(sql, id));
     return c.body(null, 204);
+  });
+
+  app.get("/tokens", authenticated, async (c) => {
+    const { result } = await c.var.withUser((sql) => listTokens(sql));
+    return c.json({ items: result });
+  });
+
+  app.post("/tokens", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseTokenCreate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      createToken(sql, parsed.name, parsed.scopes),
+    );
+    return c.json(result, 201);
+  });
+
+  app.delete("/tokens/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => revokeToken(sql, id));
+    return result ? c.body(null, 204) : notFound(c.get("requestId"));
   });
 
   app.get("/lookup/isbn/:isbn", authenticated, async (c) => {

@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import type { Tier } from "../plans.ts";
+import type { TokenScope } from "../tokens.ts";
 
 export type Sql = postgres.TransactionSql;
 
@@ -9,6 +10,9 @@ export type Db = {
     defaultTier: Tier,
     work: (sql: Sql) => Promise<T>,
   ) => Promise<{ result: T; tier: Tier }>;
+  lookupToken: (
+    hash: string,
+  ) => Promise<{ userId: string; scopes: TokenScope[] } | undefined>;
 };
 
 export const createDb = (connectionString: string) => {
@@ -28,5 +32,14 @@ export const createDb = (connectionString: string) => {
         const tier = rows[0]?.tier ?? defaultTier;
         return { result: await work(sql), tier };
       }),
+    lookupToken: async (hash) => {
+      const rows = await pool<{ user_id: string; scopes: TokenScope[] }[]>`
+        select user_id, scopes from app.token_lookup(${hash})
+      `;
+      const row = rows[0];
+      return row === undefined
+        ? undefined
+        : { userId: row.user_id, scopes: row.scopes };
+    },
   } satisfies Db;
 };

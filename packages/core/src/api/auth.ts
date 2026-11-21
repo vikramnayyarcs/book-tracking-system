@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import type { TokenScope } from "../tokens.ts";
 
-export type Caller = { userId: string };
+export type Caller = { userId: string; scopes?: readonly TokenScope[] };
 
 export type TokenVerifier = (token: string) => Promise<Caller | undefined>;
 
