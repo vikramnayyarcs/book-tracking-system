@@ -724,6 +724,21 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /stats:
+    get:
+      operationId: getStats
+      summary: Reading metrics for a visualisation screen, with days, weeks and months in the caller's time zone (no streaks or missed days)
+      responses:
+        "200":
+          description: The metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /export:
     get:
       operationId: exportVault
@@ -846,6 +861,94 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Stats:
+      type: object
+      required:
+        - timeZone
+        - entriesPerWeek
+        - booksFinishedPerMonth
+        - voiceMinutesPerMonth
+        - perBook
+        - ratings
+        - booksByStatus
+      properties:
+        timeZone:
+          type: string
+        entriesPerWeek:
+          description: Sessions per week for the last 12 weeks, oldest first, zero-filled; weekStart is a Monday
+          type: array
+          items:
+            type: object
+            required: [weekStart, count]
+            properties:
+              weekStart:
+                type: string
+                format: date
+              count:
+                type: integer
+        booksFinishedPerMonth:
+          description: Books finished per month for the last 12 months, oldest first, zero-filled; books finished with year precision are left out
+          type: array
+          items:
+            type: object
+            required: [month, count]
+            properties:
+              month:
+                type: string
+                pattern: "^\\d{4}-\\d{2}$"
+              count:
+                type: integer
+        voiceMinutesPerMonth:
+          description: Minutes of voice notes per month for the last 12 months, oldest first, zero-filled
+          type: array
+          items:
+            type: object
+            required: [month, minutes]
+            properties:
+              month:
+                type: string
+                pattern: "^\\d{4}-\\d{2}$"
+              minutes:
+                type: number
+        perBook:
+          description: Insight and quote counts for every book, most notes first
+          type: array
+          items:
+            type: object
+            required: [bookId, title, insights, quotes]
+            properties:
+              bookId:
+                type: string
+                format: uuid
+              title:
+                type: string
+              insights:
+                type: integer
+              quotes:
+                type: integer
+        ratings:
+          description: Finished-book ratings, one item for each of 1 to 5
+          type: array
+          items:
+            type: object
+            required: [rating, count]
+            properties:
+              rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+              count:
+                type: integer
+        booksByStatus:
+          type: object
+          required: [reading, finished, abandoned]
+          properties:
+            reading:
+              type: integer
+            finished:
+              type: integer
+            abandoned:
+              type: integer
     Review:
       type: object
       required: [rating, text, summary, hasPhoto]
