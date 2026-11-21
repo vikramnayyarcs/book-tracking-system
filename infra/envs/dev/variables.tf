@@ -23,3 +23,14 @@ variable "github_app_private_key" {
   type        = string
   sensitive   = true
 }
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account that owns the Pages projects (repo variable CLOUDFLARE_ACCOUNT_ID)."
+  type        = string
+}
+
+variable "domain" {
+  description = "Apex domain of the product. Leave empty until the domain is bought and added to Cloudflare; the zone module stays off while it is empty."
+  type        = string
+  default     = ""
+}
