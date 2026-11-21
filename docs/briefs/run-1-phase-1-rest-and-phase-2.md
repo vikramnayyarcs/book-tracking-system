@@ -8,6 +8,18 @@ Brief for an unattended Claude Code cloud session. The owner reviews and merges;
 2. Confirm you are in the `book-tracking-dev` environment, on this repository alone, not in a project thread. If `gh pr merge 1` is not blocked by the `block-merges` hook, stop: the hooks are not running.
 3. Find the open issue titled **Run 1 progress**. If none exists, create it with the task list below as checkboxes. Tick each task when its PR is open, with the PR link. This lets a later session pick up where you stopped.
 
+## Running on a schedule
+
+A scheduled task starts a new session every hour. Each session must check the progress issue before doing anything else, so two sessions never work at once:
+
+1. **Finished?** If the progress issue has the `run-finished` label, comment nothing and end the session.
+2. **Someone else working?** If it has the `run-active` label and its newest comment starting `Heartbeat` is less than 50 minutes old, end the session without changes.
+3. **Claim it.** Otherwise add `run-active` (create the label if needed) and comment `Heartbeat: started, next task N`.
+4. **Keep it alive.** Comment `Heartbeat: task N, <what you are doing>` at least every 20 minutes and after each PR.
+5. **Hand over.** Before ending for any reason, tick finished tasks, comment `Heartbeat: stopped, next task N, <why>`, and remove `run-active`. When Phase 2 is done or every remaining task is blocked, add `run-finished` and post the Finish comment below.
+
+Pick up where the last session stopped: read the progress issue, its comments and open PRs, and continue with the first unticked task that is not blocked. A task with an open PR but failing CI is not done; fix that PR first.
+
 ## How to work
 
 - One task per PR, small commits, one concern each. Branch from `main`; when a task needs an unmerged PR, stack the branch on that PR's branch and say so in the PR body ("Stacked on #N").
