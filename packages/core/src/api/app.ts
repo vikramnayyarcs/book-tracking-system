@@ -47,6 +47,7 @@ import {
   setSessionAudio,
   updateSession,
 } from "../sessions.ts";
+import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
@@ -461,6 +462,31 @@ export const createApp = (deps: ApiDeps) => {
       searchVault(sql, parsed.query, parsed.limit),
     );
     return c.json({ items: result });
+  });
+
+  app.get("/export", authenticated, async (c) => {
+    const format = parseExportFormat(c.req.query("format"));
+    if (format === undefined) {
+      return invalid("format must be json or markdown", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      collectExport(sql, new Date(deps.now())),
+    );
+    const day = result.exportedAt.slice(0, 10);
+    if (format === "json") {
+      return new Response(JSON.stringify(result), {
+        headers: {
+          "content-type": "application/json",
+          "content-disposition": `attachment; filename="vault-${day}.json"`,
+        },
+      });
+    }
+    return new Response(renderMarkdown(result), {
+      headers: {
+        "content-type": "text/markdown; charset=utf-8",
+        "content-disposition": `attachment; filename="vault-${day}.md"`,
+      },
+    });
   });
 
   app.get("/tokens", authenticated, async (c) => {
