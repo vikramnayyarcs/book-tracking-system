@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(12);
 
 create function pg_temp.affected(statement text)
 returns bigint
@@ -78,6 +78,13 @@ select throws_ok(
   '42501',
   null,
   'alice cannot hand her insight to bob'
+);
+
+select throws_ok(
+  $$update app.insights set original_text = 'Rewritten history' where user_id = 'alice'$$,
+  '42501',
+  null,
+  'alice cannot rewrite the original AI text'
 );
 
 select set_config('request.jwt.claims', '{"sub":"bob","role":"authenticated"}', true);
