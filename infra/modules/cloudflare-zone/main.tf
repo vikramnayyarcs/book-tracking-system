@@ -8,36 +8,6 @@ locals {
   zone_id = data.cloudflare_zone.this.zone_id
 }
 
-resource "cloudflare_pages_domain" "apex" {
-  account_id   = var.account_id
-  project_name = var.site_pages_project
-  name         = var.domain
-}
-
-resource "cloudflare_pages_domain" "www" {
-  account_id   = var.account_id
-  project_name = var.site_pages_project
-  name         = "www.${var.domain}"
-}
-
-resource "cloudflare_dns_record" "apex" {
-  zone_id = local.zone_id
-  name    = var.domain
-  type    = "CNAME"
-  content = var.site_pages_subdomain
-  proxied = true
-  ttl     = 1
-}
-
-resource "cloudflare_dns_record" "www" {
-  zone_id = local.zone_id
-  name    = "www.${var.domain}"
-  type    = "CNAME"
-  content = var.site_pages_subdomain
-  proxied = true
-  ttl     = 1
-}
-
 resource "cloudflare_ruleset" "custom_rules" {
   zone_id     = local.zone_id
   name        = "Custom WAF rules"
@@ -56,7 +26,7 @@ resource "cloudflare_ruleset" "custom_rules" {
       description = "Block unexpected methods on the site"
       action      = "block"
       enabled     = true
-      expression  = "(http.host in {\"${var.domain}\" \"www.${var.domain}\"} and not http.request.method in {\"GET\" \"HEAD\" \"OPTIONS\"})"
+      expression  = "(http.host in {${join(" ", [for h in var.site_hostnames : "\"${h}\""])}} and not http.request.method in {\"GET\" \"HEAD\" \"OPTIONS\"})"
     },
   ]
 }
