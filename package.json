@@ -13,19 +13,23 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "oxlint --deny-warnings",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p packages/core/tsconfig.json && tsc -p test/e2e/tsconfig.json",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@interfere/landmines": "0.1.1",
+    "@playwright/test": "1.65.1",
     "@types/node": "24.19.2",
     "oxlint": "1.94.0",
     "prettier": "3.10.1",
     "simple-git-hooks": "2.14.0",
     "supabase": "3.2.0",
     "typescript": "7.0.2",
-    "vitest": "5.1.1"
+    "vitest": "5.1.1",
+    "wrangler": "4.166.0"
   },
   "simple-git-hooks": {
     "pre-commit": "node scripts/git-hooks/pre-commit.ts"

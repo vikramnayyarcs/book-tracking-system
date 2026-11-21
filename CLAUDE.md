@@ -50,7 +50,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - Prefer CLIs and scripts (gh, supabase, terraform, wrangler, npm) so work runs with or without MCP servers.
 - After a debugging detour caused by surprising behaviour, log it in `docs/GOTCHAS.md`: the trap in one bold sentence, then the fix.
 - Ponytail is for reviewing PRs, not always on. These non-negotiables win over its advice.
-- Claude never merges PRs, triggers workflows or pushes to `main`; it opens PRs and the owner merges them (enforced by the `block-merges` hook). Work that depends on an unmerged PR goes on a branch stacked on it.
+- Claude never merges PRs, triggers workflows or pushes to `main`; it opens PRs; the owner merges yellow and red ones and the PR risk workflow merges green ones (ADR 0005) (enforced by the `block-merges` and `block-github-tool-merges` hooks). Work that depends on an unmerged PR goes on a branch stacked on it.
 - Small PRs, one concern each. Every PR passes lint, typecheck, tests and Terraform plan.
 - Every PR with a feature change includes a Playwright video demoing what was done, and/or an explainer video with voice-over whose script is written in ASD-STE100 Simplified Technical English. Videos use seeded test data only (never real notes), and are attached to the PR, not committed.
 - Commit early and often: small commits, one logical change each, committed as soon as that change works. Don't batch unrelated changes into one commit.

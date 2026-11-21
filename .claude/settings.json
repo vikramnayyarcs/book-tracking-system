@@ -1,5 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "mcp__github__merge_pull_request",
+      "mcp__github__enable_pr_auto_merge",
+      "mcp__github__run_workflow",
+      "mcp__github__rerun_workflow_run",
+      "mcp__github__rerun_failed_jobs"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -37,6 +46,15 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/block-merges.ts\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__github__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/block-github-tool-merges.ts\""
           }
         ]
       }

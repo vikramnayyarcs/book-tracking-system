@@ -1,0 +1,86 @@
+name: Release production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-prod
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Production must be switched on
+        env:
+          PROD_ENABLED: ${{ vars.PROD_ENABLED }}
+        run: |
+          if [ "$PROD_ENABLED" != "true" ]; then
+            echo "::error::Production is not enabled. Set the repo variable PROD_ENABLED to true to allow a release."
+            exit 1
+          fi
+
+  terraform:
+    needs: guard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/envs/prod
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_github_owner: ${{ github.repository_owner }}
+      TF_VAR_github_repository: ${{ github.event.repository.name }}
+      TF_VAR_github_app_id: ${{ vars.TF_GITHUB_APP_ID }}
+      TF_VAR_github_app_installation_id: ${{ vars.TF_GITHUB_APP_INSTALLATION_ID }}
+      TF_VAR_github_app_private_key: ${{ secrets.TF_GITHUB_APP_PRIVATE_KEY }}
+      TF_VAR_cloudflare_account_id: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_supabase_organization_id: ${{ vars.PROD_SUPABASE_ORG_ID }}
+      TF_VAR_clerk_frontend_api_url: ${{ vars.PROD_CLERK_FRONTEND_API_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.PROD_SUPABASE_ACCESS_TOKEN }}
+      AWS_ENDPOINT_URL_S3: https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      AWS_ACCESS_KEY_ID: ${{ secrets.TF_STATE_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_STATE_R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.17.1
+          terraform_wrapper: false
+
+      - run: terraform init -backend-config=../../r2.tfbackend -lockfile=readonly
+
+      - name: Plan
+        run: |
+          terraform plan -out=prod.tfplan -lock-timeout=5m -no-color | tee plan.txt
+          { echo '```'; tail -n 60 plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply
+        run: terraform apply prod.tfplan
+
+  site:
+    needs: terraform
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the site
+        run: npm -w @book-tracking-system/site run build
+
+      - name: Deploy to site-prod
+        run: npx wrangler pages deploy apps/site/dist --project-name=site-prod --branch=main --commit-dirty=true
