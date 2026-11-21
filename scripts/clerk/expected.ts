@@ -23,6 +23,12 @@ export const offAttributes = [
   "passkey",
 ] as const;
 
+export const enabledSocial = ["oauth_google", "oauth_apple"];
+
+export const emailFirstFactors: string[] = [];
+
+export const emailVerifications: string[] = [];
+
 const describe = (value: unknown) =>
   value === undefined ? "missing" : JSON.stringify(value);
 
@@ -47,21 +53,23 @@ export const evaluate = (
   const email = attributes["email_address"];
   expect("email address enabled", true, email?.enabled);
   expect(
-    "email address first factor includes email link",
-    true,
-    email?.first_factors?.includes("email_link"),
+    "email address first factors",
+    emailFirstFactors,
+    email?.first_factors,
   );
   expect(
-    "email address verified by email link",
-    true,
-    email?.verifications?.includes("email_link"),
+    "email address verifications",
+    emailVerifications,
+    email?.verifications,
   );
   for (const name of offAttributes) {
     expect(`${name} enabled`, false, attributes[name]?.enabled ?? false);
   }
-  expect("social google enabled", true, social["oauth_google"]?.enabled);
+  for (const name of enabledSocial) {
+    expect(`social ${name} enabled`, true, social[name]?.enabled);
+  }
   for (const [name, connection] of Object.entries(social)) {
-    if (name !== "oauth_google") {
+    if (!enabledSocial.includes(name)) {
       expect(`social ${name} enabled`, false, connection?.enabled ?? false);
     }
   }
