@@ -79,6 +79,77 @@ jobs:
           path: playwright-report
           retention-days: 7
 
+  pr-video:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      PIPER_VERSION: 1.8.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint the narration scripts
+        run: node scripts/video/lint-script.ts docs/videos/*.txt
+
+      - name: Install ffmpeg, Piper and Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          python3 -m venv "$RUNNER_TEMP/piper"
+          "$RUNNER_TEMP/piper/bin/pip" install --quiet "piper-tts==${PIPER_VERSION}"
+          npx playwright install --with-deps chromium
+
+      - name: Download the voice
+        id: voice
+        run: |
+          voice="$RUNNER_TEMP/voice"
+          mkdir -p "$voice"
+          name="$(jq -r .name scripts/video/voice.json)"
+          curl -fsSL "$(jq -r .modelUrl scripts/video/voice.json)" -o "$voice/${name}.onnx"
+          curl -fsSL "$(jq -r .configUrl scripts/video/voice.json)" -o "$voice/${name}.onnx.json"
+          model_sha="$(sha256sum "$voice/${name}.onnx" | cut -d' ' -f1)"
+          config_sha="$(sha256sum "$voice/${name}.onnx.json" | cut -d' ' -f1)"
+          if [ "$(jq -r .modelSha256 scripts/video/voice.json)" = "PENDING" ]; then
+            {
+              echo '## Voice checksums not pinned yet'
+              echo "Set these in scripts/video/voice.json after checking them against the Piper voices repository:"
+              echo "- modelSha256: \`${model_sha}\`"
+              echo "- configSha256: \`${config_sha}\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "$(jq -r .modelSha256 scripts/video/voice.json)  $voice/${name}.onnx" | sha256sum --check
+            echo "$(jq -r .configSha256 scripts/video/voice.json)  $voice/${name}.onnx.json" | sha256sum --check
+          fi
+          echo "model=$voice/${name}.onnx" >> "$GITHUB_OUTPUT"
+
+      - name: Record the demo
+        run: PW_VIDEO=on npx playwright test --trace off
+
+      - name: Build the explainer video
+        env:
+          PIPER_BIN: ${{ runner.temp }}/piper/bin/piper
+        run: |
+          mkdir -p videos
+          demo="$(find test-results -name 'video.webm' | head -n 1)"
+          node scripts/video/build-video.ts "$demo" docs/videos/site.txt "${{ steps.voice.outputs.model }}" videos/site-explainer.mp4
+          cp "$demo" videos/site-demo.webm
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: upload
+        with:
+          name: pr-videos
+          path: videos
+          retention-days: 30
+
+      - name: Link the videos
+        run: echo "Videos, built from seeded test data only - ${{ steps.upload.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
+
   terraform:
     runs-on: ubuntu-latest
     env:
