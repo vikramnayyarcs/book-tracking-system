@@ -83,6 +83,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isDate = (value: unknown) =>
   typeof value === "string" &&
   /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) &&
   new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
 
 const fail = (detail: string) => ({ ok: false, detail }) as const;

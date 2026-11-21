@@ -1,0 +1,26 @@
+meta {
+  name: Finish book
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/books/{{bookId}}/finish
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "rating": 4,
+    "review": "An invented review of a sample book."
+  }
+}
+
+docs {
+  operationId: finishBook
+}
