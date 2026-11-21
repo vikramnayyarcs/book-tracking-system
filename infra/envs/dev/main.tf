@@ -28,6 +28,11 @@ module "zone" {
   site_pages_subdomain = module.site_dev.subdomain
 }
 
+import {
+  to = module.supabase_dev.supabase_project.this
+  id = "gabddomwxncvuaoykrhc"
+}
+
 module "supabase_dev" {
   source = "../../modules/supabase-project"
 
