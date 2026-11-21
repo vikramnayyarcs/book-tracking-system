@@ -47,3 +47,9 @@ jobs:
 
       - name: Score recall prompts with DeepEval
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/recall.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/recall-scores.json"
+
+      - name: Read invented page images with the vision prompt and model in the code
+        run: node packages/core/evals/generate-ocr.ts "$RUNNER_TEMP/ocr.json"
+
+      - name: Score the page reading against the known text
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/ocr.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/ocr-scores.json"
