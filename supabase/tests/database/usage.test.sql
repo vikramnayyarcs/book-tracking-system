@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(20);
 
 create function pg_temp.affected(statement text)
 returns bigint
@@ -99,11 +99,46 @@ select is(
   'deleting a book does not count its AI insights as rejected'
 );
 
+select lives_ok(
+  $$select app.record_usage(p_voice_seconds => 30, p_vault_questions => 1, p_ai_input_tokens => 100, p_ai_output_tokens => 50)$$,
+  'alice records usage through the function'
+);
+
+select results_eq(
+  'select voice_seconds, vault_questions, ai_input_tokens, ai_output_tokens from app.usage',
+  $$values (90, 1, 100::bigint, 50::bigint)$$,
+  'the function adds to her existing row'
+);
+
+select lives_ok(
+  $$select app.record_usage(p_voice_seconds => 10)$$,
+  'a second call adds again'
+);
+
+select is(
+  (select voice_seconds from app.usage),
+  100,
+  'additions accumulate'
+);
+
+select throws_ok(
+  $$select app.record_usage(p_voice_seconds => -50)$$,
+  '22023',
+  null,
+  'negative amounts are refused'
+);
+
+select is(
+  (select voice_seconds from app.usage),
+  100,
+  'a refused call changes nothing'
+);
+
 select set_config('request.jwt.claims', '{"sub":"bob","role":"authenticated"}', true);
 select results_eq(
   'select voice_seconds from app.usage',
   array[120],
-  'bob sees only his own usage'
+  'bob sees only his own usage, untouched by alice''s calls'
 );
 
 reset role;
