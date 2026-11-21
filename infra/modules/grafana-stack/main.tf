@@ -105,3 +105,28 @@ resource "github_actions_secret" "this" {
   secret_name = each.key
   value       = local.secrets[each.key]
 }
+
+resource "grafana_synthetic_monitoring_check" "api" {
+  provider = grafana.sm
+  count    = var.api_health_url == "" ? 0 : 1
+
+  job       = "api-${var.env}"
+  target    = var.api_health_url
+  enabled   = true
+  frequency = var.check_frequency_ms
+  timeout   = 10000
+  probes    = [for name in var.probe_names : data.grafana_synthetic_monitoring_probes.main.probes[name]]
+
+  labels = {
+    env = var.env
+  }
+
+  settings {
+    http {
+      method             = "GET"
+      ip_version         = "V4"
+      fail_if_not_ssl    = true
+      valid_status_codes = [200]
+    }
+  }
+}

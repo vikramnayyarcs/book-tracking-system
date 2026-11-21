@@ -50,3 +50,16 @@ variable "grafana_stack_slug" {
   description = "Slug of the existing Grafana Cloud stack (repo variable GRAFANA_STACK_SLUG)."
   type        = string
 }
+
+variable "groq_api_key" {
+  description = "Groq API key for the api function (repo secret DEV_GROQ_API_KEY). Empty skips the secret."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "workers_subdomain" {
+  description = "The account's workers.dev subdomain (repo variable CLOUDFLARE_WORKERS_SUBDOMAIN). Empty skips the API synthetic check."
+  type        = string
+  default     = ""
+}
