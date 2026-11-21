@@ -1,0 +1,16 @@
+This video shows the books endpoints.
+All data in this test run is seeded test data.
+First, send a request to look up a book by ISBN.
+The response shows the title and the author.
+Next, send a request to add a book.
+The response gives the book an identifier.
+Now request the list of books.
+The list shows the new book.
+Open the book by its identifier.
+Change the status of the book.
+The response shows the new status.
+Now delete the book.
+The book is no longer in the list.
+Next, a second user asks for the first book.
+The response says that the book is not found.
+This shows that users cannot see the books of other users.

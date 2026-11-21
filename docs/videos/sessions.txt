@@ -1,0 +1,15 @@
+This video shows the sessions endpoints.
+All data in this test run is seeded test data.
+First, send a request to start a session for a book.
+The response gives the session an identifier.
+Next, ask for a signed upload address for the audio.
+The response shows an address that stops working after a short time.
+Send the sample audio to that address.
+Now ask the API to process the session.
+The transcription service is a recorded response.
+The response shows the status of the session.
+Open the session.
+The session shows the insights that the AI found.
+Next, a second user asks for the first session.
+The response says that the session is not found.
+This shows that users cannot see the sessions of other users.
