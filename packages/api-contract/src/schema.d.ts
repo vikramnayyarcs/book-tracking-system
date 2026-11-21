@@ -283,10 +283,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export the caller's books, sessions, insights, reviews and reflections as one file (no audio or photos) */
+        get: operations["exportVault"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Export: {
+            /** Format: date-time */
+            exportedAt: string;
+            books: components["schemas"]["ExportBook"][];
+        };
+        ExportBook: components["schemas"]["Book"] & {
+            review: components["schemas"]["ExportReview"] | null;
+            sessions: components["schemas"]["Session"][];
+            insights: components["schemas"]["Insight"][];
+            reflections: components["schemas"]["ExportReflection"][];
+        };
+        ExportReview: {
+            rating: number | null;
+            text: string | null;
+            summary: string | null;
+        };
+        ExportReflection: {
+            /** @enum {string} */
+            stage: "mid" | "end" | "recall";
+            position: number;
+            question: string;
+            answer: string | null;
+        };
         SearchResult: {
             /** @enum {string} */
             kind: "session" | "insight" | "quote" | "review";
@@ -1118,6 +1158,32 @@ export interface operations {
                     "application/json": {
                         items: components["schemas"]["SearchResult"][];
                     };
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    exportVault: {
+        parameters: {
+            query: {
+                format: "json" | "markdown";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The export, sent as a download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                    "text/markdown": string;
                 };
             };
             400: components["responses"]["Problem"];

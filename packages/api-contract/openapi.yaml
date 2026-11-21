@@ -550,6 +550,33 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /export:
+    get:
+      operationId: exportVault
+      summary: Export the caller's books, sessions, insights, reviews and reflections as one file (no audio or photos)
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [json, markdown]
+      responses:
+        "200":
+          description: The export, sent as a download
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+            text/markdown:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -557,6 +584,62 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Export:
+      type: object
+      required: [exportedAt, books]
+      properties:
+        exportedAt:
+          type: string
+          format: date-time
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportBook"
+    ExportBook:
+      allOf:
+        - $ref: "#/components/schemas/Book"
+        - type: object
+          required: [review, sessions, insights, reflections]
+          properties:
+            review:
+              oneOf:
+                - $ref: "#/components/schemas/ExportReview"
+                - type: "null"
+            sessions:
+              type: array
+              items:
+                $ref: "#/components/schemas/Session"
+            insights:
+              type: array
+              items:
+                $ref: "#/components/schemas/Insight"
+            reflections:
+              type: array
+              items:
+                $ref: "#/components/schemas/ExportReflection"
+    ExportReview:
+      type: object
+      required: [rating, text, summary]
+      properties:
+        rating:
+          type: [integer, "null"]
+        text:
+          type: [string, "null"]
+        summary:
+          type: [string, "null"]
+    ExportReflection:
+      type: object
+      required: [stage, position, question, answer]
+      properties:
+        stage:
+          type: string
+          enum: [mid, end, recall]
+        position:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: [string, "null"]
     SearchResult:
       type: object
       required: [kind, id, bookId, bookTitle, snippet, rank]
