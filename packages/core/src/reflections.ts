@@ -1,6 +1,6 @@
 import type { Sql } from "./api/db.ts";
 
-export const STAGES = ["mid", "end"] as const;
+export const STAGES = ["mid", "end", "recall"] as const;
 export type Stage = (typeof STAGES)[number];
 
 export type Reflection = {
@@ -49,7 +49,7 @@ export const parseReflectionCreate = (input: unknown) => {
   }
   const stage = STAGES.find((value) => value === input["stage"]);
   return stage === undefined
-    ? fail("stage must be mid or end")
+    ? fail("stage must be mid, end or recall")
     : ({ ok: true, stage } as const);
 };
 

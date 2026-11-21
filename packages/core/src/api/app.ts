@@ -511,7 +511,7 @@ export const createApp = (deps: ApiDeps) => {
     if (source === undefined) {
       return notFound(c.get("requestId"));
     }
-    if (source.notes.length === 0) {
+    if (parsed.stage !== "recall" && source.notes.length === 0) {
       return problemResponse(
         422,
         "nothing_to_process",

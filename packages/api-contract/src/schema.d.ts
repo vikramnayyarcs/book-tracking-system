@@ -243,7 +243,7 @@ export interface paths {
         put?: never;
         /**
          * Ask 3 reflection questions for a stage, written from the reader's own notes
-         * @description Stage `mid` or `end`. If the book already has questions for the stage, they are returned with 200 and nothing new is generated. Needs at least one session note or insight on the book, else 422.
+         * @description Stage `mid` or `end`: questions come from the reader's own notes, so the book needs at least one session note or insight, else 422. Stage `recall` is for past books: 3 prompts that help the reader remember the book, written from the title and author only. If the book already has questions for the stage, they are returned with 200 and nothing new is generated.
          */
         post: operations["createBookReflections"];
         delete?: never;
@@ -609,7 +609,7 @@ export interface components {
         };
         ReflectionCreate: {
             /** @enum {string} */
-            stage: "mid" | "end";
+            stage: "mid" | "end" | "recall";
         };
         ReflectionAnswer: {
             answer: string | null;
