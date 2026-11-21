@@ -19,7 +19,7 @@ variable "site_pages_subdomain" {
 }
 
 variable "blocked_paths" {
-  description = "Request paths that no client should ever ask for; matching requests are blocked."
+  description = "Path prefixes that no client should ever ask for; a request whose path starts with one is blocked."
   type        = list(string)
   default     = ["/.env", "/.git", "/wp-admin", "/wp-login.php", "/xmlrpc.php"]
 }

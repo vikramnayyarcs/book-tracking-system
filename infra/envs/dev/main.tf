@@ -6,8 +6,9 @@ import {
 module "github_repo" {
   source = "../../modules/github-repo"
 
-  name        = var.github_repository
-  description = "Private, AI-powered memory for the physical books you read."
+  name         = var.github_repository
+  description  = "Private, AI-powered memory for the physical books you read."
+  homepage_url = module.site_dev.url
 }
 
 module "site_dev" {
