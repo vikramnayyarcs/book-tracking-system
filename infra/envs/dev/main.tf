@@ -26,3 +26,13 @@ module "zone" {
   site_pages_project   = module.site_dev.name
   site_pages_subdomain = module.site_dev.subdomain
 }
+
+module "supabase_dev" {
+  source = "../../modules/supabase-project"
+
+  organization_id        = var.supabase_organization_id
+  name                   = "book-tracking-dev"
+  github_repository      = var.github_repository
+  secret_prefix          = "DEV_"
+  clerk_frontend_api_url = var.clerk_frontend_api_url
+}

@@ -34,3 +34,14 @@ variable "domain" {
   type        = string
   default     = ""
 }
+
+variable "supabase_organization_id" {
+  description = "Supabase organization slug (repo variable DEV_SUPABASE_ORG_ID)."
+  type        = string
+}
+
+variable "clerk_frontend_api_url" {
+  description = "Clerk development instance Frontend API URL (repo variable DEV_CLERK_FRONTEND_API_URL). Empty skips registering Clerk with Supabase."
+  type        = string
+  default     = ""
+}
