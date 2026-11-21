@@ -1268,6 +1268,7 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

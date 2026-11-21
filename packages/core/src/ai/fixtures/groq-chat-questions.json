@@ -1,0 +1,37 @@
+{
+  "id": "chatcmpl-c11605cb-649d-4f45-a69b-0ad499d28c50",
+  "object": "chat.completion",
+  "created": 1795296831,
+  "model": "openai/gpt-oss-20b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"questions\":[{\"text\":\"How has your view that \\\"routine is a form of attention\\\" reshaped the way you approach daily tasks?\"},{\"text\":\"In what ways will you prioritize the habit of looking over keeping logs, as you noted, when planning future projects?\"},{\"text\":\"What insights emerged from your planned five‑minute morning walk, and how might you extend that practice to other areas of your life?\"}]}",
+        "reasoning": "We need to produce 3 questions, each referencing the reader's notes. Stage \"end\". So reflect on what stayed, changed, apply. Use quotes or paraphrase. Must be open-ended. Each question one sentence. JSON compact. Let's craft.\n\nNotes: \"Routine is a form of attention.\" \"The habit of looking matters more than the log.\" \"I want to try a five minute morning walk and write down one thing I notice.\"\n\nWe can ask: How has your understanding of routine as attention influenced your daily habits? How will you prioritize the habit of looking over keeping logs in future projects? What insights did you gain from your planned five-minute walk and how might you expand that practice?\n\nMake sure each question references the notes. Use quotes or paraphrase. Use open question. Provide JSON.\n\nLet's produce."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "queue_time": 0.06873262,
+    "prompt_tokens": 353,
+    "prompt_time": 0.018466294,
+    "completion_tokens": 260,
+    "completion_time": 0.284049076,
+    "total_tokens": 613,
+    "total_time": 0.30251537,
+    "completion_tokens_details": {
+      "reasoning_tokens": 166
+    }
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_84bb35977d",
+  "x_groq": {
+    "id": "req_01m800f9aje9a88aer6gp65hy6",
+    "seed": 554081600
+  },
+  "service_tier": "on_demand"
+}

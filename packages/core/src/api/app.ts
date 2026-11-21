@@ -68,6 +68,16 @@ import {
   planProcessing,
   runProcessing,
 } from "../processing.ts";
+import { askReflectionQuestions } from "../ai/questions.ts";
+import {
+  answerReflection,
+  listReflections,
+  loadReflectionSource,
+  parseReflectionAnswer,
+  parseReflectionCreate,
+  saveQuestions,
+} from "../reflections.ts";
+import { AiError } from "../ai/types.ts";
 import { problemResponse } from "./problem.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
@@ -462,6 +472,98 @@ export const createApp = (deps: ApiDeps) => {
       getSession(sql, id),
     );
     return c.json(session, 202);
+  });
+
+  app.get("/books/:id/reflections", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => listReflections(sql, id));
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.post("/books/:id/reflections", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseReflectionCreate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result: existing } = await c.var.withUser((sql) =>
+      listReflections(sql, id),
+    );
+    if (existing === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    const same = existing.filter((row) => row.stage === parsed.stage);
+    if (same.length > 0) {
+      return c.json({ items: same }, 200);
+    }
+    const { result: source } = await c.var.withUser((sql) =>
+      loadReflectionSource(sql, id),
+    );
+    if (source === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (source.notes.length === 0) {
+      return problemResponse(
+        422,
+        "nothing_to_process",
+        "The book has no notes or insights to ask about yet",
+        c.get("requestId"),
+      );
+    }
+    let asked;
+    try {
+      asked = await askReflectionQuestions(
+        deps.text,
+        parsed.stage,
+        source.book,
+        source.notes,
+      );
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not write questions. Try again later.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
+    const { result: items } = await c.var.withUser(async (sql) => {
+      await sql`
+        select app.record_usage(
+          0, 0, ${asked.usage.inputTokens}::bigint, ${asked.usage.outputTokens}::bigint
+        )
+      `;
+      return saveQuestions(sql, id, parsed.stage, asked.questions);
+    });
+    return c.json({ items }, 201);
+  });
+
+  app.patch("/reflections/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseReflectionAnswer(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      answerReflection(sql, id, parsed.answer),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
   });
 
   app.get("/books/:id/insights", authenticated, async (c) => {
