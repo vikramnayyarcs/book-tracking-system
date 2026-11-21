@@ -29,3 +29,7 @@ Fix: quit GitHub Desktop and VS Code, then reopen. Check with `gitleaks version`
 ## 2026-11-20: Stacked PRs merge into their base branch, not main
 **A PR whose base is another PR's branch merges into that branch; if the lower PR merged first and its branch was not deleted, the upper PR's commits never reach `main`.**
 Fix: after a lower PR merges, retarget the next one with `gh pr edit <n> --base main` before merging it. "Automatically delete head branches" in repo settings (managed by Terraform) makes GitHub retarget automatically.
+
+## 2026-11-21: `clerk config pull` cannot run in CI with a secret key
+**The Clerk CLI's `config pull` talks to Clerk's Platform API and needs a browser (OAuth) login; `CLERK_SECRET_KEY` only unlocks `clerk api` (the Backend API), so a CI job built on `config pull` fails.**
+Fix: `scripts/clerk/check.ts` reads `GET /v1/instance` with the secret key and the public Frontend API `GET /v1/environment`, and compares them with `infra/clerk-checklist.md`. The Supabase integration cannot be read through either API, so it stays a manual checklist item.
