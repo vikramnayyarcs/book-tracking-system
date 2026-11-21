@@ -130,13 +130,15 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      - run: npm ci
+
       - name: Check that the project is set up for migrations
         run: |
           test -f supabase/config.toml || { echo "::error::supabase/config.toml is missing."; exit 1; }
           test -n "$SUPABASE_PROJECT_REF" || { echo "::error::DEV_SUPABASE_PROJECT_REF is not set. Run the Terraform job first."; exit 1; }
 
       - name: Link the dev project
-        run: npx --yes supabase@3.2.0 link --project-ref "$SUPABASE_PROJECT_REF"
+        run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Apply migrations to dev
-        run: npx --yes supabase@3.2.0 db push
+        run: npx supabase db push
