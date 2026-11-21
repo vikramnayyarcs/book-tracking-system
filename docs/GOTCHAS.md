@@ -75,6 +75,10 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 
 **Supabase signed upload URLs are valid for two hours and the time cannot be changed.** The API reports `expiresInSeconds: 7200` and the real limit on how long a client may upload is the tier's longest note, checked when the URL is requested.
 
+## 2026-11-21: the Open Library fixture is a verbatim recording of a public catalogue record
+
+**`packages/core/src/fixtures/open-library-isbn.json` is the live response for ISBN 9780140328721, not hand-written data; an invented ISBN returns no record, so the lookup cannot be recorded from one.** The record holds public catalogue data only, no user data. Record it again with `curl -sL "https://openlibrary.org/api/books?bibkeys=ISBN:9780140328721&format=json&jscmd=data"` when the API shape changes.
+
 ## 2026-11-21: MSW cannot catch a `fetch` that a client captured before `server.listen()`
 
 **A client built with `fetch: f = fetch` keeps the original `fetch`, so tests that construct it at module or `describe` level skip the MSW handlers and hit the real network.** The Groq clients now default to `(input, init) => fetch(input, init)`, which reads the global at call time.

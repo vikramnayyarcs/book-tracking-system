@@ -41,9 +41,9 @@ describe("lookupIsbn", () => {
   it("maps the Open Library record", async () => {
     expect(await lookupIsbn("9780140328721", options)).toEqual({
       isbn: "9780140328721",
-      title: "An Invented Sample Book",
-      author: "Sample Author",
-      coverUrl: "https://covers.openlibrary.org/b/id/0-M.jpg",
+      title: "Fantastic Mr. Fox",
+      author: "Roald Dahl",
+      coverUrl: "https://covers.openlibrary.org/b/id/15152634-M.jpg",
       pageCount: 96,
     });
   });
