@@ -58,10 +58,18 @@ import {
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
 import { parseSearch, searchVault } from "../search.ts";
+import {
+  answerQuestion,
+  bookExists,
+  loadVaultQuestionsUsed,
+  parseAsk,
+  retrieveNotes,
+} from "../ask.ts";
+import { mayAskVault } from "../limits.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
-import type { SpeechToText, TextModel } from "../ai/types.ts";
+import type { Embedder, SpeechToText, TextModel } from "../ai/types.ts";
 import {
   loadProcessInfo,
   markStatus,
@@ -96,6 +104,7 @@ export type ApiDeps = {
   openLibraryUrl: string;
   speech: SpeechToText;
   text: TextModel;
+  embedder?: Embedder;
   waitUntil: (work: Promise<unknown>) => void;
 };
 
@@ -377,6 +386,74 @@ export const createApp = (deps: ApiDeps) => {
     }
     await c.var.withUser((sql) => deleteSession(sql, id));
     return c.body(null, 204);
+  });
+
+  app.post("/ask", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseAsk(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result: gate, tier } = await c.var.withUser(async (sql) => ({
+      bookFound:
+        parsed.bookId === undefined || (await bookExists(sql, parsed.bookId)),
+      used: await loadVaultQuestionsUsed(sql),
+    }));
+    if (!gate.bookFound) {
+      return notFound(c.get("requestId"));
+    }
+    const decision = mayAskVault({
+      tier,
+      usage: { voiceSeconds: 0, vaultQuestions: gate.used },
+    });
+    if (!decision.allowed) {
+      return problemResponse(
+        403,
+        "tier_limit_reached",
+        "You have used all vault questions your plan allows this month",
+        c.get("requestId"),
+        decision.reason,
+      );
+    }
+    let embedding: number[] | null = null;
+    if (deps.embedder !== undefined) {
+      try {
+        embedding = (await deps.embedder.embed([parsed.question]))[0] ?? null;
+      } catch {
+        embedding = null;
+      }
+    }
+    const { result: retrieved } = await c.var.withUser((sql) =>
+      retrieveNotes(sql, {
+        question: parsed.question,
+        embedding,
+        ...(parsed.bookId === undefined ? {} : { bookId: parsed.bookId }),
+      }),
+    );
+    let asked;
+    try {
+      asked = await answerQuestion(deps.text, parsed.question, retrieved);
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not answer. Try again later.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
+    await c.var.withUser(
+      (sql) =>
+        sql`
+        select app.record_usage(
+          0, 1, ${asked.usage.inputTokens}::bigint, ${asked.usage.outputTokens}::bigint
+        )
+      `,
+    );
+    return c.json({ ...asked.result, warn: decision.warn });
   });
 
   app.post("/sessions/:id/audio-upload", auth("sessions:write"), async (c) => {
