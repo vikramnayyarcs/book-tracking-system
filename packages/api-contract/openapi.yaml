@@ -511,6 +511,45 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /search:
+    get:
+      operationId: searchVault
+      summary: Search the caller's session notes, insights, quotes and reviews, best match first
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: The matches
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SearchResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -518,6 +557,27 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    SearchResult:
+      type: object
+      required: [kind, id, bookId, bookTitle, snippet, rank]
+      properties:
+        kind:
+          type: string
+          enum: [session, insight, quote, review]
+        id:
+          type: string
+          format: uuid
+          description: The session or insight ID; for a review, the book ID
+        bookId:
+          type: string
+          format: uuid
+        bookTitle:
+          type: string
+        snippet:
+          type: string
+          description: A short excerpt around the match, with matches wrapped in square brackets
+        rank:
+          type: number
     Insight:
       type: object
       required:

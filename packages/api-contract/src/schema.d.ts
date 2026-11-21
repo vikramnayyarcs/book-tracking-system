@@ -266,10 +266,42 @@ export interface paths {
         patch: operations["updateInsight"];
         trace?: never;
     };
+    "/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the caller's session notes, insights, quotes and reviews, best match first */
+        get: operations["searchVault"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SearchResult: {
+            /** @enum {string} */
+            kind: "session" | "insight" | "quote" | "review";
+            /**
+             * Format: uuid
+             * @description The session or insight ID; for a review, the book ID
+             */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            bookTitle: string;
+            /** @description A short excerpt around the match, with matches wrapped in square brackets */
+            snippet: string;
+            rank: number;
+        };
         Insight: {
             /** Format: uuid */
             id: string;
@@ -1062,6 +1094,34 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    searchVault: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The matches */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["SearchResult"][];
+                    };
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
