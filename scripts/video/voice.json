@@ -1,7 +1,7 @@
 {
   "name": "en_GB-alan-medium",
-  "modelUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx",
-  "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json",
-  "modelSha256": "PENDING",
-  "configSha256": "PENDING"
+  "modelUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/e9c8a39444359388adaa94255becb37a5a2b8e51/en/en_GB/alan/medium/en_GB-alan-medium.onnx",
+  "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/e9c8a39444359388adaa94255becb37a5a2b8e51/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json",
+  "modelSha256": "0a309668932205e762801f1efc2736cd4b0120329622adf62be09e56339d3330",
+  "configSha256": "c0f0d124e5895c00e7c03b35dcc8287f319a6998a365b182deb5c8e752ee8c1e"
 }
