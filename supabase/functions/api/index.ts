@@ -7,7 +7,9 @@ import {
 import {
   groqSpeech,
   groqText,
+  groqVision,
   INSIGHT_MODEL,
+  VISION_MODEL,
 } from "../../../packages/core/src/ai/index.ts";
 import { parseTier } from "../../../packages/core/src/plans.ts";
 
@@ -19,6 +21,11 @@ const groqUrl = Deno.env.get("GROQ_URL") ?? undefined;
 const app = createApp({
   speech: groqSpeech({ apiKey: groqKey, baseUrl: groqUrl }),
   text: groqText({ apiKey: groqKey, model: INSIGHT_MODEL, baseUrl: groqUrl }),
+  vision: groqVision({
+    apiKey: groqKey,
+    model: VISION_MODEL,
+    baseUrl: groqUrl,
+  }),
   waitUntil: (work) => EdgeRuntime.waitUntil(work),
   gatewaySecret: Deno.env.get("GATEWAY_SECRET") ?? "",
   logger: jsonLogger((line) => console.log(line)),
