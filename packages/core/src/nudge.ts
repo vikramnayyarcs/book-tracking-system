@@ -197,7 +197,7 @@ export const savePushSubscription = async (
     insert into app.push_subscriptions (endpoint, p256dh, auth)
     values (${input.endpoint}, ${input.p256dh}, ${input.auth})
     on conflict (user_id, endpoint)
-    do update set p256dh = excluded.p256dh, auth = excluded.auth
+    do update set p256dh = ${input.p256dh}, auth = ${input.auth}
     returning id, endpoint, created_at
   `;
   const row = rows[0] as SubscriptionRow;

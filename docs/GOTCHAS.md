@@ -82,3 +82,7 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 ## 2026-11-21: MSW cannot catch a `fetch` that a client captured before `server.listen()`
 
 **A client built with `fetch: f = fetch` keeps the original `fetch`, so tests that construct it at module or `describe` level skip the MSW handlers and hit the real network.** The Groq clients now default to `(input, init) => fetch(input, init)`, which reads the global at call time.
+
+## 2026-11-21: `excluded.col` in an upsert needs SELECT on that column
+**`insert ... on conflict do update set x = excluded.x` fails (a 500 from the API) when the role has column-limited grants and no `select` on `x`, because reading `excluded.x` counts as reading the column.**
+Fix: set the column from the bound parameter (`set x = ${value}`) instead of `excluded.x`; see `savePushSubscription` in `packages/core/src/nudge.ts`.
