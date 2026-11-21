@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./brand": "./src/brand.ts"
+    "./brand": "./src/brand.ts",
+    "./api": "./src/api/index.ts"
+  },
+  "dependencies": {
+    "hono": "4.13.19"
   }
 }

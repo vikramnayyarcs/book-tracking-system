@@ -13,11 +13,13 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "oxlint --deny-warnings",
-    "typecheck": "tsc -p tsconfig.json && tsc -p packages/core/tsconfig.json && tsc -p test/e2e/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p packages/core/tsconfig.json && tsc -p packages/api-contract/tsconfig.json && tsc -p test/e2e/tsconfig.json && tsc -p test/api/tsconfig.json",
     "test": "vitest run",
+    "contract:check": "npm run check -w packages/api-contract",
     "test:e2e": "playwright test",
     "prepare": "simple-git-hooks",
-    "pr-video": "node scripts/pr-video/download.ts"
+    "pr-video": "node scripts/pr-video/download.ts",
+    "test:api": "vitest run --config vitest.api.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
