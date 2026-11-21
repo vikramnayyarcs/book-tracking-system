@@ -39,5 +39,5 @@ create policy insights_delete on app.insights
 
 revoke all on app.insights from public, anon, authenticated;
 grant select, insert, delete on app.insights to authenticated;
-grant update (session_id, kind, text, original_text, page, pinned) on app.insights to authenticated;
+grant update (session_id, kind, text, page, pinned) on app.insights to authenticated;
 grant all on app.insights to service_role;
