@@ -7,7 +7,9 @@ export type ProblemCode =
   | "validation_failed"
   | "isbn_invalid"
   | "isbn_not_found"
-  | "tier_limit_reached";
+  | "tier_limit_reached"
+  | "already_processed"
+  | "nothing_to_process";
 
 export type Problem = {
   type: string;
