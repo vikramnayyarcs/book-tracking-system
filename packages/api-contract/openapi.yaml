@@ -803,6 +803,57 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/quote-photos:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: createQuotePhotoUpload
+      summary: Get a signed URL to upload a photo of a page for quote OCR
+      responses:
+        "201":
+          description: The photo id and the signed upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotePhotoUpload"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-photos/{id}/ocr:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: readQuotePhoto
+      summary: Read the text lines of an uploaded page photo, then delete the photo
+      description: The photo is deleted whether the reading succeeds or fails, so a failed reading needs a new photo.
+      responses:
+        "200":
+          description: The lines of printed text, in reading order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotePhotoLines"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -866,6 +917,26 @@ components:
           type: string
         expiresInSeconds:
           type: integer
+    QuotePhotoUpload:
+      type: object
+      required: [id, uploadUrl, expiresInSeconds]
+      properties:
+        id:
+          type: string
+          format: uuid
+        uploadUrl:
+          type: string
+          description: Send the image bytes (JPEG, PNG or WebP, at most 3 MB) to this URL with PUT
+        expiresInSeconds:
+          type: integer
+    QuotePhotoLines:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items:
+            type: string
     Export:
       type: object
       required: [exportedAt, books]
