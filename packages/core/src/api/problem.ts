@@ -3,6 +3,7 @@ export type ProblemCode =
   | "not_found"
   | "gateway_rejected"
   | "unauthorized"
+  | "insufficient_scope"
   | "validation_failed"
   | "isbn_invalid"
   | "isbn_not_found";

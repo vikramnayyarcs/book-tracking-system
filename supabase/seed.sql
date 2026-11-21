@@ -38,3 +38,7 @@ insert into app.reviews (book_id, user_id, rating, text, summary) values
 insert into app.usage (user_id, month, voice_seconds, vault_questions, ai_input_tokens, ai_output_tokens, ai_insights_deleted) values
   ('user_seed_alice', '2026-10-01', 48, 1, 1800, 420, 0),
   ('user_seed_bob', '2026-07-01', 62, 0, 1200, 300, 0);
+
+insert into app.api_tokens (id, user_id, name, token_hash, scopes) values
+  ('50000000-0000-0000-0000-000000a00001', 'user_seed_alice', 'Invented iOS Shortcut', repeat('1', 64), array['sessions:write', 'books:read']),
+  ('50000000-0000-0000-0000-000000b00001', 'user_seed_bob', 'Invented reader token', repeat('2', 64), array['books:read']);
