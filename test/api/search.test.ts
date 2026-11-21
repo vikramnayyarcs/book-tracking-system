@@ -62,7 +62,7 @@ describe("search", () => {
     const body = (await expectMatchesContract(response, "GET", "/search")) as {
       items: { kind: string; bookTitle: string; snippet: string }[];
     };
-    expect(body.items.map((i) => i.kind).sort()).toEqual([
+    expect(body.items.map((i) => i.kind).toSorted()).toEqual([
       "insight",
       "session",
     ]);
