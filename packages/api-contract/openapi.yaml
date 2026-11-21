@@ -688,6 +688,42 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /activity:
+    get:
+      operationId: getActivity
+      summary: The dates in a year with at least one entry (a session or a finished-book review), in the caller's time zone
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2200
+      responses:
+        "200":
+          description: The dates, oldest first
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [year, timeZone, dates]
+                properties:
+                  year:
+                    type: integer
+                  timeZone:
+                    type: string
+                  dates:
+                    type: array
+                    items:
+                      type: string
+                      format: date
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /export:
     get:
       operationId: exportVault
