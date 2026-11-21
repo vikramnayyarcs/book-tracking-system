@@ -1,0 +1,23 @@
+meta {
+  name: createBookReflections
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/books/{{bookId}}/reflections
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  { "stage": "end" }
+}
+
+docs {
+  operationId: createBookReflections
+}

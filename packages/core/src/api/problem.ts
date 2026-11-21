@@ -9,7 +9,8 @@ export type ProblemCode =
   | "isbn_not_found"
   | "tier_limit_reached"
   | "already_processed"
-  | "nothing_to_process";
+  | "nothing_to_process"
+  | "ai_unavailable";
 
 export type Problem = {
   type: string;

@@ -35,3 +35,9 @@ jobs:
 
       - name: Score with DeepEval
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/outputs.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/scores.json"
+
+      - name: Generate reflection questions with the prompt and model in the code
+        run: node packages/core/evals/generate-questions.ts "$RUNNER_TEMP/questions.json"
+
+      - name: Score reflection questions with DeepEval
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/questions.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/question-scores.json"
