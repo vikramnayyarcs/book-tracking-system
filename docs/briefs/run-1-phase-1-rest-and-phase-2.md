@@ -16,11 +16,13 @@ A scheduled task starts a new session every hour. Each session must check the pr
 2. **Someone else working?** If it has the `run-active` label and its newest comment starting `Heartbeat` is less than 50 minutes old, end the session without changes.
 3. **Claim it.** Otherwise add `run-active` (create the label if needed) and comment `Heartbeat: started, next task N`.
 4. **Keep it alive.** Comment `Heartbeat: task N, <what you are doing>` at least every 20 minutes and after each PR.
-5. **Hand over.** Before ending for any reason, tick finished tasks, comment `Heartbeat: stopped, next task N, <why>`, and remove `run-active`. When Phase 2 is done or every remaining task is blocked, add `run-finished` and post the Finish comment below.
+5. **Hand over.** Before ending for any reason, tick finished tasks, comment `Heartbeat: stopped, next task N, <why>`, and remove `run-active`. Add `run-finished` and post the Finish comment below only when every task and follow-up in the progress issue is done or blocked, **and** no owner request is open: no unanswered review comment on an open PR, no owner instruction in the progress issue still to act on.
 
-Pick up where the last session stopped: read the progress issue, its comments and open PRs, and continue with the first unticked task that is not blocked. A task with an open PR but failing CI is not done; fix that PR first.
+Pick up where the last session stopped: read the progress issue and its comments, then the **owner's review comments on every open PR** (`gh pr view N --comments`). Act on owner requests first, then continue with the first unticked task or follow-up that is not blocked. A task with an open PR but failing CI is not done; fix that PR first.
 
 ## Keep output short
+
+Follow the `terse` skill. For every yellow or red PR you open, add a risk note with the `risk-note` skill.
 
 Nobody reads a scheduled run live, so spend tokens on the work, not on narration.
 
