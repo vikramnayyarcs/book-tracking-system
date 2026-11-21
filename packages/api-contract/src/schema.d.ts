@@ -300,10 +300,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a book finished, with an optional rating and review */
+        post: operations["finishBook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get the rating, review and finish photo flag of a book */
+        get: operations["getBookReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/{id}/finish-photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a signed URL to upload the finish photo of a book */
+        post: operations["createFinishPhotoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Review: {
+            rating: number | null;
+            text: string | null;
+            summary: string | null;
+            hasPhoto: boolean;
+        };
+        FinishCreate: {
+            rating?: number;
+            review?: string;
+            /**
+             * Format: date
+             * @description Defaults to today
+             */
+            finishedOn?: string;
+            finishedPrecision?: components["schemas"]["FinishedPrecision"];
+        };
+        FinishResult: {
+            book: components["schemas"]["Book"];
+            review: components["schemas"]["Review"];
+        };
+        PhotoUploadCreate: {
+            /** @enum {string} */
+            extension: "jpg" | "png" | "webp";
+        };
+        PhotoUpload: {
+            /** @description Send the image bytes to this URL with PUT */
+            uploadUrl: string;
+            path: string;
+            expiresInSeconds: number;
+        };
         Export: {
             /** Format: date-time */
             exportedAt: string;
@@ -1188,6 +1275,91 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    finishBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishCreate"];
+            };
+        };
+        responses: {
+            /** @description The finished book and its review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinishResult"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getBookReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createFinishPhotoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoUploadCreate"];
+            };
+        };
+        responses: {
+            /** @description The signed upload URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoUpload"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
