@@ -166,4 +166,4 @@ jobs:
       - run: npm ci
 
       - name: Deploy the api function to dev
-        run: npx supabase functions deploy api --project-ref "$SUPABASE_PROJECT_REF" --use-api
+        run: npx supabase functions deploy api --project-ref "$SUPABASE_PROJECT_REF" --use-api --yes
