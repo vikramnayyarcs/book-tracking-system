@@ -38,6 +38,10 @@ Fix: quit GitHub Desktop and VS Code, then reopen. Check with `gitleaks version`
 **A PR whose base is another PR's branch merges into that branch; if the lower PR merged first and its branch was not deleted, the upper PR's commits never reach `main`.**
 Fix: after a lower PR merges, retarget the next one with `gh pr edit <n> --base main` before merging it. "Automatically delete head branches" in repo settings (managed by Terraform) makes GitHub retarget automatically.
 
+## 2026-11-21: Storage blocks direct deletes from `storage.objects`
+**A `delete from storage.objects` in SQL raises "Direct deletion from storage tables is not allowed" (trigger `storage.protect_delete`), so a pgTAP test of the delete policy fails before RLS is even checked.**
+Fix: in the test, run `set local storage.allow_delete_query = 'true';` before the delete. The API deletes objects through the Storage API, never with SQL. The storage policies check only the first path segment, so a name such as `alice/../bob/x` stays in alice's folder; the Phase 3 API must reject `.` and `..` segments.
+
 ## 2026-11-21: `astro preview` backgrounds itself in agent sessions
 **Astro 7 starts `astro preview` as a background daemon when it detects an AI agent session (for example Claude Code), so the command exits at once and Playwright's `webServer` fails with "Process from config.webServer exited early".**
 Fix: pass `--ignore-lock` (`playwright.config.ts` does), which keeps the server in the foreground. Stop a stray daemon with `npx astro preview stop` from `apps/site`.
