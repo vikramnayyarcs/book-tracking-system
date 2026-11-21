@@ -23,7 +23,7 @@ declare const Supabase: {
   };
 };
 
-const embeddingSession = new Supabase.ai.Session("gte-small");
+let embeddingSession: InstanceType<typeof Supabase.ai.Session> | undefined;
 
 const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
 const groqUrl = Deno.env.get("GROQ_URL") ?? undefined;
@@ -35,7 +35,10 @@ const app = createApp({
     embed: (texts) =>
       Promise.all(
         texts.map((text) =>
-          embeddingSession.run(text, { mean_pool: true, normalize: true }),
+          (embeddingSession ??= new Supabase.ai.Session("gte-small")).run(
+            text,
+            { mean_pool: true, normalize: true },
+          ),
         ),
       ),
   },
