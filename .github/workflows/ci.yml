@@ -39,6 +39,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Install ffmpeg for the video builder test
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
       - name: Secrets scan (full history)
         run: gitleaks git --redact --verbose --no-banner .
 
