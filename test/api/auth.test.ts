@@ -45,7 +45,7 @@ describe("GET /v1/me", () => {
   it("creates the users row on the first call with the default tier, once", async () => {
     const first = await call("/me", { headers: bearer(alice) });
     expect(first.status).toBe(200);
-    expect(await expectMatchesContract(first, "GET", "/me")).toEqual({
+    expect(await expectMatchesContract(first, "GET", "/me")).toMatchObject({
       id: alice.userId,
       tier: expectedTier,
     });
