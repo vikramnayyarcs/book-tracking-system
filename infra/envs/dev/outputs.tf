@@ -12,3 +12,8 @@ output "supabase_dev_project_ref" {
   description = "Reference ID of the dev Supabase project."
   value       = module.supabase_dev.project_ref
 }
+
+output "grafana_stack_url" {
+  description = "Address of the shared Grafana Cloud stack."
+  value       = module.grafana.stack_url
+}
