@@ -204,6 +204,10 @@ jobs:
     if: github.event_name == 'pull_request'
     env:
       GATEWAY_SECRET: ci-gateway-secret
+      DEFAULT_TIER: plus
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+      CLERK_ISSUER: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
+      CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
       API_BASE_URL: http://127.0.0.1:54321/functions/v1/api
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -236,7 +240,11 @@ jobs:
       - name: Serve the api function
         if: steps.changed.outputs.api == 'true'
         run: |
-          echo "GATEWAY_SECRET=${GATEWAY_SECRET}" > "$RUNNER_TEMP/functions.env"
+          {
+            echo "GATEWAY_SECRET=${GATEWAY_SECRET}"
+            echo "DEFAULT_TIER=${DEFAULT_TIER}"
+            echo "CLERK_ISSUER=${CLERK_ISSUER}"
+          } > "$RUNNER_TEMP/functions.env"
           npx supabase functions serve api --no-verify-jwt --env-file "$RUNNER_TEMP/functions.env" > "$RUNNER_TEMP/functions.log" 2>&1 &
           until curl -fsS -H "x-gateway-secret: ${GATEWAY_SECRET}" "${API_BASE_URL}/v1/health" > /dev/null; do sleep 2; done
 
