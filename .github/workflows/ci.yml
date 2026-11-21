@@ -153,6 +153,49 @@ jobs:
       - name: Link the videos
         run: echo "Videos, built from seeded test data only - ${{ steps.upload.outputs.artifact-url }}" >> "$GITHUB_STEP_SUMMARY"
 
+  database:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Did the database change?
+        id: changed
+        run: |
+          if git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- supabase .github/workflows/ci.yml package.json; then
+            echo "database=false" >> "$GITHUB_OUTPUT"
+            echo "No database changes; skipping."
+          else
+            echo "database=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.changed.outputs.database == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+        if: steps.changed.outputs.database == 'true'
+
+      - name: Start the local Supabase stack
+        if: steps.changed.outputs.database == 'true'
+        run: npx supabase start
+
+      - name: Apply migrations and seed from scratch
+        if: steps.changed.outputs.database == 'true'
+        run: npx supabase db reset
+
+      - name: Run the pgTAP tests
+        if: steps.changed.outputs.database == 'true'
+        run: npx supabase test db
+
+      - name: Stop the stack
+        if: always() && steps.changed.outputs.database == 'true'
+        run: npx supabase stop --no-backup
+
   terraform:
     runs-on: ubuntu-latest
     env:
