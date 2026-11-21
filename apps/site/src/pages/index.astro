@@ -1,0 +1,65 @@
+---
+import { brand } from "@book-tracking-system/core/brand";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{brand.name}</title>
+    <meta name="description" content={brand.tagline} />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fdfcf8;
+        --fg: #1b1b18;
+        --link: #0b4fb3;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #15150f;
+          --fg: #f3f1e8;
+          --link: #8db8ff;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      main {
+        max-width: 40rem;
+        margin: 0 auto;
+        padding: 4rem 1.5rem;
+      }
+      h1 {
+        font-size: 2.5rem;
+        line-height: 1.2;
+        margin: 0 0 0.5rem;
+      }
+      a {
+        color: var(--link);
+        text-underline-offset: 0.2em;
+      }
+      a:focus-visible {
+        outline: 3px solid currentColor;
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{brand.name}</h1>
+      <p>{brand.tagline}</p>
+      <h2>Private by default</h2>
+      <p>
+        Your notes, voice recordings and photos belong to you. Nothing is public, nothing is sold,
+        and nothing is used to train AI models.
+      </p>
+      <p><a href={brand.waitlistUrl}>Join the waitlist</a></p>
+    </main>
+  </body>
+</html>
