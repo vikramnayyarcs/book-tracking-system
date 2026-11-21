@@ -1,6 +1,7 @@
 name: Deploy dev
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -8,6 +9,7 @@ on:
       - "infra/modules/**"
       - "infra/r2.tfbackend"
       - "apps/site/**"
+      - "supabase/**"
       - "packages/core/**"
       - "package.json"
       - "package-lock.json"
@@ -26,6 +28,7 @@ jobs:
     outputs:
       infra: ${{ steps.diff.outputs.infra }}
       site: ${{ steps.diff.outputs.site }}
+      database: ${{ steps.diff.outputs.database }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -38,10 +41,12 @@ jobs:
           if ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
             echo "infra=true" >> "$GITHUB_OUTPUT"
             echo "site=true" >> "$GITHUB_OUTPUT"
+            echo "database=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           changed() { git diff --quiet "$BEFORE" "$GITHUB_SHA" -- "$@" && echo false || echo true; }
           echo "infra=$(changed infra .github/workflows/deploy-dev.yml)" >> "$GITHUB_OUTPUT"
+          echo "database=$(changed supabase .github/workflows/deploy-dev.yml)" >> "$GITHUB_OUTPUT"
           echo "site=$(changed apps/site packages/core package.json package-lock.json .github/workflows/deploy-dev.yml)" >> "$GITHUB_OUTPUT"
 
   terraform:
@@ -109,3 +114,31 @@ jobs:
 
       - name: Deploy to site-dev
         run: npx wrangler pages deploy apps/site/dist --project-name=site-dev --branch=main --commit-dirty=true
+
+  migrations:
+    needs: [changes, terraform]
+    if: ${{ !cancelled() && needs.changes.outputs.database == 'true' && needs.terraform.result != 'failure' }}
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.DEV_SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.DEV_SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.DEV_SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - run: npm ci
+
+      - name: Check that the project is set up for migrations
+        run: |
+          test -f supabase/config.toml || { echo "::error::supabase/config.toml is missing."; exit 1; }
+          test -n "$SUPABASE_PROJECT_REF" || { echo "::error::DEV_SUPABASE_PROJECT_REF is not set. Run the Terraform job first."; exit 1; }
+
+      - name: Link the dev project
+        run: npx supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Apply migrations to dev
+        run: npx supabase db push
