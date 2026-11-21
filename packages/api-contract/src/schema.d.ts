@@ -28,11 +28,30 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get the signed-in user, creating the account on the first call */
+        /** Get the signed-in user and nudge settings, creating the account on the first call */
         get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        /** Change nudge settings; send only the fields to change */
+        patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/push-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save this device's Web Push subscription; the same endpoint again updates its keys */
+        post: operations["createPushSubscription"];
+        /** Remove this device's Web Push subscription */
+        delete: operations["deletePushSubscription"];
         options?: never;
         head?: never;
         patch?: never;
@@ -697,6 +716,38 @@ export interface components {
             id: string;
             /** @enum {string} */
             tier: "free" | "plus";
+            /** @description IANA time zone name, for example Europe/London */
+            timeZone: string;
+            /** @description Local time of day for the daily nudge as HH:MM; null means nudges are off */
+            nudgeTime: string | null;
+            /**
+             * Format: date
+             * @description Nudges are silenced through this local date; null when not silenced
+             */
+            notReadingUntil: string | null;
+        };
+        MeUpdate: {
+            /** @description IANA time zone name */
+            timeZone?: string;
+            /** @description HH:MM local time; null turns nudges off */
+            nudgeTime?: string | null;
+            /** @description true silences nudges through the end of today in the user's time zone; false clears it */
+            notReadingToday?: boolean;
+        };
+        PushSubscriptionCreate: {
+            /** Format: uri */
+            endpoint: string;
+            keys: {
+                p256dh: string;
+                auth: string;
+            };
+        };
+        PushSubscription: {
+            /** Format: uuid */
+            id: string;
+            endpoint: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         Problem: {
             type: string;
@@ -766,6 +817,87 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The user with the new settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createPushSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description The saved subscription */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushSubscription"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deletePushSubscription: {
+        parameters: {
+            query: {
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription is removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
