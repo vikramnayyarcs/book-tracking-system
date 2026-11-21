@@ -1,6 +1,6 @@
 # ADR 0002: Phase 1 plan (Foundations: IaC and CI/CD)
 
-- Status: Accepted
+- Status: Accepted; merge policy superseded by ADR 0004
 - Date: 2026-11-20
 - Decider: Vikram Nayyar
 - Method: `/grill-me` session, four rounds
