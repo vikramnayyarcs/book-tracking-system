@@ -30,7 +30,7 @@ At claude.ai/code → **Environments** → **New environment**:
 
    Add Supabase and Grafana domains only when a task needs them. Sessions never call Cloudflare, Supabase or GitHub APIs to change infrastructure; that happens in Actions after a merge.
 
-4. **Environment variables:** `BT_GITHUB_MCP_TOKEN`, the same read-only fine-grained token as on Windows (`docs/secrets.md`). `.mcp.json` sends it to GitHub's remote MCP server (`https://api.githubcopilot.com/mcp/`) as `${BT_GITHUB_MCP_TOKEN:-}`; if the variable is missing the session still starts and the GitHub server simply fails to connect.
+4. **Environment variables:** `BT_GITHUB_MCP_TOKEN`, the same read-only fine-grained token as on Windows (`docs/secrets.md`). `.mcp.json` sends it to GitHub's remote MCP server (`https://api.githubcopilot.com/mcp/`) as `${BT_GITHUB_MCP_TOKEN:-}` with the `X-MCP-Readonly: true` header, so it only offers read tools; if the variable is missing the session still starts and the GitHub server simply fails to connect.
 5. **Setup script:** paste the whole of `scripts/cloud-setup.sh`. It installs pinned Node, Terraform, gitleaks and terraform-mcp-server, checking each download's SHA-256. When it finishes within about five minutes, the result is cached for later sessions.
 
 The same script also runs from the SessionStart hook in every cloud session, so a session still gets the tools if the cache is cold; it skips anything already installed. When you change the script in the repo, paste the new version into the environment too.
