@@ -122,6 +122,28 @@ if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -f "$CLAUDE_PROJECT_DIR/package-lock.js
   (cd "$CLAUDE_PROJECT_DIR" && "$PREFIX/bin/npm" ci --no-audit --no-fund)
 fi
 
+# The local Supabase stack needs Docker, and the cloud image does not start the daemon.
+# Detach dockerd from the hook's stdin and stdout, or the hook waits for it to exit.
+if [ -n "$SESSION_START" ] && command -v dockerd >/dev/null && ! docker info >/dev/null 2>&1; then
+  setsid dockerd </dev/null >>/tmp/dockerd.log 2>&1 &
+  dockerd_pid=$!
+  docker_up=
+  for _ in $(seq 60); do
+    if docker info >/dev/null 2>&1; then
+      docker_up=1
+      break
+    fi
+    kill -0 "$dockerd_pid" 2>/dev/null || break
+    sleep 1
+  done
+  if [ -n "$docker_up" ]; then
+    echo "cloud-setup: started Docker $(docker info --format '{{.ServerVersion}}')"
+  else
+    echo "cloud-setup: WARNING Docker did not start; end of /tmp/dockerd.log:" >&2
+    tail -n 20 /tmp/dockerd.log >&2 || true
+  fi
+fi
+
 echo "cloud-setup: node $("$PREFIX/bin/node" --version), $("$PREFIX/bin/terraform" version | head -1), gitleaks $("$PREFIX/bin/gitleaks" version), terraform-mcp-server $("$PREFIX/bin/terraform-mcp-server" --version | tail -1)"
 
 for tool in node terraform gitleaks terraform-mcp-server; do
