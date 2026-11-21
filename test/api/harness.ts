@@ -62,10 +62,10 @@ const lookup = (method: string, path: string, status: number) => {
   return content;
 };
 
-const resolveRef = (schema: Json) => {
-  const ref = schema["$ref"];
-  return typeof ref === "string" ? { $ref: `spec${ref}` } : schema;
-};
+const resolveRef = (schema: Json) =>
+  JSON.parse(
+    JSON.stringify(schema).replaceAll('"$ref":"#/', '"$ref":"spec#/'),
+  ) as Json;
 
 export const expectMatchesContract = async (
   response: Response,
