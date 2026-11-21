@@ -1,0 +1,30 @@
+meta {
+  name: Create insight
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/books/{{bookId}}/insights
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "text": "An invented thought about a sample chapter.",
+    "page": 7
+  }
+}
+
+docs {
+  operationId: createInsight
+}
+
+script:post-response {
+  bru.setVar("insightId", res.body.id);
+}
