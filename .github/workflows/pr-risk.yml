@@ -1,0 +1,84 @@
+name: PR risk
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: pr-risk-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      BASE: ${{ github.event.pull_request.base.ref }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Classify with the rules on main
+        id: classify
+        run: |
+          gh api --paginate "repos/$REPO/pulls/$PR/files" \
+            --jq '.[] | {filename, previous_filename, additions, deletions}' \
+            | jq -s --arg base "$BASE" '{base: $base, files: .}' \
+            | node scripts/pr-risk/classify.ts > result.json
+          cat result.json
+          echo "colour=$(jq -r .colour result.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Label and comment
+        env:
+          COLOUR: ${{ steps.classify.outputs.colour }}
+        run: |
+          for c in red yellow green; do
+            case $c in red) hex=d73a4a ;; yellow) hex=fbca04 ;; green) hex=2da44e ;; esac
+            gh label create "risk:$c" --repo "$REPO" --color "$hex" --force >/dev/null
+          done
+          for c in red yellow green; do
+            [ "$c" = "$COLOUR" ] || gh pr edit "$PR" --repo "$REPO" --remove-label "risk:$c" >/dev/null 2>&1 || true
+          done
+          gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=risk:$COLOUR" >/dev/null
+
+          case $COLOUR in
+            red) icon="🔴"; next="Owner review required." ;;
+            yellow) icon="🟡"; next="Owner review required." ;;
+            green) icon="🟢"; next="Merged automatically once every check passes on the latest commit." ;;
+          esac
+          {
+            echo "<!-- pr-risk -->"
+            echo "### $icon Risk: $COLOUR"
+            echo
+            echo "$next"
+            if [ "$(jq -r .deploys result.json)" = "true" ]; then
+              echo
+              echo "**Merging changes real infrastructure or CI.** Read the \`plan-dev\` summary first."
+            fi
+            echo
+            jq -r '.reasons[] | "- " + .' result.json
+            echo
+            echo "_Rules: \`scripts/pr-risk/classify.ts\` on main (ADR 0005)._"
+          } > comment.md
+
+          existing="$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+            --jq '.[] | select(.body | startswith("<!-- pr-risk -->")) | .id' | head -1)"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing" -F body=@comment.md >/dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@comment.md >/dev/null
+          fi
