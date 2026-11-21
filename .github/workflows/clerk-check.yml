@@ -1,0 +1,30 @@
+name: Clerk check
+
+on:
+  pull_request:
+    paths:
+      - "infra/clerk-checklist.md"
+      - "scripts/clerk/**"
+      - ".github/workflows/clerk-check.yml"
+  schedule:
+    - cron: "43 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  clerk:
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
+    env:
+      CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
+      CLERK_FRONTEND_API_URL: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Compare the dev instance with the checklist
+        run: node scripts/clerk/check.ts
