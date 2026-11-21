@@ -395,6 +395,122 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/insights:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listBookInsights
+      summary: List the insights and quotes of one book, pinned first
+      responses:
+        "200":
+          description: The insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createInsight
+      summary: Add an insight or quote written by the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsightCreate"
+      responses:
+        "201":
+          description: The new insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Insight"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sessions/{id}/insights:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listSessionInsights
+      summary: List the insights and quotes of one session
+      responses:
+        "200":
+          description: The insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /insights/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: updateInsight
+      summary: Edit, pin or unpin an insight; the first AI wording is kept in originalText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsightUpdate"
+      responses:
+        "200":
+          description: The changed insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Insight"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteInsight
+      summary: Delete an insight
+      responses:
+        "204":
+          description: The insight is deleted
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -402,6 +518,89 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Insight:
+      type: object
+      required:
+        - id
+        - bookId
+        - sessionId
+        - kind
+        - text
+        - originalText
+        - source
+        - page
+        - pinned
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookId:
+          type: string
+          format: uuid
+        sessionId:
+          type: [string, "null"]
+          format: uuid
+        kind:
+          type: string
+          enum: [insight, quote]
+        text:
+          type: string
+        originalText:
+          type: [string, "null"]
+        source:
+          type: string
+          enum: [ai, user]
+        page:
+          type: [integer, "null"]
+        pinned:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    InsightList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Insight"
+    InsightCreate:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        kind:
+          type: string
+          enum: [insight, quote]
+          default: insight
+        page:
+          type: integer
+          minimum: 1
+        sessionId:
+          type: string
+          format: uuid
+        pinned:
+          type: boolean
+    InsightUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        page:
+          type: [integer, "null"]
+          minimum: 1
+        pinned:
+          type: boolean
     Session:
       type: object
       required:
