@@ -82,3 +82,7 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 ## 2026-11-21: MSW cannot catch a `fetch` that a client captured before `server.listen()`
 
 **A client built with `fetch: f = fetch` keeps the original `fetch`, so tests that construct it at module or `describe` level skip the MSW handlers and hit the real network.** The Groq clients now default to `(input, init) => fetch(input, init)`, which reads the global at call time.
+
+## 2026-11-21: the lint-after-edit hook can fail in a worktree with a duplicate Landmines plugin name
+
+**In a git worktree the hook may print "Plugin name landmines-structure is already registered" and block edits while `npm run lint` passes.** Run `npm run lint` from the worktree root and trust that result.

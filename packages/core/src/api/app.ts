@@ -58,6 +58,7 @@ import {
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
 import { getActivity, parseYear } from "../activity.ts";
+import { getStats } from "../stats.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
@@ -651,6 +652,13 @@ export const createApp = (deps: ApiDeps) => {
       return invalid("year must be 1900 to 2200", c.get("requestId"));
     }
     const { result } = await c.var.withUser((sql) => getActivity(sql, year));
+    return c.json(result);
+  });
+
+  app.get("/stats", authenticated, async (c) => {
+    const { result } = await c.var.withUser((sql) =>
+      getStats(sql, new Date(deps.now())),
+    );
     return c.json(result);
   });
 
