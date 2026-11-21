@@ -2,6 +2,10 @@
 
 Log a trap the moment a debugging detour ends, so nobody (human or AI) hits it twice. Newest first.
 
+## 2026-11-21: deploying a function needs `--yes` in CI
+**Supabase CLI 3.x asks for confirmation before deploying a function; in CI (no terminal) it prints "Nothing was changed" and exits 1, so every dev deploy after 18:19 failed without deploying the API.**
+Fix: pass `--yes`, as the migrations job's `db push` already does.
+
 Format:
 
 ```
