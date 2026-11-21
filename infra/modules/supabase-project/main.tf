@@ -4,11 +4,10 @@ resource "random_password" "database" {
 }
 
 resource "supabase_project" "this" {
-  organization_id         = var.organization_id
-  name                    = var.name
-  region                  = var.region
-  database_password       = random_password.database.result
-  legacy_api_keys_enabled = true
+  organization_id   = var.organization_id
+  name              = var.name
+  region            = var.region
+  database_password = random_password.database.result
 
   lifecycle {
     prevent_destroy = true
