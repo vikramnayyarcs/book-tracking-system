@@ -1,7 +1,8 @@
 resource "github_repository" "this" {
-  name        = var.name
-  description = var.description
-  visibility  = "private"
+  name         = var.name
+  description  = var.description
+  homepage_url = var.homepage_url
+  visibility   = "private"
 
   has_issues   = true
   has_projects = false

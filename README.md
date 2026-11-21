@@ -8,4 +8,4 @@ A private, AI-powered memory for the physical books you read. Log a reading sess
 - Secrets to set by hand: [docs/secrets.md](docs/secrets.md)
 - Working with Claude Code: [CLAUDE.md](CLAUDE.md)
 
-Status: Phase 1 (Foundations: IaC and CI/CD) not started.
+Dev site: the **Website** link in this repository's About box (set by Terraform from the Cloudflare Pages project).

@@ -1,6 +1,6 @@
 # ADR 0003: Phase 2 data layer
 
-- Status: Accepted
+- Status: Accepted; Clerk sign-in methods superseded by ADR 0006
 - Date: 2026-11-21
 - Decider: Vikram Nayyar
 - Method: `/grill-me` session, two rounds

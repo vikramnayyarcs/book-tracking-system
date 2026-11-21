@@ -50,13 +50,13 @@ resource "cloudflare_ruleset" "custom_rules" {
       description = "Block known-bad paths"
       action      = "block"
       enabled     = true
-      expression  = "(http.request.uri.path in {${join(" ", [for p in var.blocked_paths : "\"${p}\""])}})"
+      expression  = "(${join(" or ", [for p in var.blocked_paths : "starts_with(http.request.uri.path, \"${p}\")"])})"
     },
     {
       description = "Block unexpected methods on the site"
       action      = "block"
       enabled     = true
-      expression  = "(not http.request.method in {\"GET\" \"HEAD\" \"OPTIONS\"})"
+      expression  = "(http.host in {\"${var.domain}\" \"www.${var.domain}\"} and not http.request.method in {\"GET\" \"HEAD\" \"OPTIONS\"})"
     },
   ]
 }

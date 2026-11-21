@@ -1,0 +1,7 @@
+This is the marketing site.
+Open the home page.
+The page shows the product name and a short description.
+Read the note about privacy.
+Your notes, recordings and photos stay private.
+Find the link to join the waitlist.
+The site uses no cookies.
