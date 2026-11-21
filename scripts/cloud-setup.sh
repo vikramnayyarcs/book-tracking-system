@@ -71,11 +71,19 @@ export PATH="$PREFIX/bin:$PATH"
 
 # The image can ship its own node in a folder ahead of $PREFIX/bin (for example
 # /opt/node22/bin). Hooks and the session's shell use the caller's PATH, so point that
-# folder's node, npm, npx and corepack at the pinned ones.
+# folder's node, npm, npx and corepack at the pinned ones. This replaces files that are
+# not ours, so only do it on a throwaway cloud VM. The SessionStart hook always has
+# CLAUDE_CODE_REMOTE=true, so it links in every cloud session even if the environment's
+# setup script runs without it.
 IFS=: read -ra caller_dirs <<<"$CALLER_PATH"
 for dir in "${caller_dirs[@]}"; do
   [ "$dir" = "$PREFIX/bin" ] && break
   [ -n "$dir" ] && [ -x "$dir/node" ] || continue
+  if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+    [ "$(readlink "$dir/node")" = "$PREFIX/bin/node" ] ||
+      echo "cloud-setup: WARNING $dir/node comes before $PREFIX/bin/node; not changing it outside a cloud session" >&2
+    continue
+  fi
   for tool in node npm npx corepack; do
     if [ "$(readlink "$dir/$tool")" != "$PREFIX/bin/$tool" ]; then
       ln -sfn "$PREFIX/bin/$tool" "$dir/$tool"

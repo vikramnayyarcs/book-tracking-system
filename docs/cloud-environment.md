@@ -36,7 +36,7 @@ The same script also runs from the SessionStart hook in every cloud session, so 
 
 What the SessionStart run adds on top of the setup script:
 
-- **Node 24 wins on PATH.** The image puts its own Node 22 (`/opt/node22/bin`) ahead of `/usr/local/bin`. The script links `node`, `npm`, `npx` and `corepack` in any such folder to the pinned ones, so hooks run on Node 24, and adds `/usr/local/bin` to the front of the session shell's PATH through `CLAUDE_ENV_FILE`.
+- **Node 24 wins on PATH.** The image puts its own Node 22 (`/opt/node22/bin`) ahead of `/usr/local/bin`. When `CLAUDE_CODE_REMOTE` is `true` (always so for the SessionStart hook), the script links `node`, `npm`, `npx` and `corepack` in any such folder to the pinned ones, so hooks run on Node 24. Anywhere else it only warns, because linking replaces files the script does not own. It also adds `/usr/local/bin` to the front of the session shell's PATH through `CLAUDE_ENV_FILE`.
 - **`npm ci`** when `node_modules` is missing.
 - **Docker.** The image has `dockerd` but does not start it. The script starts it in the background (log: `/tmp/dockerd.log`) and waits up to 60 seconds. If Docker does not come up, the script prints the end of the log and the session starts without it.
 
