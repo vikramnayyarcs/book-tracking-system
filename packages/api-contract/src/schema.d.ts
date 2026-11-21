@@ -131,10 +131,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List the reading sessions of one book, newest first */
+        get: operations["listBookSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a reading session; a retry with the same id returns the same session */
+        post: operations["createSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get one session; clients poll this while it is processed */
+        get: operations["getSession"];
+        put?: never;
+        post?: never;
+        /** Delete a session with its insights and stored audio */
+        delete: operations["deleteSession"];
+        options?: never;
+        head?: never;
+        /** Change a session */
+        patch: operations["updateSession"];
+        trace?: never;
+    };
+    "/sessions/{id}/audio-upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a signed URL to upload the audio of a session */
+        post: operations["createAudioUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Session: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            /** Format: date */
+            date: string;
+            pageFrom: number | null;
+            pageTo: number | null;
+            chapter: string | null;
+            noteText: string | null;
+            /** @enum {string} */
+            noteSource: "typed" | "voice";
+            audioSeconds: number | null;
+            hasAudio: boolean;
+            /** @enum {string} */
+            status: "draft" | "uploaded" | "transcribing" | "extracting" | "ready" | "failed";
+            errorCode: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        SessionCreate: {
+            /**
+             * Format: uuid
+             * @description Chosen by the client so a retry is safe
+             */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            /** Format: date */
+            date: string;
+            pageFrom?: number;
+            pageTo?: number;
+            chapter?: string;
+            noteText?: string;
+        };
+        SessionUpdate: {
+            /** Format: date */
+            date?: string;
+            pageFrom?: number | null;
+            pageTo?: number | null;
+            chapter?: string | null;
+            noteText?: string | null;
+        };
+        AudioUploadCreate: {
+            durationSeconds: number;
+            /**
+             * @default m4a
+             * @enum {string}
+             */
+            extension: "m4a" | "mp3" | "wav" | "webm" | "ogg";
+        };
+        AudioUpload: {
+            /** @description Send the audio bytes to this URL with PUT */
+            uploadUrl: string;
+            path: string;
+            expiresInSeconds: number;
+        };
         Health: {
             /** @constant */
             status: "ok";
@@ -524,6 +658,179 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listBookSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sessions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Session"][];
+                    };
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionCreate"];
+            };
+        };
+        responses: {
+            /** @description A session with this id already exists and is returned unchanged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            /** @description The new session */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session is deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionUpdate"];
+            };
+        };
+        responses: {
+            /** @description The changed session */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createAudioUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioUploadCreate"];
+            };
+        };
+        responses: {
+            /** @description The signed upload URL */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioUpload"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };

@@ -24,6 +24,20 @@ import {
   revokeToken,
   type TokenScope,
 } from "../tokens.ts";
+import {
+  audioPath,
+  createSession,
+  deleteSession,
+  getSession,
+  listBookSessions,
+  mayUploadAudio,
+  parseAudioUpload,
+  parseSessionCreate,
+  parseSessionUpdate,
+  sessionAudioPath,
+  setSessionAudio,
+  updateSession,
+} from "../sessions.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -249,6 +263,116 @@ export const createApp = (deps: ApiDeps) => {
     }
     await c.var.withUser((sql) => deleteBook(sql, id));
     return c.body(null, 204);
+  });
+
+  app.get("/books/:id/sessions", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser(async (sql) =>
+      (await getBook(sql, id)) === undefined
+        ? undefined
+        : listBookSessions(sql, id),
+    );
+    return result === undefined
+      ? notFound(c.get("requestId"))
+      : c.json({ items: result });
+  });
+
+  app.post("/sessions", auth("sessions:write"), async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseSessionCreate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      createSession(sql, parsed.session),
+    );
+    return result.kind === "missing"
+      ? notFound(c.get("requestId"))
+      : c.json(result.session, result.kind === "created" ? 201 : 200);
+  });
+
+  app.get("/sessions/:id", auth("sessions:write"), async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getSession(sql, id));
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.patch("/sessions/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseSessionUpdate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      updateSession(sql, id, parsed.fields),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.delete("/sessions/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: path } = await c.var.withUser(async (sql) =>
+      (await getSession(sql, id)) === undefined
+        ? undefined
+        : { audio: await sessionAudioPath(sql, id) },
+    );
+    if (path === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (path.audio !== null) {
+      await deps.objects.remove("audio", [path.audio]);
+    }
+    await c.var.withUser((sql) => deleteSession(sql, id));
+    return c.body(null, 204);
+  });
+
+  app.post("/sessions/:id/audio-upload", auth("sessions:write"), async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseAudioUpload(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result: session, tier } = await c.var.withUser((sql) =>
+      getSession(sql, id),
+    );
+    if (session === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (!mayUploadAudio(tier, parsed.durationSeconds)) {
+      return problemResponse(
+        403,
+        "tier_limit_reached",
+        "This note is longer than your plan allows",
+        c.get("requestId"),
+      );
+    }
+    const path = audioPath(c.var.userId, id, parsed.extension);
+    const upload = await deps.objects.signedUploadUrl("audio", path);
+    await c.var.withUser((sql) =>
+      setSessionAudio(sql, id, path, parsed.durationSeconds),
+    );
+    return c.json({
+      uploadUrl: upload.url,
+      path,
+      expiresInSeconds: upload.expiresInSeconds,
+    });
   });
 
   app.get("/tokens", authenticated, async (c) => {

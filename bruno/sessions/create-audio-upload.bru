@@ -1,0 +1,27 @@
+meta {
+  name: Create audio upload
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/sessions/{{sessionId}}/audio-upload
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "durationSeconds": 45,
+    "extension": "m4a"
+  }
+}
+
+docs {
+  operationId: createAudioUpload
+}
+

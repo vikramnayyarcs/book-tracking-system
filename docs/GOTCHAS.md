@@ -64,3 +64,5 @@ Fix: after editing the wrapper, check every identifier it uses is imported; the 
 ## 2026-11-21: `npm:postgres` does not work in Supabase Edge Functions
 **postgres.js from npm fails in the Edge Runtime with `ERR_NOT_IMPLEMENTED: LibuvStreamWrap.prototype.useUserBuffer`, so every query returns a 500.**
 Fix: the function's `deno.json` import map points `postgres` at the Deno build, `https://deno.land/x/postgresjs`, which has the same API. Node (tests, tooling) still uses the npm package.
+
+**Supabase signed upload URLs are valid for two hours and the time cannot be changed.** The API reports `expiresInSeconds: 7200` and the real limit on how long a client may upload is the tier's longest note, checked when the URL is requested.
