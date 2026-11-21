@@ -1,0 +1,31 @@
+variable "stack_slug" {
+  description = "Slug of the existing Grafana Cloud stack, the part before .grafana.net (repo variable GRAFANA_STACK_SLUG). Imported, never created."
+  type        = string
+}
+
+variable "github_repository" {
+  description = "Repository whose Actions secrets receive the OTLP connection details."
+  type        = string
+}
+
+variable "site_url" {
+  description = "Address the synthetic uptime check requests."
+  type        = string
+}
+
+variable "env" {
+  description = "Value of the env label on the uptime check."
+  type        = string
+}
+
+variable "probe_names" {
+  description = "Names of the Synthetic Monitoring probes that run the check."
+  type        = list(string)
+  default     = ["London", "Frankfurt"]
+}
+
+variable "check_frequency_ms" {
+  description = "Milliseconds between uptime checks; five minutes keeps usage inside the free tier."
+  type        = number
+  default     = 300000
+}

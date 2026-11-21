@@ -28,6 +28,11 @@ module "zone" {
   site_pages_subdomain = module.site_dev.subdomain
 }
 
+import {
+  to = module.supabase_dev.supabase_project.this
+  id = "gabddomwxncvuaoykrhc"
+}
+
 module "supabase_dev" {
   source = "../../modules/supabase-project"
 
@@ -36,4 +41,23 @@ module "supabase_dev" {
   github_repository      = var.github_repository
   secret_prefix          = "DEV_"
   clerk_frontend_api_url = var.clerk_frontend_api_url
+}
+
+import {
+  to = module.grafana.grafana_cloud_stack.this
+  id = var.grafana_stack_slug
+}
+
+module "grafana" {
+  source = "../../modules/grafana-stack"
+
+  providers = {
+    grafana.cloud = grafana.cloud
+    grafana.sm    = grafana.sm
+  }
+
+  stack_slug        = var.grafana_stack_slug
+  github_repository = var.github_repository
+  site_url          = module.site_dev.url
+  env               = "dev"
 }
