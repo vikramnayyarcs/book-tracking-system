@@ -1,0 +1,17 @@
+{
+  "ISBN:9780140328721": {
+    "title": "An Invented Sample Book",
+    "authors": [
+      {
+        "name": "Sample Author",
+        "url": "https://openlibrary.org/authors/OL0A/Sample_Author"
+      }
+    ],
+    "number_of_pages": 96,
+    "cover": {
+      "small": "https://covers.openlibrary.org/b/id/0-S.jpg",
+      "medium": "https://covers.openlibrary.org/b/id/0-M.jpg",
+      "large": "https://covers.openlibrary.org/b/id/0-L.jpg"
+    }
+  }
+}

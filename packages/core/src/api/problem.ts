@@ -21,6 +21,7 @@ export const problemResponse = (
   code: ProblemCode,
   title: string,
   requestId: string,
+  detail?: string,
 ) => {
   const body: Problem = {
     type: `about:blank#${code}`,
@@ -28,6 +29,7 @@ export const problemResponse = (
     status,
     code,
     instance: requestId,
+    ...(detail === undefined ? {} : { detail }),
   };
   return new Response(JSON.stringify(body), {
     status,

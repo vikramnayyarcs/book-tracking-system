@@ -3,7 +3,20 @@ import { createMiddleware } from "hono/factory";
 import type { Tier } from "../plans.ts";
 import { bearerToken, type TokenVerifier } from "./auth.ts";
 import type { Db, Sql } from "./db.ts";
+import {
+  createBook,
+  deleteBook,
+  getBook,
+  listBooks,
+  parseBookFields,
+  storagePathsForBook,
+  updateBook,
+  BOOK_STATUSES,
+  type BookStatus,
+} from "../books.ts";
+import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
+import type { ObjectStore } from "./storage.ts";
 import { problemResponse } from "./problem.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
@@ -17,6 +30,9 @@ export type ApiDeps = {
   verifyToken: TokenVerifier;
   db: Db;
   defaultTier: Tier;
+  objects: ObjectStore;
+  fetch: typeof fetch;
+  openLibraryUrl: string;
 };
 
 type Env = {
@@ -38,6 +54,20 @@ const sameSecret = (a: string, b: string) => {
   }
   return diff === 0;
 };
+
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const notFound = (requestId: string) =>
+  problemResponse(404, "not_found", "Not found", requestId);
+
+const invalid = (detail: string, requestId: string) =>
+  problemResponse(
+    400,
+    "validation_failed",
+    "Invalid request",
+    requestId,
+    detail,
+  );
 
 export const createApp = (deps: ApiDeps) => {
   const app = new Hono<Env>().basePath("/v1");
@@ -113,6 +143,108 @@ export const createApp = (deps: ApiDeps) => {
   app.get("/me", authenticated, async (c) => {
     const { tier } = await c.var.withUser(async () => undefined);
     return c.json({ id: c.var.userId, tier });
+  });
+
+  app.get("/books", authenticated, async (c) => {
+    const status = c.req.query("status");
+    if (
+      status !== undefined &&
+      !(BOOK_STATUSES as readonly string[]).includes(status)
+    ) {
+      return problemResponse(
+        400,
+        "validation_failed",
+        "Invalid status",
+        c.get("requestId"),
+      );
+    }
+    const { result } = await c.var.withUser((sql) =>
+      listBooks(sql, status as BookStatus | undefined),
+    );
+    return c.json({ items: result });
+  });
+
+  app.post("/books", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseBookFields(body, "create");
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      createBook(sql, parsed.fields),
+    );
+    return c.json(result, 201);
+  });
+
+  app.get("/books/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getBook(sql, id));
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.patch("/books/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseBookFields(body, "update");
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      updateBook(sql, id, parsed.fields),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  app.delete("/books/:id", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: book } = await c.var.withUser((sql) => getBook(sql, id));
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: paths } = await c.var.withUser((sql) =>
+      storagePathsForBook(sql, id),
+    );
+    if (paths.audio.length > 0) {
+      await deps.objects.remove("audio", paths.audio);
+    }
+    if (paths.photos.length > 0) {
+      await deps.objects.remove("photos", paths.photos);
+    }
+    await c.var.withUser((sql) => deleteBook(sql, id));
+    return c.body(null, 204);
+  });
+
+  app.get("/lookup/isbn/:isbn", authenticated, async (c) => {
+    const isbn = normalizeIsbn(c.req.param("isbn"));
+    if (isbn === undefined) {
+      return problemResponse(
+        400,
+        "isbn_invalid",
+        "Not a valid ISBN",
+        c.get("requestId"),
+      );
+    }
+    const found = await lookupIsbn(isbn, {
+      fetch: deps.fetch,
+      baseUrl: deps.openLibraryUrl,
+    });
+    return found === undefined
+      ? problemResponse(
+          404,
+          "isbn_not_found",
+          "No book found for that ISBN",
+          c.get("requestId"),
+        )
+      : c.json(found);
   });
 
   app.notFound((c) =>

@@ -15,6 +15,26 @@ const app = createApp({
   db: createDb(
     Deno.env.get("DATABASE_URL") ?? Deno.env.get("SUPABASE_DB_URL") ?? "",
   ),
+  objects: {
+    remove: async (bucket, paths) => {
+      const response = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/${bucket}`,
+        {
+          method: "DELETE",
+          headers: {
+            authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ prefixes: paths }),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Storage delete returned ${response.status}`);
+      }
+    },
+  },
+  fetch: (input, init) => fetch(input, init),
+  openLibraryUrl: Deno.env.get("OPEN_LIBRARY_URL") ?? "https://openlibrary.org",
   defaultTier: parseTier(Deno.env.get("DEFAULT_TIER")) ?? "free",
 });
 
