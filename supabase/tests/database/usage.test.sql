@@ -38,37 +38,32 @@ select results_eq(
   'alice sees only her own usage'
 );
 
-select is(
-  pg_temp.affected($$update app.usage set voice_seconds = 0 where user_id = 'bob'$$),
-  0::bigint,
-  'alice cannot update bob''s usage'
-);
-
-select is(
-  pg_temp.affected($$delete from app.usage where user_id = 'bob'$$),
-  0::bigint,
-  'alice cannot delete bob''s usage'
-);
-
 select throws_ok(
-  $$insert into app.usage (user_id, month) values ('bob', '2020-01-01')$$,
+  $$update app.usage set voice_seconds = 0 where user_id = 'alice'$$,
   '42501',
   null,
-  'alice cannot insert usage for bob'
+  'alice cannot reset her own usage'
 );
 
 select throws_ok(
-  $$update app.usage set user_id = 'bob' where user_id = 'alice'$$,
+  $$delete from app.usage where user_id = 'alice'$$,
   '42501',
   null,
-  'alice cannot hand her usage to bob'
+  'alice cannot delete her own usage'
 );
 
 select throws_ok(
-  $$insert into app.usage (month) values ('2020-01-15')$$,
-  '23514',
+  $$insert into app.usage (month) values ('2020-01-01')$$,
+  '42501',
   null,
-  'a usage month is the first day of the month'
+  'alice cannot add a usage row'
+);
+
+select throws_ok(
+  $$update app.usage set voice_seconds = 0 where user_id = 'bob'$$,
+  '42501',
+  null,
+  'alice cannot change bob''s usage either'
 );
 
 select is(
@@ -116,6 +111,13 @@ select is(
   (select ai_insights_deleted from app.usage where user_id = 'bob'),
   0,
   'alice''s deletions did not touch bob''s usage'
+);
+
+select throws_ok(
+  $$insert into app.usage (user_id, month) values ('alice', '2020-01-15')$$,
+  '23514',
+  null,
+  'a usage month is the first day of the month'
 );
 
 select lives_ok(

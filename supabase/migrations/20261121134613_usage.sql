@@ -16,24 +16,8 @@ create policy usage_select on app.usage
   for select to authenticated
   using (user_id = app.current_user_id());
 
-create policy usage_insert on app.usage
-  for insert to authenticated
-  with check (user_id = app.current_user_id());
-
-create policy usage_update on app.usage
-  for update to authenticated
-  using (user_id = app.current_user_id())
-  with check (user_id = app.current_user_id());
-
-create policy usage_delete on app.usage
-  for delete to authenticated
-  using (user_id = app.current_user_id());
-
 revoke all on app.usage from public, anon, authenticated;
-grant select, insert, delete on app.usage to authenticated;
-grant update (
-  voice_seconds, vault_questions, ai_input_tokens, ai_output_tokens, ai_insights_deleted
-) on app.usage to authenticated;
+grant select on app.usage to authenticated;
 grant all on app.usage to service_role;
 
 create function app.count_deleted_ai_insight()
