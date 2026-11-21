@@ -19,8 +19,8 @@ A GitHub workflow decides a PR's colour from fixed rules: which files it touches
 
 | Colour | When |
 | --- | --- |
-| **Red** | Any file under `infra/`, `.github/`, `scripts/claude-hooks/`, `scripts/git-hooks/`, `supabase/migrations/`; `.claude/settings*.json`, `.mcp.json`, `scripts/cloud-setup.sh`, `CLAUDE.md`, `docs/secrets.md` |
-| **Green** | Every file is documentation (`docs/**` except `docs/adr/`, `docs/briefs/` and `docs/secrets.md`; `README.md`) or a project skill (`.claude/skills/**`), with at most 300 lines changed, targeting `main` |
+| **Red** | Any file under `infra/`, `.github/`, `scripts/claude-hooks/`, `scripts/git-hooks/`, `scripts/pr-risk/` (the rules themselves), `supabase/migrations/`; `.claude/settings*.json`, `.mcp.json`, `scripts/cloud-setup.sh`, `CLAUDE.md`, `docs/secrets.md` |
+| **Green** | Every file is documentation (`docs/**` except `docs/adr/`, `docs/briefs/`, `docs/requirements.md` and `docs/secrets.md`; `README.md`) or a project skill (`.claude/skills/**`), with at most 300 lines changed, targeting `main` |
 | **Yellow** | Everything else: application and test code, ADRs, briefs, dependency changes |
 
 The first matching row wins, top to bottom. The workflow labels the PR `risk:red`, `risk:yellow` or `risk:green` and keeps one comment explaining which files set the colour. Red PRs that touch `infra/` or `.github/` say that merging changes real infrastructure or CI.
@@ -36,7 +36,7 @@ A project skill adds a short written risk assessment to each PR to help the owne
 
 ## Consequences
 
-- Documentation PRs merge without the owner; a wrong doc can land unreviewed. Docs that steer agents (ADRs, briefs, CLAUDE.md, secrets guidance) are excluded for that reason.
+- Documentation PRs merge without the owner; a wrong doc can land unreviewed. Docs that steer agents (ADRs, briefs, requirements, CLAUDE.md, secrets guidance) are excluded for that reason.
 - Merges made with the workflow's token do not trigger other workflows; green PRs never need a deploy, so this is intended.
 - Changing the rules is itself a red PR.
 - Stacked green PRs wait until they target `main`.
