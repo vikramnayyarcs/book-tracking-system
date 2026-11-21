@@ -15,6 +15,9 @@ TERRAFORM_VERSION=1.17.1
 TERRAFORM_MCP_VERSION=1.4.1
 GITLEAKS_VERSION=8.30.1
 PREFIX="${PREFIX:-/usr/local}"
+# Set only when the SessionStart hook runs the script; unset in the environment's setup script.
+SESSION_START="${CLAUDE_PROJECT_DIR:+1}"
+CALLER_PATH="$PATH"
 
 case "$(uname -m)" in
   x86_64)
@@ -66,6 +69,26 @@ fi
 # comes first on PATH. Put the pinned one first for everything this script runs.
 export PATH="$PREFIX/bin:$PATH"
 
+# The image can ship its own node in a folder ahead of $PREFIX/bin (for example
+# /opt/node22/bin). Hooks and the session's shell use the caller's PATH, so point that
+# folder's node, npm, npx and corepack at the pinned ones.
+IFS=: read -ra caller_dirs <<<"$CALLER_PATH"
+for dir in "${caller_dirs[@]}"; do
+  [ "$dir" = "$PREFIX/bin" ] && break
+  [ -n "$dir" ] && [ -x "$dir/node" ] || continue
+  for tool in node npm npx corepack; do
+    if [ "$(readlink "$dir/$tool")" != "$PREFIX/bin/$tool" ]; then
+      ln -sfn "$PREFIX/bin/$tool" "$dir/$tool"
+      echo "cloud-setup: linked $dir/$tool to $PREFIX/bin/$tool"
+    fi
+  done
+done
+
+path_line="export PATH=\"$PREFIX/bin:\$PATH\""
+if [ -n "$SESSION_START" ] && [ -n "${CLAUDE_ENV_FILE:-}" ] && ! grep -qxF "$path_line" "$CLAUDE_ENV_FILE" 2>/dev/null; then
+  echo "$path_line" >>"$CLAUDE_ENV_FILE"
+fi
+
 install_zip() {
   local name="$1" url="$2" sha="$3"
   local archive
@@ -102,7 +125,8 @@ fi
 echo "cloud-setup: node $("$PREFIX/bin/node" --version), $("$PREFIX/bin/terraform" version | head -1), gitleaks $("$PREFIX/bin/gitleaks" version), terraform-mcp-server $("$PREFIX/bin/terraform-mcp-server" --version | tail -1)"
 
 for tool in node terraform gitleaks terraform-mcp-server; do
-  if [ "$(command -v "$tool")" != "$PREFIX/bin/$tool" ]; then
-    echo "cloud-setup: WARNING $tool on PATH is $(command -v "$tool" || echo missing), not $PREFIX/bin/$tool" >&2
+  found="$(PATH="$CALLER_PATH" command -v "$tool" || true)"
+  if [ -z "$found" ] || [ "$(readlink -f "$found")" != "$(readlink -f "$PREFIX/bin/$tool")" ]; then
+    echo "cloud-setup: WARNING $tool on PATH is ${found:-missing}, not $PREFIX/bin/$tool" >&2
   fi
 done
