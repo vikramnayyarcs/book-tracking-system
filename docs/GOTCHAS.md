@@ -53,3 +53,6 @@ Fix: in the test, run `set local storage.allow_delete_query = 'true';` before th
 ## 2026-11-21: `astro preview` backgrounds itself in agent sessions
 **Astro 7 starts `astro preview` as a background daemon when it detects an AI agent session (for example Claude Code), so the command exits at once and Playwright's `webServer` fails with "Process from config.webServer exited early".**
 Fix: pass `--ignore-lock` (`playwright.config.ts` does), which keeps the server in the foreground. Stop a stray daemon with `npx astro preview stop` from `apps/site`.
+
+## 2026-11-21: local Supabase stack will not start in cloud sessions
+**The cloud session cannot start the local Supabase stack, because the agent proxy blocks the ghcr.io image blobs.** Run the pgTAP and API tests in CI; locally, check the harness against a Node shim of the Hono app.

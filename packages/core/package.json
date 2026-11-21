@@ -5,7 +5,11 @@
   "type": "module",
   "exports": {
     "./brand": "./src/brand.ts",
+    "./api": "./src/api/index.ts",
     "./plans": "./src/plans.ts",
     "./limits": "./src/limits.ts"
+  },
+  "dependencies": {
+    "hono": "4.13.19"
   }
 }

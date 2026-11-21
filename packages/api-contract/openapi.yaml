@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: Book API
+  version: 1.0.0
+  description: The only way clients read or write data. Errors use RFC 9457 problem+json.
+servers:
+  - url: /v1
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check that the API is running
+      security: []
+      responses:
+        "200":
+          description: The API is running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        default:
+          $ref: "#/components/responses/Problem"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: A Clerk session token or a personal access token
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: ok
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          description: A stable machine-readable error code, for example tier_limit_reached
+  responses:
+    Problem:
+      description: An error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
