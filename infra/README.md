@@ -6,8 +6,12 @@ Terraform for every environment. Applies run only in GitHub Actions (ADR 0002); 
 | --- | --- |
 | `bootstrap/` | R2 bucket holding all Terraform state, plus a token that can only read and write that bucket |
 | `envs/dev` | Dev environment, applied by `deploy-dev.yml` on every merge to main. Also owns the GitHub repo settings, which are shared by all environments |
-| `envs/prod` | Production (later PR; applied only through `release-prod.yml`) |
+| `envs/prod` | Production: `site-prod`, the prod Supabase project and the zone module (off until `domain` is set). Validated in CI, never planned in PRs; applied only by `release-prod.yml`, which fails unless the repo variable `PROD_ENABLED` is `true`. The Grafana stack is shared and owned by the dev root |
 | `modules/github-repo` | Repo settings: merge commits only, delete branch on merge, Dependabot, SHA-pinned allowlisted actions, read-only workflow token |
+| `modules/cloudflare-pages` | One direct-upload Pages project (`site-dev` on `pages.dev`); `deploy-dev.yml` uploads the built site with `wrangler pages deploy` |
+| `modules/cloudflare-zone` | DNS, Pages custom domains, WAF custom rules and the rate limiting rule for the apex domain. Off until `domain` is set in the dev root; the Cloudflare token then also needs Zone edit, DNS edit and Zone WAF edit |
+| `modules/supabase-project` | Dev Supabase project (`eu-west-2`, free), generated database password, Clerk registered as third-party auth, connection details written to `DEV_SUPABASE_*` repo secrets |
+| `modules/grafana-stack` | Imports the existing Grafana Cloud stack (never creates one), an OTLP write token written to `GRAFANA_OTLP_*` repo secrets, and a synthetic HTTP check on the site |
 | `r2.tfbackend` | Shared S3-backend settings for R2; each root names its own `key` |
 
 ## Bootstrap (once)

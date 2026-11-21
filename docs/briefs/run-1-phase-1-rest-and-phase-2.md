@@ -20,6 +20,14 @@ A scheduled task starts a new session every hour. Each session must check the pr
 
 Pick up where the last session stopped: read the progress issue, its comments and open PRs, and continue with the first unticked task that is not blocked. A task with an open PR but failing CI is not done; fix that PR first.
 
+## Keep output short
+
+Nobody reads a scheduled run live, so spend tokens on the work, not on narration.
+
+- **Terse:** heartbeats, progress-issue comments, your own working notes and replies. One line each, fragments fine: `Heartbeat: task 20, fixing usage grants, CI running`. No summaries of what you just did, no restating the plan, no pleasantries.
+- **Read before you write:** check CI and issue state with targeted commands (`gh pr checks`, `--json` with `--jq`), not full logs; open only the failing step's log.
+- **Normal, clear sentences** where the owner reads and decides: PR titles and bodies, `needs-owner` issues, review replies, the Finish comment, commit subjects. Keep these short too; no padding.
+
 ## How to work
 
 - One task per PR, small commits, one concern each. Branch from `main`; when a task needs an unmerged PR, stack the branch on that PR's branch and say so in the PR body ("Stacked on #N").
