@@ -8,6 +8,13 @@
       "type": "stdio",
       "command": "terraform-mcp-server",
       "args": ["stdio"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${BT_GITHUB_MCP_TOKEN:-}"
+      }
     }
   }
 }
