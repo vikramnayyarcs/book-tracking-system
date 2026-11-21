@@ -31,6 +31,7 @@ On GitHub Free private repos there are no Environments, so everything is repo-le
 | Before Phase 3 (ADR 0007) | `DEV_GROQ_API_KEY` | Secret | GitHub repo; Terraform passes it to Supabase secrets |
 | Before the dev API synthetic check (task 5, run 2) | `CLOUDFLARE_WORKERS_SUBDOMAIN` | Variable | GitHub repo; the part before `.workers.dev`; leave unset to skip the check |
 | When the GitHub MCP server is added | `BT_GITHUB_MCP_TOKEN` | Env var | Windows user env and cloud session settings |
+| Before task 12, run 2 (issue #78) | `GROQ_API_KEY` | Env var | Cloud session settings only; same value as `DEV_GROQ_API_KEY` |
 | When the Grafana MCP server is added | `BT_GRAFANA_DEV_TOKEN` | Env var | Windows user env and cloud session settings |
 | At launch only | `PROD_ENABLED` = `true` | Variable | GitHub repo; leave unset until then |
 
@@ -46,7 +47,7 @@ Every credential you created by hand, and what to do when it expires or leaks. T
 | `DEV_SUPABASE_ACCESS_TOKEN` | Supabase | The date you chose | Account → Access Tokens | `GET /v1/projects` |
 | `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` | Grafana Cloud | The date you chose; the check reads it | Access Policies → token | Access policy read |
 | `DEV_CLERK_SECRET_KEY` | Clerk | Never (roll if leaked) | API keys → Secret keys | `GET /v1/instance` |
-| `DEV_GROQ_API_KEY` | Groq | Never (roll if leaked) | console.groq.com → API Keys | `GET /openai/v1/models` |
+| `DEV_GROQ_API_KEY` (also `GROQ_API_KEY` in cloud session settings; roll both together) | Groq | Never (roll if leaked) | console.groq.com → API Keys | `GET /openai/v1/models` |
 | `BT_API_TOKEN` (env var, not checked by CI) | This API (personal access token) | The date you set, or never | Create a new token with `POST /v1/tokens`, then revoke the old one | None |
 | `BT_CLERK_SECRET_KEY` (env var, not checked by CI) | Clerk | Never (roll if leaked) | API keys → Secret keys; use the dev instance key, same value as `DEV_CLERK_SECRET_KEY` | None |
 | `BT_GITHUB_MCP_TOKEN` (env var, not checked by CI) | GitHub fine-grained PAT | The date you chose | Settings → Developer settings → PATs | None; MCP fails to start |
