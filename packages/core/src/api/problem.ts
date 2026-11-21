@@ -3,7 +3,9 @@ export type ProblemCode =
   | "not_found"
   | "gateway_rejected"
   | "unauthorized"
-  | "validation_failed";
+  | "validation_failed"
+  | "isbn_invalid"
+  | "isbn_not_found";
 
 export type Problem = {
   type: string;
@@ -19,6 +21,7 @@ export const problemResponse = (
   code: ProblemCode,
   title: string,
   requestId: string,
+  detail?: string,
 ) => {
   const body: Problem = {
     type: `about:blank#${code}`,
@@ -26,6 +29,7 @@ export const problemResponse = (
     status,
     code,
     instance: requestId,
+    ...(detail === undefined ? {} : { detail }),
   };
   return new Response(JSON.stringify(body), {
     status,

@@ -37,6 +37,140 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books:
+    get:
+      operationId: listBooks
+      summary: List the caller's books, newest first
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/BookStatus"
+      responses:
+        "200":
+          description: The caller's books
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Book"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    post:
+      operationId: createBook
+      summary: Add a book, including a past book added retrospectively
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookCreate"
+      responses:
+        "201":
+          description: The new book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /books/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getBook
+      summary: Get one book
+      responses:
+        "200":
+          description: The book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateBook
+      summary: Change a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookUpdate"
+      responses:
+        "200":
+          description: The changed book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteBook
+      summary: Delete a book with its sessions, insights and stored audio and photos
+      responses:
+        "204":
+          description: The book is deleted
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /lookup/isbn/{isbn}:
+    get:
+      operationId: lookupIsbn
+      summary: Look a book up by ISBN in Open Library
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The book details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookLookup"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -51,6 +185,134 @@ components:
         status:
           type: string
           const: ok
+    BookStatus:
+      type: string
+      enum: [reading, finished, abandoned]
+    FinishedPrecision:
+      type: string
+      enum: [day, month, year]
+    Book:
+      type: object
+      required:
+        - id
+        - isbn
+        - title
+        - author
+        - coverUrl
+        - pageCount
+        - status
+        - startedOn
+        - finishedOn
+        - finishedPrecision
+        - addedRetrospectively
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        isbn:
+          type: [string, "null"]
+        title:
+          type: string
+        author:
+          type: [string, "null"]
+        coverUrl:
+          type: [string, "null"]
+        pageCount:
+          type: [integer, "null"]
+        status:
+          $ref: "#/components/schemas/BookStatus"
+        startedOn:
+          type: [string, "null"]
+          format: date
+        finishedOn:
+          type: [string, "null"]
+          format: date
+        finishedPrecision:
+          oneOf:
+            - $ref: "#/components/schemas/FinishedPrecision"
+            - type: "null"
+        addedRetrospectively:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    BookCreate:
+      type: object
+      required: [title]
+      additionalProperties: false
+      properties:
+        isbn:
+          type: string
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        author:
+          type: string
+        coverUrl:
+          type: string
+        pageCount:
+          type: integer
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/BookStatus"
+        startedOn:
+          type: string
+          format: date
+        finishedOn:
+          type: string
+          format: date
+        finishedPrecision:
+          $ref: "#/components/schemas/FinishedPrecision"
+        addedRetrospectively:
+          type: boolean
+    BookUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        isbn:
+          type: [string, "null"]
+        title:
+          type: string
+          minLength: 1
+          maxLength: 300
+        author:
+          type: [string, "null"]
+        coverUrl:
+          type: [string, "null"]
+        pageCount:
+          type: [integer, "null"]
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/BookStatus"
+        startedOn:
+          type: [string, "null"]
+          format: date
+        finishedOn:
+          type: [string, "null"]
+          format: date
+        finishedPrecision:
+          oneOf:
+            - $ref: "#/components/schemas/FinishedPrecision"
+            - type: "null"
+        addedRetrospectively:
+          type: boolean
+    BookLookup:
+      type: object
+      required: [isbn, title, author, coverUrl, pageCount]
+      properties:
+        isbn:
+          type: string
+        title:
+          type: string
+        author:
+          type: [string, "null"]
+        coverUrl:
+          type: [string, "null"]
+        pageCount:
+          type: [integer, "null"]
     Me:
       type: object
       required: [id, tier]

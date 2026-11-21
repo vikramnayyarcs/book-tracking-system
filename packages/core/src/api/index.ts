@@ -6,3 +6,4 @@ export { clerkVerifier, bearerToken } from "./auth.ts";
 export type { Caller, TokenVerifier } from "./auth.ts";
 export { createDb } from "./db.ts";
 export type { Db, Sql } from "./db.ts";
+export type { ObjectStore } from "./storage.ts";

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
+import formatsModule from "ajv-formats";
 import { parse } from "yaml";
 
 type Json = Record<string, unknown>;
@@ -11,6 +12,8 @@ const specPath = fileURLToPath(
 const spec = parse(readFileSync(specPath, "utf8")) as Json;
 
 const ajv = new Ajv2020({ strict: false, allErrors: true });
+const addFormats = formatsModule as unknown as typeof formatsModule.default;
+addFormats(ajv);
 ajv.addSchema({ $id: "spec", ...spec });
 
 export const baseUrl = process.env["API_BASE_URL"] ?? "";
@@ -18,11 +21,22 @@ export const gatewaySecret = process.env["GATEWAY_SECRET"] ?? "";
 
 export const call = (
   path: string,
-  init: { method?: string; headers?: Record<string, string> } = {},
+  init: {
+    method?: string;
+    headers?: Record<string, string>;
+    json?: unknown;
+  } = {},
 ) =>
   fetch(`${baseUrl}/v1${path}`, {
     method: init.method ?? "GET",
-    headers: { "x-gateway-secret": gatewaySecret, ...init.headers },
+    headers: {
+      "x-gateway-secret": gatewaySecret,
+      ...(init.json === undefined
+        ? {}
+        : { "content-type": "application/json" }),
+      ...init.headers,
+    },
+    ...(init.json === undefined ? {} : { body: JSON.stringify(init.json) }),
   });
 
 const lookup = (method: string, path: string, status: number) => {
@@ -48,10 +62,10 @@ const lookup = (method: string, path: string, status: number) => {
   return content;
 };
 
-const resolveRef = (schema: Json) => {
-  const ref = schema["$ref"];
-  return typeof ref === "string" ? { $ref: `spec${ref}` } : schema;
-};
+const resolveRef = (schema: Json) =>
+  JSON.parse(
+    JSON.stringify(schema).replaceAll('"$ref":"#/', '"$ref":"spec#/'),
+  ) as Json;
 
 export const expectMatchesContract = async (
   response: Response,
