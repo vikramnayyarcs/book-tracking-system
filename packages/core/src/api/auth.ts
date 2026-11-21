@@ -5,9 +5,10 @@ export type Caller = { userId: string };
 export type TokenVerifier = (token: string) => Promise<Caller | undefined>;
 
 export const clerkVerifier = (issuer: string) => {
-  const jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
+  let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
   return (async (token) => {
     try {
+      jwks ??= createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
       const { payload } = await jwtVerify(token, jwks, { issuer });
       return typeof payload.sub === "string" && payload.sub !== ""
         ? { userId: payload.sub }
