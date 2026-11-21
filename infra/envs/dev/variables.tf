@@ -45,3 +45,8 @@ variable "clerk_frontend_api_url" {
   type        = string
   default     = ""
 }
+
+variable "grafana_stack_slug" {
+  description = "Slug of the existing Grafana Cloud stack (repo variable GRAFANA_STACK_SLUG)."
+  type        = string
+}

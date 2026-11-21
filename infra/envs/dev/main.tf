@@ -36,3 +36,22 @@ module "supabase_dev" {
   secret_prefix          = "DEV_"
   clerk_frontend_api_url = var.clerk_frontend_api_url
 }
+
+import {
+  to = module.grafana.grafana_cloud_stack.this
+  id = var.grafana_stack_slug
+}
+
+module "grafana" {
+  source = "../../modules/grafana-stack"
+
+  providers = {
+    grafana.cloud = grafana.cloud
+    grafana.sm    = grafana.sm
+  }
+
+  stack_slug        = var.grafana_stack_slug
+  github_repository = var.github_repository
+  site_url          = module.site_dev.url
+  env               = "dev"
+}

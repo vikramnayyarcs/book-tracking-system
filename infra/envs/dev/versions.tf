@@ -6,6 +6,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.29"
     }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 4.55"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
@@ -29,6 +33,16 @@ terraform {
 provider "cloudflare" {}
 
 provider "supabase" {}
+
+provider "grafana" {
+  alias = "cloud"
+}
+
+provider "grafana" {
+  alias           = "sm"
+  sm_access_token = module.grafana.sm_access_token
+  sm_url          = module.grafana.sm_url
+}
 
 provider "github" {
   owner = var.github_owner
