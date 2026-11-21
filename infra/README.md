@@ -8,6 +8,8 @@ Terraform for every environment. Applies run only in GitHub Actions (ADR 0002); 
 | `envs/dev` | Dev environment, applied by `deploy-dev.yml` on every merge to main. Also owns the GitHub repo settings, which are shared by all environments |
 | `envs/prod` | Production (later PR; applied only through `release-prod.yml`) |
 | `modules/github-repo` | Repo settings: merge commits only, delete branch on merge, Dependabot, SHA-pinned allowlisted actions, read-only workflow token |
+| `modules/cloudflare-pages` | One direct-upload Pages project (`site-dev` on `pages.dev`); `deploy-dev.yml` uploads the built site with `wrangler pages deploy` |
+| `modules/cloudflare-zone` | DNS, Pages custom domains, WAF custom rules and the rate limiting rule for the apex domain. Off until `domain` is set in the dev root; the Cloudflare token then also needs Zone edit, DNS edit and Zone WAF edit |
 | `r2.tfbackend` | Shared S3-backend settings for R2; each root names its own `key` |
 
 ## Bootstrap (once)
