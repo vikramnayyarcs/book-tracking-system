@@ -1,0 +1,23 @@
+meta {
+  name: answerReflection
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/v1/reflections/{{reflectionId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  { "answer": "An invented answer about tides." }
+}
+
+docs {
+  operationId: answerReflection
+}

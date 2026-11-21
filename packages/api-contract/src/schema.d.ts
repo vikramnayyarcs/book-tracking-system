@@ -229,6 +229,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/reflections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** List the reflection questions and answers of one book */
+        get: operations["listBookReflections"];
+        put?: never;
+        /**
+         * Ask 3 reflection questions for a stage, written from the reader's own notes
+         * @description Stage `mid` or `end`. If the book already has questions for the stage, they are returned with 200 and nothing new is generated. Needs at least one session note or insight on the book, else 422.
+         */
+        post: operations["createBookReflections"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reflections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save the answer to a reflection question */
+        patch: operations["answerReflection"];
+        trace?: never;
+    };
     "/books/{id}/insights": {
         parameters: {
             query?: never;
@@ -550,6 +592,27 @@ export interface components {
         Health: {
             /** @constant */
             status: "ok";
+        };
+        Reflection: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            bookId: string;
+            /** @enum {string} */
+            stage: "mid" | "end" | "recall";
+            position: number;
+            question: string;
+            answer: string | null;
+        };
+        ReflectionList: {
+            items: components["schemas"]["Reflection"][];
+        };
+        ReflectionCreate: {
+            /** @enum {string} */
+            stage: "mid" | "end";
+        };
+        ReflectionAnswer: {
+            answer: string | null;
         };
         /** @enum {string} */
         BookStatus: "reading" | "finished" | "abandoned";
@@ -1138,6 +1201,103 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listBookReflections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reflections, by stage and position */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Reflection"][];
+                    };
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createBookReflections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReflectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Questions already existed for this stage */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReflectionList"];
+                };
+            };
+            /** @description New questions generated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReflectionList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    answerReflection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReflectionAnswer"];
+            };
+        };
+        responses: {
+            /** @description The updated reflection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Reflection"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
