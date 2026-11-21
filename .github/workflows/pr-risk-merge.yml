@@ -1,0 +1,63 @@
+name: Merge green PRs
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  merge:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+      statuses: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Merge if green and every check passed
+        run: |
+          pr="$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[] | select(.state == "open")][0].number // empty')"
+          if [ -z "$pr" ]; then echo "No open PR for $SHA."; exit 0; fi
+
+          info="$(gh api "repos/$REPO/pulls/$pr")"
+          if [ "$(jq -r .head.sha <<<"$info")" != "$SHA" ]; then echo "#$pr has newer commits; skipping."; exit 0; fi
+          if [ "$(jq -r .draft <<<"$info")" = "true" ]; then echo "#$pr is a draft; skipping."; exit 0; fi
+          base="$(jq -r .base.ref <<<"$info")"
+
+          colour="$(gh api --paginate "repos/$REPO/pulls/$pr/files" \
+            --jq '.[] | {filename, previous_filename, additions, deletions}' \
+            | jq -s --arg base "$base" '{base: $base, files: .}' \
+            | node scripts/pr-risk/classify.ts | jq -r .colour)"
+          if [ "$colour" != "green" ]; then echo "#$pr is $colour; leaving it for the owner."; exit 0; fi
+
+          pending_or_failed="$(gh api --paginate "repos/$REPO/commits/$SHA/check-runs" \
+            --jq '.check_runs[] | select(.status != "completed" or (.conclusion | IN("success","neutral","skipped") | not)) | "\(.name): \(.status) \(.conclusion)"')"
+          if [ -n "$pending_or_failed" ]; then
+            echo "#$pr is green but these checks have not passed:"
+            echo "$pending_or_failed"
+            exit 0
+          fi
+          state="$(gh api "repos/$REPO/commits/$SHA/status" --jq .state)"
+          if [ "$state" != "success" ] && [ "$(gh api "repos/$REPO/commits/$SHA/status" --jq '.statuses | length')" != "0" ]; then
+            echo "#$pr has commit statuses in state $state; skipping."
+            exit 0
+          fi
+
+          gh pr merge "$pr" --repo "$REPO" --merge --match-head-commit "$SHA"
+          echo "Merged #$pr (green)."
