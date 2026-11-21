@@ -1,6 +1,6 @@
 # ADR 0004: Unattended cloud runs and PR videos
 
-- Status: Accepted
+- Status: Accepted; merging of green PRs amended by ADR 0005
 - Date: 2026-11-21
 - Decider: Vikram Nayyar
 - Method: decided while finishing Phase 1 setup (20 and 21 November)

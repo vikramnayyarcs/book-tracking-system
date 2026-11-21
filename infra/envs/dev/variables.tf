@@ -23,3 +23,25 @@ variable "github_app_private_key" {
   type        = string
   sensitive   = true
 }
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account that owns the Pages projects (repo variable CLOUDFLARE_ACCOUNT_ID)."
+  type        = string
+}
+
+variable "domain" {
+  description = "Apex domain of the product. Leave empty until the domain is bought and added to Cloudflare; the zone module stays off while it is empty."
+  type        = string
+  default     = ""
+}
+
+variable "supabase_organization_id" {
+  description = "Supabase organization slug (repo variable DEV_SUPABASE_ORG_ID)."
+  type        = string
+}
+
+variable "clerk_frontend_api_url" {
+  description = "Clerk development instance Frontend API URL (repo variable DEV_CLERK_FRONTEND_API_URL). Empty skips registering Clerk with Supabase."
+  type        = string
+  default     = ""
+}
