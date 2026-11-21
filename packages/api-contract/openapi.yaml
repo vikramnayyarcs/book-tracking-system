@@ -688,6 +688,46 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /ask:
+    post:
+      operationId: askVault
+      summary: Ask a question and get an answer from the caller's own insights only, with citations (counts toward the monthly vault question limit; the question and answer are never stored or logged)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              additionalProperties: false
+              properties:
+                question:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                bookId:
+                  type: string
+                  format: uuid
+                  description: Limit the answer to one book
+      responses:
+        "200":
+          description: The answer. When nothing relevant is found, answered is false and no model is called.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AskAnswer"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /export:
     get:
       operationId: exportVault
@@ -922,6 +962,39 @@ components:
           type: string
         answer:
           type: [string, "null"]
+    AskAnswer:
+      type: object
+      required: [answered, answer, citations, warn]
+      properties:
+        answered:
+          type: boolean
+        answer:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AskCitation"
+        warn:
+          type: boolean
+          description: True when the caller has used at least 80% of this month's vault questions
+    AskCitation:
+      type: object
+      required: [insightId, bookId, bookTitle, sessionId, sessionDate]
+      properties:
+        insightId:
+          type: string
+          format: uuid
+        bookId:
+          type: string
+          format: uuid
+        bookTitle:
+          type: string
+        sessionId:
+          type: [string, "null"]
+          format: uuid
+        sessionDate:
+          type: [string, "null"]
+          format: date
     SearchResult:
       type: object
       required: [kind, id, bookId, bookTitle, snippet, rank]
