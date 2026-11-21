@@ -1,5 +1,7 @@
 {
   "imports": {
-    "hono": "npm:hono@4.13.19"
+    "hono": "npm:hono@4.13.19",
+    "jose": "npm:jose@6.2.18",
+    "postgres": "npm:postgres@4.1.1"
   }
 }

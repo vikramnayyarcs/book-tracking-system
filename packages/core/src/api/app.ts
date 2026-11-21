@@ -1,4 +1,8 @@
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
+import type { Tier } from "../plans.ts";
+import { bearerToken, type TokenVerifier } from "./auth.ts";
+import type { Db, Sql } from "./db.ts";
 import type { Logger } from "./logger.ts";
 import { problemResponse } from "./problem.ts";
 
@@ -10,9 +14,20 @@ export type ApiDeps = {
   logger: Logger;
   newRequestId: () => string;
   now: () => number;
+  verifyToken: TokenVerifier;
+  db: Db;
+  defaultTier: Tier;
 };
 
-type Env = { Variables: { requestId: string } };
+type Env = {
+  Variables: {
+    requestId: string;
+    userId: string;
+    withUser: <T>(
+      work: (sql: Sql) => Promise<T>,
+    ) => Promise<{ result: T; tier: Tier }>;
+  };
+};
 
 const sameSecret = (a: string, b: string) => {
   const left = new TextEncoder().encode(a);
@@ -26,6 +41,25 @@ const sameSecret = (a: string, b: string) => {
 
 export const createApp = (deps: ApiDeps) => {
   const app = new Hono<Env>().basePath("/v1");
+
+  const authenticated = createMiddleware<Env>(async (c, next) => {
+    const token = bearerToken(c.req.header("authorization"));
+    const caller =
+      token === undefined ? undefined : await deps.verifyToken(token);
+    if (caller === undefined) {
+      return problemResponse(
+        401,
+        "unauthorized",
+        "Missing or invalid token",
+        c.get("requestId"),
+      );
+    }
+    c.set("userId", caller.userId);
+    c.set("withUser", (work) =>
+      deps.db.asUser(caller.userId, deps.defaultTier, work),
+    );
+    await next();
+  });
 
   app.use("*", async (c, next) => {
     const requestId = deps.newRequestId();
@@ -75,6 +109,11 @@ export const createApp = (deps: ApiDeps) => {
   });
 
   app.get("/health", (c) => c.json({ status: "ok" as const }));
+
+  app.get("/me", authenticated, async (c) => {
+    const { tier } = await c.var.withUser(async () => undefined);
+    return c.json({ id: c.var.userId, tier });
+  });
 
   app.notFound((c) =>
     problemResponse(404, "not_found", "Not found", c.get("requestId")),

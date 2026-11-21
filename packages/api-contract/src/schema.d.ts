@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the signed-in user, creating the account on the first call */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -28,6 +45,11 @@ export interface components {
         Health: {
             /** @constant */
             status: "ok";
+        };
+        Me: {
+            id: string;
+            /** @enum {string} */
+            tier: "free" | "plus";
         };
         Problem: {
             type: string;
@@ -75,6 +97,28 @@ export interface operations {
                     "application/json": components["schemas"]["Health"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The signed-in user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
