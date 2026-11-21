@@ -16,6 +16,27 @@ const app = createApp({
     Deno.env.get("DATABASE_URL") ?? Deno.env.get("SUPABASE_DB_URL") ?? "",
   ),
   objects: {
+    signedUploadUrl: async (bucket, path) => {
+      const response = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/upload/sign/${bucket}/${path}`,
+        {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "content-type": "application/json",
+          },
+          body: "{}",
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Storage sign returned ${response.status}`);
+      }
+      const { url } = (await response.json()) as { url: string };
+      const publicBase =
+        Deno.env.get("STORAGE_PUBLIC_URL") ??
+        `${Deno.env.get("SUPABASE_URL")}/storage/v1`;
+      return { url: `${publicBase}${url}`, expiresInSeconds: 7200 };
+    },
     remove: async (bucket, paths) => {
       const response = await fetch(
         `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/${bucket}`,
