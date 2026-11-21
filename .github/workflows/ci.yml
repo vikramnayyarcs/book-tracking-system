@@ -125,3 +125,18 @@ jobs:
           terraform init -backend-config=../../r2.tfbackend -lockfile=readonly
           terraform plan -lock-timeout=5m -no-color | tee plan.txt
           { echo '## Plan for dev'; echo '```'; tail -n 80 plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  cloud-setup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: First run installs the pinned tools
+        run: sudo env "PATH=$PATH" bash scripts/cloud-setup.sh
+
+      - name: Second run changes nothing
+        run: |
+          before="$(sha256sum /usr/local/bin/{node,terraform,gitleaks,terraform-mcp-server})"
+          sudo env "PATH=$PATH" bash scripts/cloud-setup.sh
+          after="$(sha256sum /usr/local/bin/{node,terraform,gitleaks,terraform-mcp-server})"
+          [ "$before" = "$after" ]
