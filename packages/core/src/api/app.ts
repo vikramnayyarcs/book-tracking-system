@@ -47,6 +47,7 @@ import {
   setSessionAudio,
   updateSession,
 } from "../sessions.ts";
+import { parseSearch, searchVault } from "../search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -449,6 +450,17 @@ export const createApp = (deps: ApiDeps) => {
     }
     const { result } = await c.var.withUser((sql) => deleteInsight(sql, id));
     return result ? c.body(null, 204) : notFound(c.get("requestId"));
+  });
+
+  app.get("/search", authenticated, async (c) => {
+    const parsed = parseSearch(c.req.query("q"), c.req.query("limit"));
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      searchVault(sql, parsed.query, parsed.limit),
+    );
+    return c.json({ items: result });
   });
 
   app.get("/tokens", authenticated, async (c) => {
