@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(16);
 
 select is((select count(*) from app.users), 2::bigint, 'the seed creates two users');
 
@@ -7,6 +7,7 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"user_seed_alice","role":"authenticated"}', true);
 
 select is((select count(*) from app.api_tokens), 1::bigint, 'seeded alice sees her token');
+select is((select count(*) from app.push_subscriptions), 1::bigint, 'seeded alice sees her push subscription');
 select is((select count(*) from app.books), 3::bigint, 'seeded alice sees her 3 books');
 select is((select count(*) from app.sessions), 3::bigint, 'seeded alice sees her 3 sessions');
 select is((select count(*) from app.insights), 3::bigint, 'seeded alice sees her 3 insights');
@@ -21,6 +22,7 @@ select is(
 select set_config('request.jwt.claims', '{"sub":"user_seed_bob","role":"authenticated"}', true);
 
 select is((select count(*) from app.api_tokens), 1::bigint, 'seeded bob sees his token');
+select is((select count(*) from app.push_subscriptions), 0::bigint, 'seeded bob has no push subscription');
 select is((select count(*) from app.books), 2::bigint, 'seeded bob sees his 2 books');
 select is((select count(*) from app.sessions), 2::bigint, 'seeded bob sees his 2 sessions');
 select is((select count(*) from app.insights), 2::bigint, 'seeded bob sees his 2 insights');
