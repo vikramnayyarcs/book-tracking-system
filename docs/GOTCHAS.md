@@ -60,3 +60,7 @@ Fix: pass `--ignore-lock` (`playwright.config.ts` does), which keeps the server 
 ## 2026-11-21: the edge wrapper is not typechecked
 **`supabase/functions/api/index.ts` runs on Deno, so `npm run typecheck` does not cover it, and a missing import shows up only as a runtime `ReferenceError` in `supabase functions serve`.**
 Fix: after editing the wrapper, check every identifier it uses is imported; the `api` CI job prints the last 40 lines of the function log when the function does not start.
+
+## 2026-11-21: `npm:postgres` does not work in Supabase Edge Functions
+**postgres.js from npm fails in the Edge Runtime with `ERR_NOT_IMPLEMENTED: LibuvStreamWrap.prototype.useUserBuffer`, so every query returns a 500.**
+Fix: the function's `deno.json` import map points `postgres` at the Deno build, `https://deno.land/x/postgresjs`, which has the same API. Node (tests, tooling) still uses the npm package.
