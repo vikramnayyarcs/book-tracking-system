@@ -3,7 +3,9 @@ export type ProblemCode =
   | "not_found"
   | "gateway_rejected"
   | "unauthorized"
-  | "validation_failed";
+  | "validation_failed"
+  | "isbn_invalid"
+  | "isbn_not_found";
 
 export type Problem = {
   type: string;

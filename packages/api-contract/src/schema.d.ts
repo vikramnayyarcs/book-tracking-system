@@ -38,6 +38,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the caller's books, newest first */
+        get: operations["listBooks"];
+        put?: never;
+        /** Add a book, including a past book added retrospectively */
+        post: operations["createBook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** Get one book */
+        get: operations["getBook"];
+        put?: never;
+        post?: never;
+        /** Delete a book with its sessions, insights and stored audio and photos */
+        delete: operations["deleteBook"];
+        options?: never;
+        head?: never;
+        /** Change a book */
+        patch: operations["updateBook"];
+        trace?: never;
+    };
+    "/lookup/isbn/{isbn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Look a book up by ISBN in Open Library */
+        get: operations["lookupIsbn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -45,6 +101,63 @@ export interface components {
         Health: {
             /** @constant */
             status: "ok";
+        };
+        /** @enum {string} */
+        BookStatus: "reading" | "finished" | "abandoned";
+        /** @enum {string} */
+        FinishedPrecision: "day" | "month" | "year";
+        Book: {
+            /** Format: uuid */
+            id: string;
+            isbn: string | null;
+            title: string;
+            author: string | null;
+            coverUrl: string | null;
+            pageCount: number | null;
+            status: components["schemas"]["BookStatus"];
+            /** Format: date */
+            startedOn: string | null;
+            /** Format: date */
+            finishedOn: string | null;
+            finishedPrecision: components["schemas"]["FinishedPrecision"] | null;
+            addedRetrospectively: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        BookCreate: {
+            isbn?: string;
+            title: string;
+            author?: string;
+            coverUrl?: string;
+            pageCount?: number;
+            status?: components["schemas"]["BookStatus"];
+            /** Format: date */
+            startedOn?: string;
+            /** Format: date */
+            finishedOn?: string;
+            finishedPrecision?: components["schemas"]["FinishedPrecision"];
+            addedRetrospectively?: boolean;
+        };
+        BookUpdate: {
+            isbn?: string | null;
+            title?: string;
+            author?: string | null;
+            coverUrl?: string | null;
+            pageCount?: number | null;
+            status?: components["schemas"]["BookStatus"];
+            /** Format: date */
+            startedOn?: string | null;
+            /** Format: date */
+            finishedOn?: string | null;
+            finishedPrecision?: components["schemas"]["FinishedPrecision"] | null;
+            addedRetrospectively?: boolean;
+        };
+        BookLookup: {
+            isbn: string;
+            title: string;
+            author: string | null;
+            coverUrl: string | null;
+            pageCount: number | null;
         };
         Me: {
             id: string;
@@ -119,6 +232,163 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listBooks: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["BookStatus"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The caller's books */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Book"][];
+                    };
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookCreate"];
+            };
+        };
+        responses: {
+            /** @description The new book */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Book"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The book */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Book"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The book is deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookUpdate"];
+            };
+        };
+        responses: {
+            /** @description The changed book */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Book"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    lookupIsbn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                isbn: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The book details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookLookup"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
