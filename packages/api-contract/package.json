@@ -1,0 +1,17 @@
+{
+  "name": "@book-tracking-system/api-contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./src/schema.d.ts",
+    "./openapi.yaml": "./openapi.yaml"
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi.yaml -o src/schema.d.ts",
+    "check": "openapi-typescript openapi.yaml -o src/schema.d.ts && git diff --exit-code -- src/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0"
+  }
+}

@@ -54,6 +54,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: API contract types are up to date
+        run: npm run contract:check
+
       - name: Test
         run: npm test
 

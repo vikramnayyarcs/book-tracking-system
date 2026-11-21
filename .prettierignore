@@ -7,3 +7,4 @@ skills-lock.json
 .terraform/
 .terraform.lock.hcl
 *.md
+packages/api-contract/src/schema.d.ts
