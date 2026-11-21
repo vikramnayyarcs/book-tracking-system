@@ -1,0 +1,23 @@
+meta {
+  name: Clerk: create session
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://api.clerk.com/v1/sessions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{process.env.BT_CLERK_SECRET_KEY}}
+}
+
+body:json {
+  { "user_id": "{{clerkUserId}}" }
+}
+
+script:post-response {
+  bru.setVar("clerkSessionId", res.body.id);
+}

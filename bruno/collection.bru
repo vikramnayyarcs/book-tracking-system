@@ -1,0 +1,12 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}
+
+script:pre-request {
+  const token = bru.getVar("clerkToken") || bru.getProcessEnv("BT_API_TOKEN");
+  bru.setVar("bearerToken", token);
+}

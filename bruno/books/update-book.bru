@@ -1,0 +1,27 @@
+meta {
+  name: Update book
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/v1/books/{{bookId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "status": "finished",
+    "finishedOn": "2026-02-01",
+    "finishedPrecision": "month"
+  }
+}
+
+docs {
+  operationId: updateBook
+}

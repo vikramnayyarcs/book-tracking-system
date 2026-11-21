@@ -1,0 +1,19 @@
+meta {
+  name: Clerk: find test user
+  type: http
+  seq: 1
+}
+
+get {
+  url: https://api.clerk.com/v1/users?external_id=bt-test-alice
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{process.env.BT_CLERK_SECRET_KEY}}
+}
+
+script:post-response {
+  bru.setVar("clerkUserId", res.body[0].id);
+}
