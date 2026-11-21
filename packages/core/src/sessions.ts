@@ -248,6 +248,14 @@ export const listBookSessions = async (sql: Sql, bookId: string) => {
   return rows.map(toSession);
 };
 
+export const listAllSessions = async (sql: Sql) => {
+  const rows = await sql<SessionRow[]>`
+    select ${sql.unsafe(columns)} from app.sessions
+    order by date, created_at, id
+  `;
+  return rows.map(toSession);
+};
+
 export type CreateResult =
   { kind: "created" | "existing"; session: Session } | { kind: "missing" };
 

@@ -147,6 +147,14 @@ export const parseInsightUpdate = (input: unknown) => {
   return { ok: true, fields } as const;
 };
 
+export const listAllInsights = async (sql: Sql) => {
+  const rows = await sql<InsightRow[]>`
+    select ${sql.unsafe(columns)} from app.insights
+    order by created_at, id
+  `;
+  return rows.map(toInsight);
+};
+
 export const listBookInsights = async (sql: Sql, bookId: string) => {
   const exists = await sql<{ id: string }[]>`
     select id from app.books where id = ${bookId}
