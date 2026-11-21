@@ -57,6 +57,9 @@ jobs:
       - name: API contract types are up to date
         run: npm run contract:check
 
+      - name: Every contract operation has a Bruno request
+        run: node scripts/bruno-check/check.ts
+
       - name: Test
         run: npm test
 

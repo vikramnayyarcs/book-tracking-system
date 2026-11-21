@@ -1,0 +1,31 @@
+meta {
+  name: Create book
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/books
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "title": "An Invented Sample Book",
+    "author": "Sample Author",
+    "pageCount": 96
+  }
+}
+
+docs {
+  operationId: createBook
+}
+
+script:post-response {
+  bru.setVar("bookId", res.body.id);
+}
