@@ -1,10 +1,6 @@
 export type Finding = { setting: string; expected: string; actual: string };
 
-type Attribute = {
-  enabled?: boolean;
-  first_factors?: string[];
-  verifications?: string[];
-};
+type Attribute = { enabled?: boolean };
 
 export type ClerkEnvironment = {
   user_settings?: {
@@ -22,6 +18,8 @@ export const offAttributes = [
   "web3_wallet",
   "passkey",
 ] as const;
+
+export const onSocial = ["oauth_google", "oauth_apple"] as const;
 
 const describe = (value: unknown) =>
   value === undefined ? "missing" : JSON.stringify(value);
@@ -46,22 +44,14 @@ export const evaluate = (
   expect("instance type", "development", instance.environment_type);
   const email = attributes["email_address"];
   expect("email address enabled", true, email?.enabled);
-  expect(
-    "email address first factor includes email link",
-    true,
-    email?.first_factors?.includes("email_link"),
-  );
-  expect(
-    "email address verified by email link",
-    true,
-    email?.verifications?.includes("email_link"),
-  );
   for (const name of offAttributes) {
     expect(`${name} enabled`, false, attributes[name]?.enabled ?? false);
   }
-  expect("social google enabled", true, social["oauth_google"]?.enabled);
+  for (const name of onSocial) {
+    expect(`social ${name} enabled`, true, social[name]?.enabled);
+  }
   for (const [name, connection] of Object.entries(social)) {
-    if (name !== "oauth_google") {
+    if (!(onSocial as readonly string[]).includes(name)) {
       expect(`social ${name} enabled`, false, connection?.enabled ?? false);
     }
   }

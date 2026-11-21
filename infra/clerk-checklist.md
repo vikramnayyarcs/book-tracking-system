@@ -1,6 +1,6 @@
 # Clerk checklist (development instance)
 
-Clerk has no Terraform provider, so these settings are made by hand in the Clerk dashboard and checked by CI (`scripts/clerk/check.ts`, workflow `clerk-check.yml`). They come from ADR 0003. If you change a setting, change this file and `scripts/clerk/expected.ts` in the same PR.
+Clerk has no Terraform provider, so these settings are made by hand in the Clerk dashboard and checked by CI (`scripts/clerk/check.ts`, workflow `clerk-check.yml`). They come from ADR 0003 as amended by ADR 0006. If you change a setting, change this file and `scripts/clerk/expected.ts` in the same PR.
 
 Dashboard: your application → **Development** instance.
 
@@ -8,9 +8,9 @@ Dashboard: your application → **Development** instance.
 
 | Where | Setting | Value |
 | --- | --- | --- |
-| Configure → User & authentication → Email, phone, username | Email address | On, used for sign-in, verified with **email link** |
-| Same page | Phone number, username, password, web3 wallet, passkeys | Off |
-| Configure → User & authentication → Social connections | Google | On (Clerk's shared credentials in development) |
+| Configure → User & authentication → Email, phone, username | Email address | On. How it signs in and verifies is left as it is live (ADR 0006); not checked |
+| Same page | Phone number, username, password, web3 wallet, passkeys | Off (password was turned off on 2026-11-21) |
+| Configure → User & authentication → Social connections | Google and Apple | On (Clerk's shared credentials in development) |
 | Same page | Every other social connection | Off |
 | API keys | Secret key and Frontend API URL | Dev instance (`sk_test_…`, `…clerk.accounts.dev`) |
 
