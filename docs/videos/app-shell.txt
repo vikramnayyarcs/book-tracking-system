@@ -1,5 +1,7 @@
-This video shows the sign-in page.
+This video shows sign-in and the main screen.
 A visitor opens the settings page without a session.
 The app sends the visitor to the sign-in page.
-The page shows a heading and the sign-in form.
-The visitor cannot see the navigation or any book.
+The test reader signs in.
+The app shows the main screen with the navigation bar.
+The navigation bar has three links: Shelf, Search and Settings.
+The reader opens Settings.

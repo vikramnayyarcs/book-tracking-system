@@ -30,6 +30,9 @@ test("the sign-in page works with the keyboard and has no accessibility violatio
   await expect(
     page.getByRole("heading", { level: 1, name: `Sign in to ${brand.name}` }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Sign-in is not set up in this build."),
+  ).toHaveCount(0);
   await page.keyboard.press("Tab");
   await expectNoAxeViolations(page);
 });
