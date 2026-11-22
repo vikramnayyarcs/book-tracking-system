@@ -1,0 +1,37 @@
+{
+  "id": "chatcmpl-bf2dfc06-570d-46f5-9e4b-235f324eeed7",
+  "object": "chat.completion",
+  "created": 1795311124,
+  "model": "openai/gpt-oss-20b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"summary\":\"You noted that a pear orchard keeps paying after you stop working, like a savings account. You noted that pear trees need years before the first harvest, so patience is the real skill.\"}",
+        "reasoning": "We need to produce a JSON with key \"summary\" and value a paragraph 3-6 sentences, second person, using only the reader's notes. The notes: \"A pear orchard keeps paying after you stop working, like a savings account.\" and \"Pear trees need years before the first harvest, so patience is the real skill.\" We need to cover main ideas: orchard pays after stop working, like savings account; patience needed. Use second person: \"you noted that...\" etc. Use only the notes. No extra. So maybe: \"You noted that a pear orchard keeps paying after you stop working, like a savings account. You noted that pear trees need years before the first harvest, so patience is the real skill.\" That's 2 sentences. But requirement: 3 to 6 sentences. If notes are very short, write fewer sentences. So 2 sentences is okay. But we can add a third sentence summarizing? But must only use notes. We can't add new content. We could combine into one sentence? But we need 3-6 sentences. But rule: If notes are very short, write fewer sentences. So 2 sentences is fine. But we need to keep second person. So \"You noted that a pear orchard keeps paying after you stop working, like a savings account. You noted that pear trees need years before the first harvest, so patience is the real skill.\" That's fine. JSON: {\"summary\":\"You noted that a pear orchard keeps paying after you stop working, like a savings account. You noted that pear trees need years before the first harvest, so patience is the real skill.\"} Ensure compact JSON. No extra spaces? It's okay. Ensure valid JSON. Let's produce."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "queue_time": 0.076055764,
+    "prompt_tokens": 333,
+    "prompt_time": 0.017352391,
+    "completion_tokens": 400,
+    "completion_time": 0.422861224,
+    "total_tokens": 733,
+    "total_time": 0.440213615,
+    "completion_tokens_details": {
+      "reasoning_tokens": 350
+    }
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_1d46a73b8b",
+  "x_groq": {
+    "id": "req_01m80e3fveenpt600ca69seg2v",
+    "seed": 1804751472
+  },
+  "service_tier": "on_demand"
+}

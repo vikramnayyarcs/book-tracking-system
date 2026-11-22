@@ -1,0 +1,15 @@
+This video shows the stats endpoint.
+All data in this test run is seeded test data.
+First, log two sessions, one with a voice note, and add two insights and one quote.
+Next, finish the book and give it five stars.
+Next, ask the API for the stats.
+The response lists the sessions for each of the last 12 weeks.
+It lists the books finished and the voice minutes for each of the last 12 months.
+A week or month with no data shows a zero.
+The response also shows the insights and quotes for each book.
+It shows how many books have each rating, and how many books have each status.
+The weeks and months use the time zone of the user.
+The response has no streak count and no list of missed days.
+Next, a second user asks for the stats.
+The response does not include the books of the first user.
+This shows that users cannot see the stats of other users.

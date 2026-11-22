@@ -1,0 +1,33 @@
+{
+  "id": "chatcmpl-17ab7cca-c1b0-4a96-a2a1-18f752a9d25f",
+  "object": "chat.completion",
+  "created": 1795304771,
+  "model": "qwen/qwen3.8-27b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"lines\": [\"The lighthouse keeper of Marrowick counted tides\", \"the way other people counted coins. Each evening\", \"he wrote one number in a blue ledger and closed it.\", \"Nobody asked him why. The sea, he said, kept\", \"better accounts than any bank in the valley.\"]}"
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "queue_time": 0.256221031,
+    "prompt_tokens": 1123,
+    "prompt_time": 0.568930678,
+    "completion_tokens": 66,
+    "completion_time": 0.455054448,
+    "total_tokens": 1189,
+    "total_time": 1.023985126
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_7238fa2be5",
+  "x_groq": {
+    "id": "req_01m8081j8meqhb5axdx7a3pja6",
+    "seed": 195084845
+  },
+  "service_tier": "on_demand"
+}

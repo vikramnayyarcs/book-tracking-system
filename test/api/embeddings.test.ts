@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   groqSpeech,
   groqText,
+  groqVision,
   httpEmbedder,
 } from "../../packages/core/src/ai/index.ts";
 import {
@@ -42,6 +43,7 @@ const makeApp = (embedUrl: string) =>
     embedder: httpEmbedder({ url: embedUrl }),
     speech: groqSpeech({ apiKey: "test" }),
     text: groqText({ apiKey: "test", model: "recorded" }),
+    vision: groqVision({ apiKey: "test", model: "recorded" }),
     waitUntil: () => undefined,
   });
 

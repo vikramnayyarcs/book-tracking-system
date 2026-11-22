@@ -7,8 +7,10 @@ import {
 import {
   groqSpeech,
   groqText,
+  groqVision,
   httpEmbedder,
   INSIGHT_MODEL,
+  VISION_MODEL,
 } from "../../../packages/core/src/ai/index.ts";
 import type { Embedder } from "../../../packages/core/src/ai/types.ts";
 import { parseTier } from "../../../packages/core/src/plans.ts";
@@ -54,6 +56,11 @@ const app = createApp({
   embedder,
   speech: groqSpeech({ apiKey: groqKey, baseUrl: groqUrl }),
   text: groqText({ apiKey: groqKey, model: INSIGHT_MODEL, baseUrl: groqUrl }),
+  vision: groqVision({
+    apiKey: groqKey,
+    model: VISION_MODEL,
+    baseUrl: groqUrl,
+  }),
   waitUntil: (work) => EdgeRuntime.waitUntil(work),
   gatewaySecret: Deno.env.get("GATEWAY_SECRET") ?? "",
   jobsSecret: Deno.env.get("JOBS_SECRET") ?? "",
