@@ -1,6 +1,6 @@
-import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { brand } from "@book-tracking-system/core/brand";
+import { expectNoAxeViolations } from "./axe.ts";
 
 test("site shows the brand and has no accessibility violations", async ({
   page,
@@ -15,8 +15,5 @@ test("site shows the brand and has no accessibility violations", async ({
     page.getByRole("link", { name: "Join the waitlist" }),
   ).toHaveAttribute("href", brand.waitlistUrl);
 
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .analyze();
-  expect(results.violations).toEqual([]);
+  await expectNoAxeViolations(page);
 });

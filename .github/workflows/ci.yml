@@ -88,11 +88,64 @@ jobs:
           path: playwright-report
           retention-days: 7
 
+  web-e2e:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Did the web app change?
+        id: changed
+        run: |
+          if git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- apps/web packages/core packages/api-contract supabase test/e2e playwright.web.config.ts .github/workflows/ci.yml .github/actions/local-stack package.json; then
+            echo "web=false" >> "$GITHUB_OUTPUT"
+            echo "No web changes; skipping."
+          else
+            echo "web=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.changed.outputs.web == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+        if: steps.changed.outputs.web == 'true'
+
+      - uses: ./.github/actions/local-stack
+        if: steps.changed.outputs.web == 'true'
+        with:
+          clerk-issuer: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
+
+      - name: Install Chromium
+        if: steps.changed.outputs.web == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright and axe
+        if: steps.changed.outputs.web == 'true'
+        run: npx playwright test --config playwright.web.config.ts --trace off
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure() && steps.changed.outputs.web == 'true'
+        with:
+          name: playwright-report-web
+          path: playwright-report
+          retention-days: 7
+
+      - name: Show the function log
+        if: failure() && steps.changed.outputs.web == 'true'
+        run: tail -n 60 "$RUNNER_TEMP/functions.log"
+
+      - name: Stop the stack
+        if: always() && steps.changed.outputs.web == 'true'
+        run: npx supabase stop --no-backup
+
   pr-video:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    env:
-      PIPER_VERSION: 1.8.0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -111,7 +164,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg
           python3 -m venv "$RUNNER_TEMP/piper"
-          "$RUNNER_TEMP/piper/bin/pip" install --quiet "piper-tts==${PIPER_VERSION}"
+          "$RUNNER_TEMP/piper/bin/pip" install --quiet --require-hashes -r scripts/video/piper-requirements.txt
           npx playwright install --with-deps chromium
 
       - name: Download the voice
@@ -122,32 +175,52 @@ jobs:
           name="$(jq -r .name scripts/video/voice.json)"
           curl -fsSL "$(jq -r .modelUrl scripts/video/voice.json)" -o "$voice/${name}.onnx"
           curl -fsSL "$(jq -r .configUrl scripts/video/voice.json)" -o "$voice/${name}.onnx.json"
-          model_sha="$(sha256sum "$voice/${name}.onnx" | cut -d' ' -f1)"
-          config_sha="$(sha256sum "$voice/${name}.onnx.json" | cut -d' ' -f1)"
-          if [ "$(jq -r .modelSha256 scripts/video/voice.json)" = "PENDING" ]; then
-            {
-              echo '## Voice checksums not pinned yet'
-              echo "Set these in scripts/video/voice.json after checking them against the Piper voices repository:"
-              echo "- modelSha256: \`${model_sha}\`"
-              echo "- configSha256: \`${config_sha}\`"
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "$(jq -r .modelSha256 scripts/video/voice.json)  $voice/${name}.onnx" | sha256sum --check
-            echo "$(jq -r .configSha256 scripts/video/voice.json)  $voice/${name}.onnx.json" | sha256sum --check
-          fi
+          echo "$(jq -r .modelSha256 scripts/video/voice.json)  $voice/${name}.onnx" | sha256sum --check
+          echo "$(jq -r .configSha256 scripts/video/voice.json)  $voice/${name}.onnx.json" | sha256sum --check
           echo "model=$voice/${name}.onnx" >> "$GITHUB_OUTPUT"
 
-      - name: Record the demo
-        run: PW_VIDEO=on npx playwright test --trace off
+      - uses: ./.github/actions/local-stack
+        with:
+          clerk-issuer: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
 
-      - name: Build the explainer video
+      - name: Record the site demo
+        run: PW_VIDEO=on npx playwright test --trace off --output test-results/site
+
+      - name: Record the app demos
+        env:
+          PW_VIDEO: "on"
+          PW_SUITE: demo
+        run: |
+          for file in test/e2e/demo/*.demo.ts; do
+            name="$(basename "$file" .demo.ts)"
+            if [ ! -f "docs/videos/${name}.txt" ]; then
+              echo "::error file=${file}::docs/videos/${name}.txt is missing"
+              exit 1
+            fi
+            npx playwright test --config playwright.web.config.ts --trace off --output "test-results/demo-${name}" "$file"
+          done
+
+      - name: Build the explainer videos
         env:
           PIPER_BIN: ${{ runner.temp }}/piper/bin/piper
         run: |
           mkdir -p videos
-          demo="$(find test-results -name 'video.webm' | head -n 1)"
-          node scripts/video/build-video.ts "$demo" docs/videos/site.txt "${{ steps.voice.outputs.model }}" videos/site-explainer.mp4
-          cp "$demo" videos/site-demo.webm
+          build() {
+            name="$1"
+            dir="$2"
+            demo="$(find "$dir" -name 'video.webm' | head -n 1)"
+            node scripts/video/build-video.ts "$demo" "docs/videos/${name}.txt" "${{ steps.voice.outputs.model }}" "videos/${name}-explainer.mp4"
+            cp "$demo" "videos/${name}-demo.webm"
+          }
+          build site test-results/site
+          for file in test/e2e/demo/*.demo.ts; do
+            name="$(basename "$file" .demo.ts)"
+            build "$name" "test-results/demo-${name}"
+          done
+
+      - name: Stop the stack
+        if: always()
+        run: npx supabase stop --no-backup
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         id: upload

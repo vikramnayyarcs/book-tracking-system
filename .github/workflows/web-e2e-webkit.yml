@@ -1,0 +1,49 @@
+name: Web E2E WebKit (nightly)
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: ./.github/actions/local-stack
+        with:
+          clerk-issuer: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
+
+      - name: Install WebKit
+        run: npx playwright install --with-deps webkit
+
+      - name: Playwright and axe in WebKit
+        env:
+          PW_BROWSER: webkit
+        run: npx playwright test --config playwright.web.config.ts --trace off
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-webkit
+          path: playwright-report
+          retention-days: 7
+
+      - name: Show the function log
+        if: failure()
+        run: tail -n 60 "$RUNNER_TEMP/functions.log"
+
+      - name: Stop the stack
+        if: always()
+        run: npx supabase stop --no-backup
