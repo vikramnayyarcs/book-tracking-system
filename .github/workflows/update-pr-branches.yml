@@ -26,12 +26,12 @@ jobs:
           REPO: ${{ github.repository }}
           BASE: ${{ github.ref_name }}
         run: |
-          gh label create conflicts --repo "$REPO" --color b60205 \
-            --description "Base branch cannot be merged in automatically" --force >/dev/null
-
           prs="$(gh api --paginate "repos/$REPO/pulls?state=open&base=$BASE&per_page=100" \
             --jq ".[] | select(.head.repo.full_name == \"$REPO\") | [.number, .head.sha, .head.ref] | @tsv")"
           [ -n "$prs" ] || { echo "No open PRs based on $BASE."; exit 0; }
+
+          gh label create conflicts --repo "$REPO" --color b60205 \
+            --description "Base branch cannot be merged in automatically" --force >/dev/null
 
           while IFS=$'\t' read -r pr sha head; do
             behind="$(gh api "repos/$REPO/compare/$head...$BASE" --jq .ahead_by)"
