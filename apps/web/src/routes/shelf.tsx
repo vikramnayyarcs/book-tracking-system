@@ -22,60 +22,86 @@ function today() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function Cover({ book }: { book: Book }) {
+function Cover({ book, size }: { book: Book; size: "hero" | "row" }) {
+  const box = size === "hero" ? "w-28 shrink-0 sm:w-36" : "w-14 shrink-0";
   if (book.coverUrl) {
     return (
       <img
         src={book.coverUrl}
         alt=""
-        className="aspect-2/3 w-full rounded-md border border-border object-cover"
+        className={`${box} aspect-2/3 rounded-sm object-cover shadow-md`}
       />
     );
   }
   return (
     <div
       aria-hidden="true"
-      className="flex aspect-2/3 w-full items-center justify-center rounded-md border border-border bg-accent-subtle p-sm text-center font-serif text-base text-accent-subtle-ink"
+      className={`${box} flex aspect-2/3 items-end rounded-sm border-t-8 border-accent bg-surface-sunken p-xs font-serif shadow-md ${size === "hero" ? "text-base" : "text-xs"} leading-tight text-ink`}
     >
       {book.title}
     </div>
   );
 }
 
-function BookCard({ book, online }: { book: Book; online: boolean }) {
+function BookCard({
+  book,
+  online,
+  hero,
+}: {
+  book: Book;
+  online: boolean;
+  hero: boolean;
+}) {
   const update = useUpdateBookStatus();
   return (
-    <li className="flex flex-col gap-sm">
-      <Cover book={book} />
-      <div className="flex flex-col gap-xs">
-        <h3 className="font-serif text-base font-medium">{book.title}</h3>
-        {book.author ? (
-          <p className="text-sm text-ink-muted">{book.author}</p>
+    <li
+      className={
+        hero
+          ? "flex gap-lg rounded-md border border-border bg-surface-raised p-lg shadow-lg"
+          : "flex items-center gap-md border-b border-dashed border-border py-sm"
+      }
+    >
+      <Cover book={book} size={hero ? "hero" : "row"} />
+      <div className="flex min-w-0 flex-1 flex-col gap-sm">
+        {hero ? (
+          <p className="font-mono text-xs font-medium tracking-widest text-accent uppercase">
+            Reading
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-xs">
+          <h3
+            className={`font-serif font-semibold tracking-tight ${hero ? "text-xl" : "text-base"}`}
+          >
+            {book.title}
+          </h3>
+          {book.author ? (
+            <p className="text-sm text-ink-muted">{book.author}</p>
+          ) : null}
+        </div>
+        <StatusSelect
+          label={`Status of ${book.title}`}
+          options={statusOptions}
+          value={book.status}
+          isDisabled={!online || update.isPending}
+          onChange={(to) => {
+            if (to === book.status) return;
+            update.mutate({
+              id: book.id,
+              body: statusPatch(book.status, to as BookStatus, today()),
+            });
+          }}
+        />
+        {!online ? (
+          <p className="text-sm text-ink-muted">
+            Offline. Status changes need a connection.
+          </p>
+        ) : null}
+        {update.isError ? (
+          <p role="alert" className="text-sm text-danger">
+            {update.error.message}
+          </p>
         ) : null}
       </div>
-      <StatusSelect
-        label={`Status of ${book.title}`}
-        options={statusOptions}
-        value={book.status}
-        isDisabled={!online || update.isPending}
-        onChange={(to) => {
-          if (to === book.status) return;
-          update.mutate({
-            id: book.id,
-            body: statusPatch(book.status, to as BookStatus, today()),
-          });
-        }}
-      />
-      {!online ? (
-        <p className="text-sm text-ink-muted">
-          Offline. Status changes need a connection.
-        </p>
-      ) : null}
-      {update.isError ? (
-        <p role="alert" className="text-sm text-danger">
-          {update.error.message}
-        </p>
-      ) : null}
     </li>
   );
 }
@@ -85,10 +111,11 @@ function ShelfSkeleton() {
     <div
       aria-busy="true"
       data-testid="shelf-loading"
-      className="grid grid-cols-2 gap-md sm:grid-cols-3"
+      className="flex flex-col gap-md"
     >
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="aspect-2/3 rounded-md bg-surface-sunken" />
+      <div className="h-48 rounded-md bg-surface-sunken" />
+      {[0, 1].map((i) => (
+        <div key={i} className="h-20 rounded-md bg-surface-sunken" />
       ))}
     </div>
   );
@@ -100,7 +127,12 @@ export function ShelfPage() {
 
   return (
     <div className="flex flex-col gap-xl">
-      <h1 className="text-2xl font-medium">Shelf</h1>
+      <header className="flex flex-col gap-xs">
+        <p className="font-mono text-xs font-medium tracking-widest text-ink-muted uppercase">
+          Your shelf
+        </p>
+        <h1 className="text-3xl">Shelf</h1>
+      </header>
       {books.isPending ? <ShelfSkeleton /> : null}
       {books.isError ? (
         <div role="alert" className="flex flex-col items-start gap-sm">
@@ -128,12 +160,20 @@ export function ShelfPage() {
               aria-labelledby={`h-${section.key}`}
               className="flex flex-col gap-md"
             >
-              <h2 id={`h-${section.key}`} className="text-lg font-medium">
+              <h2
+                id={`h-${section.key}`}
+                className="border-b border-border pb-xs text-lg"
+              >
                 {section.heading}
               </h2>
-              <ul className="grid grid-cols-2 gap-md sm:grid-cols-3">
+              <ul className="flex flex-col gap-md">
                 {section.books.map((b) => (
-                  <BookCard key={b.id} book={b} online={online} />
+                  <BookCard
+                    key={b.id}
+                    book={b}
+                    online={online}
+                    hero={section.key === "reading"}
+                  />
                 ))}
               </ul>
             </section>

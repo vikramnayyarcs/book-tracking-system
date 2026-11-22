@@ -12,7 +12,8 @@ const focus =
   "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
 const navLink = `inline-flex min-h-11 items-center rounded-md px-md text-base ${focus} text-ink-muted`;
-const navActive = "bg-accent-subtle text-accent-subtle-ink font-medium";
+const navActive =
+  "text-accent font-semibold underline decoration-2 underline-offset-8";
 
 function LogSessionShortcut() {
   const reading = useReadingBooks();
@@ -79,9 +80,17 @@ export function AppLayout() {
 
   return (
     <div className="flex h-dvh flex-col bg-surface text-ink">
-      <header className="bg-chrome text-chrome-ink">
+      <header className="border-b border-border bg-chrome text-chrome-ink">
         <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-sm px-md py-sm">
-          <p className="text-lg font-medium">{brand.name}</p>
+          <p className="flex items-center gap-sm font-serif text-lg font-semibold tracking-tight">
+            <span
+              aria-hidden="true"
+              className="grid size-8 place-items-center rounded-sm bg-accent font-mono text-xs text-accent-ink"
+            >
+              {brand.name.slice(0, 2).toUpperCase()}
+            </span>
+            {brand.name}
+          </p>
           <LogSessionShortcut />
         </div>
       </header>
