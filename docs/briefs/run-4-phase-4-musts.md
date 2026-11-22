@@ -19,7 +19,7 @@ A scheduled task starts a new session every hour. Each session checks the **Run 
 4. **Keep it alive.** Comment `Heartbeat: task N, <what you are doing>` at least every 20 minutes and after each PR.
 5. **Hand over.** Before ending for any reason, tick finished tasks, comment `Heartbeat: stopped, next task N, <why>`, and remove `run-active`. Add `run-finished` and post the Finish comment only when every task is done or blocked **and** no owner request is open on any run 4 PR or the progress issue.
 
-**Order of work every session:** (1) PRs labelled `conflicts` or showing as conflicting, (2) owner review comments on open PRs, (3) open PRs with failing CI, (4) issues labelled `bug`, each fix starting with a failing Playwright test, (5) the next task.
+**Order of work every session (ADR 0010):** (1) PRs labelled `conflicts` or showing as conflicting, (2) owner review comments on open PRs, (3) open PRs with failing CI, (4) `security` issues of high or critical severity, (5) `bug` issues, (6) `dependabot` issues, (7) other `security` issues, (8) the next task. Each fix starts with a failing test that proves the problem.
 
 **Keep working.** After each PR, start the next unblocked task straight away. End only when every remaining task is blocked or done, about 50 minutes have passed, or you are about to run out of context. Never end because a PR was opened or CI is running.
 
@@ -73,4 +73,4 @@ Do not start run 5 work (quote photo, book summary, ask the vault, export, activ
 
 ## Finish
 
-Comment on the progress issue with: the PRs in merge order, which merged automatically and which wait for the owner (red), what each deploys, open `needs-owner` issues, anything Playwright could not test in WebKit, and anything you would do differently. Then list the manual steps the owner still has to do (Clerk Paths, any Grafana scopes) in one checklist.
+Comment on the progress issue with: the PRs in merge order, which merged automatically and which wait for the owner (red), what each deploys, open `needs-owner` issues, anything Playwright could not test in WebKit, and anything you would do differently. Then list the manual steps the owner still has to do (Clerk Paths, any Grafana scopes) in one checklist, and remind the owner to set up the QA and security specialist routines (ADR 0010) from a desk session; link the issue that tracks it.
