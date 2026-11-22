@@ -142,3 +142,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-22: Playwright cannot click a React Aria radio by its role
 
 **React Aria renders the radio input hidden under its `<label>`, so `getByRole("radio").click()` waits until the test times out with "label intercepts pointer events".** Click the visible label text instead: `page.getByText("Type a note", { exact: true }).click()`.
+
+## 2026-11-22: a sticky bottom nav fails the axe target-size check
+
+**A `sticky bottom-0` nav overlays the content under it, so axe reports any button scrolled beneath it as "partially obscured" (WCAG 2.5.8).** The app shell is now a `h-dvh` column: the content area scrolls and the nav sits below it instead of over it.

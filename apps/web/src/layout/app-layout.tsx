@@ -78,7 +78,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-surface text-ink">
+    <div className="flex h-dvh flex-col bg-surface text-ink">
       <header className="bg-chrome text-chrome-ink">
         <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-sm px-md py-sm">
           <p className="text-lg font-medium">{brand.name}</p>
@@ -87,12 +87,14 @@ export function AppLayout() {
       </header>
       <OfflineBanner />
       <UploadStatus />
-      <main className="mx-auto w-full max-w-page flex-1 px-md py-lg">
-        <Outlet />
-      </main>
+      <div className="flex-1 overflow-y-auto">
+        <main className="mx-auto w-full max-w-page px-md py-lg">
+          <Outlet />
+        </main>
+      </div>
       <nav
         aria-label="Main"
-        className="sticky bottom-0 border-t border-border bg-surface-raised"
+        className="border-t border-border bg-surface-raised"
       >
         <ul className="mx-auto flex max-w-page justify-around gap-sm p-sm">
           {(
