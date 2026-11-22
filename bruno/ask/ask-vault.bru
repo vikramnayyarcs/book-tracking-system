@@ -1,0 +1,23 @@
+meta {
+  name: Ask vault
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/ask
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  { "question": "What did I note about morning routines?" }
+}
+
+docs {
+  operationId: askVault
+}

@@ -42,3 +42,6 @@ insert into app.usage (user_id, month, voice_seconds, vault_questions, ai_input_
 insert into app.api_tokens (id, user_id, name, token_hash, scopes) values
   ('50000000-0000-0000-0000-000000a00001', 'user_seed_alice', 'Invented iOS Shortcut', repeat('1', 64), array['sessions:write', 'books:read']),
   ('50000000-0000-0000-0000-000000b00001', 'user_seed_bob', 'Invented reader token', repeat('2', 64), array['books:read']);
+
+insert into app.push_subscriptions (id, user_id, endpoint, p256dh, auth) values
+  ('60000000-0000-0000-0000-000000a00001', 'user_seed_alice', 'https://push.example.test/seed-alice', 'invented-p256dh-key', 'invented-auth-secret');

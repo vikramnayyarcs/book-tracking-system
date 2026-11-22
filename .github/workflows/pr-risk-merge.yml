@@ -9,7 +9,10 @@ permissions: {}
 
 jobs:
   merge:
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,6 +22,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
+      OWNER: ${{ github.repository_owner }}
       SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -38,6 +42,8 @@ jobs:
           info="$(gh api "repos/$REPO/pulls/$pr")"
           if [ "$(jq -r .head.sha <<<"$info")" != "$SHA" ]; then echo "#$pr has newer commits; skipping."; exit 0; fi
           if [ "$(jq -r .draft <<<"$info")" = "true" ]; then echo "#$pr is a draft; skipping."; exit 0; fi
+          if [ "$(jq -r .head.repo.full_name <<<"$info")" != "$REPO" ]; then echo "#$pr is from a fork; leaving it for the owner."; exit 0; fi
+          if [ "$(jq -r .user.login <<<"$info")" != "$OWNER" ]; then echo "#$pr is not by $OWNER; leaving it for the owner."; exit 0; fi
           base="$(jq -r .base.ref <<<"$info")"
 
           colour="$(gh api --paginate "repos/$REPO/pulls/$pr/files" \

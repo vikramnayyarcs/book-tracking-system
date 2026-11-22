@@ -28,8 +28,47 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get the signed-in user, creating the account on the first call */
+        /** Get the signed-in user and nudge settings, creating the account on the first call */
         get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change nudge settings; send only the fields to change */
+        patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/push-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save this device's Web Push subscription; the same endpoint again updates its keys */
+        post: operations["createPushSubscription"];
+        /** Remove this device's Web Push subscription */
+        delete: operations["deletePushSubscription"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/push/public-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the VAPID public key for Web Push subscriptions
+         * @description The key is base64url, in the uncompressed point format that `applicationServerKey` expects.
+         */
+        get: operations["getPushPublicKey"];
         put?: never;
         post?: never;
         delete?: never;
@@ -347,6 +386,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask a question and get an answer from the caller's own insights only, with citations (counts toward the monthly vault question limit; the question and answer are never stored or logged) */
+        post: operations["askVault"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The dates in a year with at least one entry (a session or a finished-book review), in the caller's time zone */
+        get: operations["getActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reading metrics for a visualisation screen, with days, weeks and months in the caller's time zone (no streaks or missed days) */
+        get: operations["getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/export": {
         parameters: {
             query?: never;
@@ -421,10 +511,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/quote-photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a signed URL to upload a photo of a page for quote OCR */
+        post: operations["createQuotePhotoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-photos/{id}/ocr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read the text lines of an uploaded page photo, then delete the photo
+         * @description The photo is deleted whether the reading succeeds or fails, so a failed reading needs a new photo.
+         */
+        post: operations["readQuotePhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Stats: {
+            timeZone: string;
+            /** @description Sessions per week for the last 12 weeks, oldest first, zero-filled; weekStart is a Monday */
+            entriesPerWeek: {
+                /** Format: date */
+                weekStart: string;
+                count: number;
+            }[];
+            /** @description Books finished per month for the last 12 months, oldest first, zero-filled; books finished with year precision are left out */
+            booksFinishedPerMonth: {
+                month: string;
+                count: number;
+            }[];
+            /** @description Minutes of voice notes per month for the last 12 months, oldest first, zero-filled */
+            voiceMinutesPerMonth: {
+                month: string;
+                minutes: number;
+            }[];
+            /** @description Insight and quote counts for every book, most notes first */
+            perBook: {
+                /** Format: uuid */
+                bookId: string;
+                title: string;
+                insights: number;
+                quotes: number;
+            }[];
+            /** @description Finished-book ratings, one item for each of 1 to 5 */
+            ratings: {
+                rating: number;
+                count: number;
+            }[];
+            booksByStatus: {
+                reading: number;
+                finished: number;
+                abandoned: number;
+            };
+        };
         Review: {
             rating: number | null;
             text: string | null;
@@ -455,6 +623,16 @@ export interface components {
             path: string;
             expiresInSeconds: number;
         };
+        QuotePhotoUpload: {
+            /** Format: uuid */
+            id: string;
+            /** @description Send the image bytes (JPEG, PNG or WebP, at most 3 MB) to this URL with PUT */
+            uploadUrl: string;
+            expiresInSeconds: number;
+        };
+        QuotePhotoLines: {
+            lines: string[];
+        };
         Export: {
             /** Format: date-time */
             exportedAt: string;
@@ -477,6 +655,24 @@ export interface components {
             position: number;
             question: string;
             answer: string | null;
+        };
+        AskAnswer: {
+            answered: boolean;
+            answer: string;
+            citations: components["schemas"]["AskCitation"][];
+            /** @description True when the caller has used at least 80% of this month's vault questions */
+            warn: boolean;
+        };
+        AskCitation: {
+            /** Format: uuid */
+            insightId: string;
+            /** Format: uuid */
+            bookId: string;
+            bookTitle: string;
+            /** Format: uuid */
+            sessionId: string | null;
+            /** Format: date */
+            sessionDate: string | null;
         };
         SearchResult: {
             /** @enum {string} */
@@ -697,6 +893,42 @@ export interface components {
             id: string;
             /** @enum {string} */
             tier: "free" | "plus";
+            /** @description IANA time zone name, for example Europe/London */
+            timeZone: string;
+            /** @description Local time of day for the daily nudge as HH:MM; null means nudges are off */
+            nudgeTime: string | null;
+            /**
+             * Format: date
+             * @description Nudges are silenced through this local date; null when not silenced
+             */
+            notReadingUntil: string | null;
+        };
+        MeUpdate: {
+            /** @description IANA time zone name */
+            timeZone?: string;
+            /** @description HH:MM local time; null turns nudges off */
+            nudgeTime?: string | null;
+            /** @description true silences nudges through the end of today in the user's time zone; false clears it */
+            notReadingToday?: boolean;
+        };
+        PushSubscriptionCreate: {
+            /** Format: uri */
+            endpoint: string;
+            keys: {
+                p256dh: string;
+                auth: string;
+            };
+        };
+        PushSubscription: {
+            /** Format: uuid */
+            id: string;
+            endpoint: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PushPublicKey: {
+            /** @description Base64url of the 65-byte uncompressed P-256 point. */
+            publicKey: string;
         };
         Problem: {
             type: string;
@@ -763,6 +995,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeUpdate"];
+            };
+        };
+        responses: {
+            /** @description The user with the new settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createPushSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description The saved subscription */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushSubscription"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deletePushSubscription: {
+        parameters: {
+            query: {
+                endpoint: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription is removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getPushPublicKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The public key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushPublicKey"];
                 };
             };
             401: components["responses"]["Problem"];
@@ -1463,6 +1797,94 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    askVault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    question: string;
+                    /**
+                     * Format: uuid
+                     * @description Limit the answer to one book
+                     */
+                    bookId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The answer. When nothing relevant is found, answered is false and no model is called. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskAnswer"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getActivity: {
+        parameters: {
+            query: {
+                year: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The dates, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        year: number;
+                        timeZone: string;
+                        dates: string[];
+                    };
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stats"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
     exportVault: {
         parameters: {
             query: {
@@ -1566,6 +1988,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhotoUpload"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createQuotePhotoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo id and the signed upload URL */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotePhotoUpload"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    readQuotePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The lines of printed text, in reading order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotePhotoLines"];
                 };
             };
             400: components["responses"]["Problem"];

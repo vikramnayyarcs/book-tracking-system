@@ -1,0 +1,37 @@
+{
+  "id": "chatcmpl-d706cb7a-1c8c-45a4-a175-821d78f781c7",
+  "object": "chat.completion",
+  "created": 1795304887,
+  "model": "openai/gpt-oss-20b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"claims\":[{\"text\":\"you noted that zebrafinch songs are learned, not inherited\",\"note\":1,\"evidence\":\"Zebrafinch songs are learned, not inherited\"}]}",
+        "reasoning": "We need to answer question: \"How do zebrafinches get their songs?\" Use only notes. Note 1 says: \"Zebrafinch songs are learned, not inherited.\" That directly answers. So claim: you noted that zebrafinch songs are learned, not inherited. Provide evidence phrase: \"Zebrafinch songs are learned, not inherited.\" Use note 1. No other notes relevant. So produce JSON with one claim. Ensure valid JSON."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "queue_time": 0.200714223,
+    "prompt_tokens": 416,
+    "prompt_time": 0.02508234,
+    "completion_tokens": 142,
+    "completion_time": 0.153132093,
+    "total_tokens": 558,
+    "total_time": 0.178214433,
+    "completion_tokens_details": {
+      "reasoning_tokens": 95
+    }
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_e99e93f2ac",
+  "x_groq": {
+    "id": "req_01m80854k7ez0agfjx6tvmpg55",
+    "seed": 1901109861
+  },
+  "service_tier": "on_demand"
+}
