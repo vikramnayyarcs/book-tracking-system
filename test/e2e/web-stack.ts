@@ -91,3 +91,29 @@ export const routeStack = async (page: Page) => {
   });
   return calls;
 };
+
+export const seedNotes = async (externalId: string, bookId: string) => {
+  const headers = await seedHeaders(externalId);
+  const post = (path: string, body: unknown) =>
+    fetch(`${apiBase}/v1${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+  await post("/sessions", {
+    id: crypto.randomUUID(),
+    bookId,
+    date: "2026-03-01",
+    pageFrom: 10,
+    pageTo: 24,
+    noteText: "Invented note: routine is a form of attention.",
+  });
+  await post(`/books/${bookId}/insights`, {
+    text: "Routine is a form of attention.",
+  });
+  await post(`/books/${bookId}/insights`, {
+    text: "The habit of looking matters more than the log.",
+    kind: "quote",
+    page: 31,
+  });
+};

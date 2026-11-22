@@ -60,6 +60,24 @@ const logRoute = createRoute({
   ),
 });
 
+const bookRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/books/$bookId",
+  component: lazyRouteComponent(() =>
+    import("./routes/book-page.tsx").then((m) => ({ default: m.BookPage })),
+  ),
+});
+
+const finishRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/books/$bookId/finish",
+  component: lazyRouteComponent(() =>
+    import("./routes/finish-book.tsx").then((m) => ({
+      default: m.FinishBookPage,
+    })),
+  ),
+});
+
 const devRoutes = import.meta.env.DEV
   ? [
       createRoute({
@@ -78,7 +96,14 @@ export const router = createRouter({
   routeTree: rootRoute.addChildren([
     signInRoute,
     signInStepRoute,
-    appRoute.addChildren([shelfRoute, searchRoute, settingsRoute, logRoute]),
+    appRoute.addChildren([
+      shelfRoute,
+      searchRoute,
+      settingsRoute,
+      logRoute,
+      bookRoute,
+      finishRoute,
+    ]),
     ...devRoutes,
   ]),
   defaultNotFoundComponent: () => <AppLayout />,

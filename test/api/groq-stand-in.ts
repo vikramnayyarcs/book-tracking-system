@@ -13,6 +13,7 @@ const fixture = (name: string) =>
 
 const transcription = fixture("groq-transcription.json");
 const extraction = fixture("groq-chat-extraction.json");
+const questions = fixture("groq-chat-questions.json");
 
 export const STAND_IN_PORT = Number(
   process.env["GROQ_STAND_IN_PORT"] ?? "54390",
@@ -61,12 +62,19 @@ export const startGroqStandIn = async () => {
         const parsed = JSON.parse(body.toString("utf8")) as {
           messages: { role: string; content: string }[];
         };
+        const system =
+          parsed.messages.find((m) => m.role === "system")?.content ?? "";
         seen.push({
           kind: "chat",
           userMessage:
             parsed.messages.find((m) => m.role === "user")?.content ?? "",
         });
-        reply(res, extraction);
+        reply(
+          res,
+          system.includes("write reflection questions")
+            ? questions
+            : extraction,
+        );
       } else {
         res.writeHead(404);
         res.end();
