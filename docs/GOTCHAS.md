@@ -2,6 +2,10 @@
 
 Log a trap the moment a debugging detour ends, so nobody (human or AI) hits it twice. Newest first.
 
+## 2026-11-21: Groq vision calls need `max_tokens` on the free tier
+**`qwen/qwen3.8-27b` counts a default of 2048 output tokens against a 1000 output-tokens-per-minute limit, so every vision call without `max_tokens` fails with 429 "Request too large", and input is capped at 7000 tokens a minute (about 5 page photos).**
+Fix: `groqVision` sends `max_tokens: 800`. The OCR eval script waits and retries on 429 because its three images together exceed the input limit. Also, Python `urllib` gets a Cloudflare 403 (code 1010) from `api.groq.com`; use Node `fetch` or curl.
+
 ## 2026-11-21: deploying a function needs `--yes` in CI
 **Supabase CLI 3.x asks for confirmation before deploying a function; in CI (no terminal) it prints "Nothing was changed" and exits 1, so every dev deploy after 18:19 failed without deploying the API.**
 Fix: pass `--yes`, as the migrations job's `db push` already does.
@@ -82,6 +86,26 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 ## 2026-11-21: MSW cannot catch a `fetch` that a client captured before `server.listen()`
 
 **A client built with `fetch: f = fetch` keeps the original `fetch`, so tests that construct it at module or `describe` level skip the MSW handlers and hit the real network.** The Groq clients now default to `(input, init) => fetch(input, init)`, which reads the global at call time.
+
+## 2026-11-21: MSW in the test process cannot reach the Edge Function
+
+**The `api` function runs in the Supabase Edge Runtime container, so MSW in the Vitest process never sees its Groq calls.** `test/api/groq-stand-in.ts` is a small HTTP server in the test process that replays the recorded Groq fixtures; CI points the function's `GROQ_URL` at it through `host.docker.internal:54390`. The stand-in is only up while `voice.test.ts` runs, and API test files run one at a time (`fileParallelism: false`), so the "provider unreachable" test in `processing.test.ts` still sees a refused connection.
+
+## 2026-11-21: lint-after-edit hook reports a plugin clash that `npm run lint` does not
+
+**The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
+
+Fix: ignore the hook message and run `npm run lint` yourself; it is the real check that CI repeats.
+
+## 2026-11-21: `excluded.col` in an upsert needs SELECT on that column
+
+**`insert ... on conflict do update set x = excluded.x` fails (a 500 from the API) when the role has column-limited grants and no `select` on `x`, because reading `excluded.x` counts as reading the column.**
+
+Fix: set the column from the bound parameter (`set x = ${value}`) instead of `excluded.x`; see `savePushSubscription` in `packages/core/src/nudge.ts`.
+
+## 2026-11-21: the lint-after-edit hook can fail in a worktree with a duplicate Landmines plugin name
+
+**In a git worktree the hook may print "Plugin name landmines-structure is already registered" and block edits while `npm run lint` passes.** Run `npm run lint` from the worktree root and trust that result.
 
 ## 2026-11-21: ask the vault retrieves with an OR query and a similarity floor
 

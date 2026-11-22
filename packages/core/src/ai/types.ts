@@ -11,6 +11,14 @@ export type TextModel = {
   }) => Promise<{ json: unknown; usage: TextUsage }>;
 };
 
+export type VisionModel = {
+  readLines: (input: {
+    system: string;
+    user: string;
+    image: Blob;
+  }) => Promise<{ json: unknown; usage: TextUsage }>;
+};
+
 export type Embedder = {
   embed: (texts: string[]) => Promise<number[][]>;
 };
