@@ -23,6 +23,11 @@ const RED = [
   /^scripts\/cloud-setup\.sh$/,
   /^CLAUDE\.md$/,
   /^docs\/secrets\.md$/,
+  /^docs\/adr\//,
+  /^docs\/briefs\//,
+  /^docs\/requirements\.md$/,
+  /^packages\/core\/src\/api\/auth\.ts$/,
+  /^apps\/web\/public\/_headers$/,
 ];
 
 const DEPLOYS = [/^infra\//, /^\.github\//, /^supabase\/migrations\//];

@@ -57,7 +57,7 @@ jobs:
 
           case $COLOUR in
             red) icon="🔴"; next="Owner review required." ;;
-            yellow) icon="🟡"; next="Owner review required." ;;
+            yellow) icon="🟡"; next="Merged automatically once every check passes, it targets main and the body has a Risk note section (ADR 0009)." ;;
             green) icon="🟢"; next="Merged automatically once every check passes on the latest commit." ;;
           esac
           {

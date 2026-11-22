@@ -25,6 +25,12 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
+      - id: app
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ vars.TF_GITHUB_APP_ID }}
+          private-key: ${{ secrets.TF_GITHUB_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
@@ -34,7 +40,9 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Merge if green and every check passed
+      - name: Merge if green or yellow and every check passed
+        env:
+          APP_TOKEN: ${{ steps.app.outputs.token }}
         run: |
           pr="$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[] | select(.state == "open")][0].number // empty')"
           if [ -z "$pr" ]; then echo "No open PR for $SHA."; exit 0; fi
@@ -50,7 +58,11 @@ jobs:
             --jq '.[] | {filename, previous_filename, additions, deletions}' \
             | jq -s --arg base "$base" '{base: $base, files: .}' \
             | node scripts/pr-risk/classify.ts | jq -r .colour)"
-          if [ "$colour" != "green" ]; then echo "#$pr is $colour; leaving it for the owner."; exit 0; fi
+          if [ "$colour" = "red" ]; then echo "#$pr is red; leaving it for the owner."; exit 0; fi
+          if [ "$colour" = "yellow" ]; then
+            if [ "$base" != "main" ]; then echo "#$pr is yellow and stacked on $base; waiting until it targets main."; exit 0; fi
+            if ! jq -r '.body // ""' <<<"$info" | grep -q '^## Risk note'; then echo "#$pr is yellow with no risk note; leaving it for the owner."; exit 0; fi
+          fi
 
           pending_or_failed="$(gh api --paginate "repos/$REPO/commits/$SHA/check-runs" \
             --jq '.check_runs[] | select(.status != "completed" or (.conclusion | IN("success","neutral","skipped") | not)) | "\(.name): \(.status) \(.conclusion)"')"
@@ -65,5 +77,5 @@ jobs:
             exit 0
           fi
 
-          gh pr merge "$pr" --repo "$REPO" --merge --match-head-commit "$SHA"
-          echo "Merged #$pr (green)."
+          GH_TOKEN="$APP_TOKEN" gh api -X PUT "repos/$REPO/pulls/$pr/merge" -f merge_method=merge -f sha="$SHA" >/dev/null
+          echo "Merged #$pr ($colour)."

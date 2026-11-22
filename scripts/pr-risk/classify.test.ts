@@ -23,6 +23,11 @@ describe("classify", () => {
     "scripts/cloud-setup.sh",
     "CLAUDE.md",
     "docs/secrets.md",
+    "docs/adr/0009-phase-4-pwa.md",
+    "docs/briefs/run-4-phase-4-musts.md",
+    "docs/requirements.md",
+    "packages/core/src/api/auth.ts",
+    "apps/web/public/_headers",
   ])("is red when %s changes, even beside docs", (path) => {
     const result = classify([file("docs/GOTCHAS.md"), file(path)], "main");
     expect(result.colour).toBe("red");
@@ -65,9 +70,7 @@ describe("classify", () => {
   });
 
   it.each([
-    "docs/adr/0007-something.md",
-    "docs/briefs/run-2.md",
-    "docs/requirements.md",
+    "apps/web/src/routes/shelf.tsx",
     "apps/site/src/pages/index.astro",
     "packages/core/src/brand.ts",
     "package.json",
