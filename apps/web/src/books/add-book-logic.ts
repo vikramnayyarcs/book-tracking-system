@@ -29,14 +29,15 @@ export function draftFrom(source: {
   author: string | null;
   coverUrl: string | null;
   pageCount: number | null;
-}): Draft {
-  return {
+}) {
+  const draft: Draft = {
     isbn: source.isbn ?? "",
     title: source.title,
     author: source.author ?? "",
     coverUrl: source.coverUrl ?? "",
     pageCount: source.pageCount === null ? "" : String(source.pageCount),
   };
+  return draft;
 }
 
 export function draftError(draft: Draft) {
@@ -49,7 +50,7 @@ export function draftError(draft: Draft) {
   return null;
 }
 
-export function bookBody(draft: Draft): BookCreate {
+export function bookBody(draft: Draft) {
   const body: BookCreate = { title: draft.title.trim(), status: "reading" };
   if (draft.isbn.trim() !== "") body.isbn = draft.isbn.trim();
   if (draft.author.trim() !== "") body.author = draft.author.trim();

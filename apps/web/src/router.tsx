@@ -61,6 +61,14 @@ const logRoute = createRoute({
   ),
 });
 
+const addBookRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/books/new",
+  component: lazyRouteComponent(() =>
+    import("./routes/add-book.tsx").then((m) => ({ default: m.AddBookPage })),
+  ),
+});
+
 const bookRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/books/$bookId",
@@ -102,6 +110,7 @@ export const router = createRouter({
       searchRoute,
       settingsRoute,
       logRoute,
+      addBookRoute,
       bookRoute,
       finishRoute,
     ]),
