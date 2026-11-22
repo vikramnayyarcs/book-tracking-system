@@ -35,3 +35,8 @@ variable "api_health_url" {
   type        = string
   default     = ""
 }
+
+variable "web_url" {
+  description = "Origin of the web app; the only origin the Faro collector accepts telemetry from."
+  type        = string
+}

@@ -13,3 +13,8 @@ output "sm_url" {
   description = "Synthetic Monitoring API address for the stack's region."
   value       = grafana_synthetic_monitoring_installation.this.stack_sm_api_url
 }
+
+output "faro_collector_url" {
+  description = "Grafana Faro collector address the web app sends telemetry to."
+  value       = grafana_frontend_o11y_app.web.collector_endpoint
+}
