@@ -40,7 +40,7 @@ function Pair({ label, className }: { label: string; className: string }) {
 
 export function TokensPage() {
   return (
-    <main className="mx-auto max-w-4xl space-y-2xl bg-surface p-lg text-ink">
+    <main className="mx-auto max-w-page space-y-2xl bg-surface p-lg text-ink">
       <header className="space-y-sm">
         <h1 className="font-serif text-2xl">Design tokens</h1>
         <p className="text-ink-muted">
