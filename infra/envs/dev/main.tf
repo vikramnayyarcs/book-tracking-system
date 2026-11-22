@@ -69,6 +69,11 @@ resource "random_password" "gateway_secret" {
   special = false
 }
 
+resource "random_password" "jobs_secret" {
+  length  = 48
+  special = false
+}
+
 module "api_gateway" {
   source = "../../modules/cloudflare-api-gateway"
 
@@ -84,6 +89,7 @@ resource "supabase_edge_function_secrets" "api" {
   secrets = concat(
     [
       { name = "GATEWAY_SECRET", value = random_password.gateway_secret.result },
+      { name = "JOBS_SECRET", value = random_password.jobs_secret.result },
       { name = "DEFAULT_TIER", value = "plus" },
     ],
     var.clerk_frontend_api_url == "" ? [] : [{ name = "CLERK_ISSUER", value = var.clerk_frontend_api_url }],
