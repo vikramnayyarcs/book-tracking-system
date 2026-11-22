@@ -146,3 +146,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-22: a sticky bottom nav fails the axe target-size check
 
 **A `sticky bottom-0` nav overlays the content under it, so axe reports any button scrolled beneath it as "partially obscured" (WCAG 2.5.8).** The app shell is now a `h-dvh` column: the content area scrolls and the nav sits below it instead of over it.
+
+## 2026-11-22: two web E2E files cannot start the Groq stand-in at once
+
+**Playwright ran two test files in parallel workers, and each `beforeAll` started the Groq stand-in on port 54390, so the second failed with EADDRINUSE.** The Edge function reaches the stand-in at one fixed port, so `playwright.web.config.ts` sets `workers: 1`.
