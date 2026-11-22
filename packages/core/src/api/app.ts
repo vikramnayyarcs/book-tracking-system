@@ -57,6 +57,7 @@ import {
   setFinishPhoto,
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
+import { getActivity, parseYear } from "../activity.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import {
   deletePushSubscription,
@@ -701,6 +702,15 @@ export const createApp = (deps: ApiDeps) => {
       searchVault(sql, parsed.query, parsed.limit),
     );
     return c.json({ items: result });
+  });
+
+  app.get("/activity", authenticated, async (c) => {
+    const year = parseYear(c.req.query("year"));
+    if (year === undefined) {
+      return invalid("year must be 1900 to 2200", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getActivity(sql, year));
+    return c.json(result);
   });
 
   app.get("/export", authenticated, async (c) => {
