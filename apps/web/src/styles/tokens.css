@@ -112,6 +112,9 @@
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
 
+  --container-narrow: 28rem;
+  --container-page: 48rem;
+
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 1rem;

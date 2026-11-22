@@ -56,20 +56,20 @@ export function AppLayout() {
   return (
     <div className="flex min-h-dvh flex-col bg-surface text-ink">
       <header className="bg-chrome text-chrome-ink">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-sm px-md py-sm">
+        <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-sm px-md py-sm">
           <p className="text-lg font-medium">{brand.name}</p>
           <LogSessionShortcut />
         </div>
       </header>
       <OfflineBanner />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-md py-lg">
+      <main className="mx-auto w-full max-w-page flex-1 px-md py-lg">
         <Outlet />
       </main>
       <nav
         aria-label="Main"
         className="sticky bottom-0 border-t border-border bg-surface-raised"
       >
-        <ul className="mx-auto flex max-w-3xl justify-around gap-sm p-sm">
+        <ul className="mx-auto flex max-w-page justify-around gap-sm p-sm">
           {(
             [
               ["/", "Shelf"],

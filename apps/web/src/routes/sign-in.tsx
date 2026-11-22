@@ -11,7 +11,7 @@ export function SignInPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-lg bg-surface px-md py-xl text-ink">
+    <main className="mx-auto flex min-h-dvh max-w-narrow flex-col items-center justify-center gap-lg bg-surface px-md py-xl text-ink">
       <h1 className="text-2xl font-medium">Sign in to {brand.name}</h1>
       {signInConfigured ? (
         <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/" />
