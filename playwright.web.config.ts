@@ -25,15 +25,27 @@ export default defineConfig({
         ? { mode: "on", size: { width: 1280, height: 720 } }
         : "off",
     trace: "off",
-    launchOptions:
-      !webkit && process.env["PW_CHROMIUM_PATH"]
-        ? { executablePath: process.env["PW_CHROMIUM_PATH"] }
-        : {},
+    launchOptions: webkit
+      ? {}
+      : {
+          args: [
+            "--use-fake-device-for-media-stream",
+            "--use-fake-ui-for-media-stream",
+          ],
+          ...(process.env["PW_CHROMIUM_PATH"]
+            ? { executablePath: process.env["PW_CHROMIUM_PATH"] }
+            : {}),
+        },
   },
   webServer: {
     command:
       "npm -w @book-tracking-system/web run build && npm -w @book-tracking-system/web run preview -- --port 4173 --strictPort",
     url: baseURL,
     reuseExistingServer: !process.env["CI"],
+    env: {
+      VITE_API_BASE_URL:
+        process.env["API_BASE_URL"] ??
+        "http://127.0.0.1:54321/functions/v1/api",
+    },
   },
 });

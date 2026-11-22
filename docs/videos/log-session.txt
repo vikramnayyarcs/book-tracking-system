@@ -1,0 +1,22 @@
+This video shows how to log a reading session.
+All data in this test run is seeded test data.
+The test reader opens the Log session page for a book.
+The page shows the book title.
+The reader chooses pages or a chapter.
+The reader chooses a voice note or a typed note.
+Now the device goes offline.
+The app shows an offline notice.
+The reader types a short note and saves the session.
+The app keeps the session on the device.
+The page shows the heading Waiting to upload.
+A message at the top of the app also shows that one session is waiting.
+Now the device goes back online.
+The app sends the session to the server by itself.
+The server turns the note into insights.
+The page shows the message Session saved.
+The page shows the note, and the reader can edit it.
+The page also shows the insights.
+The reader can edit, pin or delete each insight.
+A voice note works the same way.
+The recording stops after ten minutes.
+The app asks for the microphone only when the reader taps Record.

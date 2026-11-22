@@ -1,7 +1,11 @@
 import { brand } from "@book-tracking-system/core/brand";
 import { Link, Navigate, Outlet } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useReadingBooks } from "../api/hooks.ts";
 import { useSession } from "../auth/session.tsx";
+import { waitingSummary } from "../log/queue-logic.ts";
+import { startQueueRunner } from "../log/queue-runner.ts";
+import { useQueueEntries } from "../log/use-queue.ts";
 import { useOnline } from "../ui/online.ts";
 
 const focus =
@@ -37,8 +41,28 @@ function OfflineBanner() {
   );
 }
 
+const count = (n: number) => `${n} session${n === 1 ? "" : "s"}`;
+
+function UploadStatus() {
+  const entries = useQueueEntries();
+  const { waiting, rejected } = waitingSummary(entries ?? []);
+  if (waiting + rejected === 0) return null;
+  return (
+    <p
+      role="status"
+      className="bg-accent-subtle px-md py-sm text-sm text-accent-subtle-ink"
+    >
+      {waiting > 0 ? `${count(waiting)} waiting to upload. ` : ""}
+      {rejected > 0 ? `${count(rejected)} refused by the server.` : ""}
+    </p>
+  );
+}
+
 export function AppLayout() {
   const session = useSession();
+  const signedIn = session.isLoaded && session.isSignedIn;
+
+  useEffect(() => (signedIn ? startQueueRunner() : undefined), [signedIn]);
 
   if (!session.isLoaded) {
     return (
@@ -54,7 +78,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-surface text-ink">
+    <div className="flex h-dvh flex-col bg-surface text-ink">
       <header className="bg-chrome text-chrome-ink">
         <div className="mx-auto flex max-w-page flex-wrap items-center justify-between gap-sm px-md py-sm">
           <p className="text-lg font-medium">{brand.name}</p>
@@ -62,12 +86,15 @@ export function AppLayout() {
         </div>
       </header>
       <OfflineBanner />
-      <main className="mx-auto w-full max-w-page flex-1 px-md py-lg">
-        <Outlet />
-      </main>
+      <UploadStatus />
+      <div className="flex-1 overflow-y-auto">
+        <main className="mx-auto w-full max-w-page px-md py-lg">
+          <Outlet />
+        </main>
+      </div>
       <nav
         aria-label="Main"
-        className="sticky bottom-0 border-t border-border bg-surface-raised"
+        className="border-t border-border bg-surface-raised"
       >
         <ul className="mx-auto flex max-w-page justify-around gap-sm p-sm">
           {(
