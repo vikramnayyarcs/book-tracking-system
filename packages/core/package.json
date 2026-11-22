@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./brand": "./src/brand.ts",
+    "./isbn": "./src/isbn.ts",
     "./api": "./src/api/index.ts",
     "./plans": "./src/plans.ts",
     "./limits": "./src/limits.ts",
