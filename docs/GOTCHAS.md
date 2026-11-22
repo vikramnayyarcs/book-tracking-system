@@ -94,3 +94,9 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 ## 2026-11-22: the local Edge Runtime cannot start behind the sandbox proxy
 
 **In a cloud session, `supabase functions serve` fails with "invalid peer certificate: UnknownIssuer" because the container cannot trust the proxy's CA when it downloads npm packages.** CI is unaffected. To test route logic in a cloud session, run `createApp` in a small Node server against the local database and point `API_BASE_URL` at it.
+
+## 2026-11-21: lint-after-edit hook reports a plugin clash that `npm run lint` does not
+
+**The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
+
+Fix: ignore the hook message and run `npm run lint` yourself; it is the real check that CI repeats.

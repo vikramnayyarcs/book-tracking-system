@@ -83,6 +83,11 @@ module "api_gateway" {
   gateway_secret = random_password.gateway_secret.result
 }
 
+resource "tls_private_key" "vapid" {
+  algorithm   = "ECDSA"
+  ecdsa_curve = "P256"
+}
+
 resource "supabase_edge_function_secrets" "api" {
   project_ref = module.supabase_dev.project_ref
 
@@ -94,5 +99,10 @@ resource "supabase_edge_function_secrets" "api" {
     ],
     var.clerk_frontend_api_url == "" ? [] : [{ name = "CLERK_ISSUER", value = var.clerk_frontend_api_url }],
     var.groq_api_key == "" ? [] : [{ name = "GROQ_API_KEY", value = var.groq_api_key }],
+    [
+      { name = "VAPID_PUBLIC_KEY", value = tls_private_key.vapid.public_key_pem },
+      { name = "VAPID_PRIVATE_KEY", value = tls_private_key.vapid.private_key_pem },
+    ],
+    var.domain == "" ? [] : [{ name = "VAPID_SUBJECT", value = "https://${var.domain}" }],
   )
 }

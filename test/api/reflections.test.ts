@@ -46,6 +46,7 @@ const inProcess = createApp({
   objects: { download: unused, remove: unused, signedUploadUrl: unused },
   fetch: (input, init) => fetch(input, init),
   openLibraryUrl: "http://127.0.0.1:9",
+  vapidPublicKey: "",
   speech: groqSpeech({ apiKey: "test" }),
   text: groqText({ apiKey: "test", model: "recorded" }),
   waitUntil: (work) => {

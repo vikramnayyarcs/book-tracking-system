@@ -1,0 +1,9 @@
+This is the push public key endpoint.
+The app asks the API for the key that Web Push needs.
+The test user signs in with seeded test data.
+The app sends a request to the push public key route.
+The API returns one key in base64url format.
+The key is 65 bytes long, and the first byte is 4.
+The browser uses this key as the application server key.
+A request without a token gets a 401 problem response.
+The private key never leaves the server.
