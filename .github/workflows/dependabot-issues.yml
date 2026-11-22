@@ -1,0 +1,67 @@
+name: Dependabot alerts to issues
+
+on:
+  schedule:
+    - cron: "41 6 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "package-lock.json"
+      - "**/package.json"
+
+permissions: {}
+
+concurrency:
+  group: dependabot-issues
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ vars.TF_GITHUB_APP_ID }}
+          private-key: ${{ secrets.TF_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Open an issue per open alert and close issues for fixed ones
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api -X POST "repos/$REPO/labels" -f name=dependabot -f color=0366d6 \
+            -f description="Open Dependabot alert; a session fixes it" >/dev/null 2>&1 || true
+
+          alerts="$(gh api --paginate "repos/$REPO/dependabot/alerts?state=open&per_page=100" \
+            --jq '.[] | [.number, .security_advisory.severity, .dependency.package.name, .dependency.manifest_path, (.security_vulnerability.first_patched_version.identifier // "none"), .security_advisory.summary, .html_url] | @tsv')"
+          issues="$(gh api --paginate "repos/$REPO/issues?state=open&labels=dependabot&per_page=100" \
+            --jq '.[] | [.number, .title] | @tsv')"
+
+          open_ids=" "
+          while IFS=$'\t' read -r id severity pkg manifest fixed summary url; do
+            [ -n "$id" ] || continue
+            open_ids="$open_ids$id "
+            title="Dependabot alert #$id: $pkg ($severity)"
+            if grep -qF "$(printf '\t')Dependabot alert #$id:" <<< "$issues"; then
+              echo "Alert #$id already has an issue."
+              continue
+            fi
+            body="$(printf '%s\n\n- Package: `%s` in `%s`\n- Severity: %s\n- First patched version: %s\n- Alert: %s\n\nFix per CLAUDE.md "Fix Dependabot alerts": bump the direct dependency, or add an npm `overrides` entry when only a transitive version is vulnerable; prove it with `npm ls %s`, build, lint, typecheck and tests. This issue closes itself when the alert is fixed or dismissed.' "$summary" "$pkg" "$manifest" "$severity" "$fixed" "$url" "$pkg")"
+            gh api -X POST "repos/$REPO/issues" -f title="$title" -f body="$body" -f "labels[]=dependabot" >/dev/null
+            echo "Opened an issue for alert #$id."
+          done <<< "$alerts"
+
+          while IFS=$'\t' read -r issue title; do
+            [ -n "$issue" ] || continue
+            id="$(sed -n 's/^Dependabot alert #\([0-9]*\):.*/\1/p' <<< "$title")"
+            [ -n "$id" ] || continue
+            case "$open_ids" in
+              *" $id "*) ;;
+              *)
+                gh api -X POST "repos/$REPO/issues/$issue/comments" -f body="Alert #$id is no longer open (fixed or dismissed). Closing." >/dev/null
+                gh api -X PATCH "repos/$REPO/issues/$issue" -f state=closed -f state_reason=completed >/dev/null
+                echo "Closed #$issue for alert #$id."
+                ;;
+            esac
+          done <<< "$issues"
