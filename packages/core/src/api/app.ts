@@ -79,12 +79,14 @@ import {
 } from "../reflections.ts";
 import { AiError } from "../ai/types.ts";
 import { problemResponse } from "./problem.ts";
+import { JOBS, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
 export const REQUEST_ID_HEADER = "x-request-id";
 
 export type ApiDeps = {
   gatewaySecret: string;
+  jobsSecret: string;
   logger: Logger;
   newRequestId: () => string;
   now: () => number;
@@ -779,5 +781,74 @@ export const createApp = (deps: ApiDeps) => {
     problemResponse(404, "not_found", "Not found", c.get("requestId")),
   );
 
-  return app;
+  const internal = new Hono<Env>().basePath("/internal");
+
+  internal.use("*", async (c, next) => {
+    const requestId = deps.newRequestId();
+    c.set("requestId", requestId);
+    const started = deps.now();
+    const supplied = c.req.header(JOBS_HEADER);
+    let errorName: string | undefined;
+    if (
+      deps.jobsSecret === "" ||
+      supplied === undefined ||
+      !sameSecret(supplied, deps.jobsSecret)
+    ) {
+      c.res = problemResponse(
+        401,
+        "unauthorized",
+        "Missing or invalid jobs secret",
+        requestId,
+      );
+    } else {
+      try {
+        await next();
+      } catch (error) {
+        errorName = error instanceof Error ? error.name : "UnknownError";
+        c.res = problemResponse(
+          500,
+          "internal_error",
+          "Internal error",
+          requestId,
+        );
+      }
+    }
+    c.res.headers.set(REQUEST_ID_HEADER, requestId);
+    const fields = {
+      requestId,
+      method: c.req.method,
+      path: new URL(c.req.url).pathname,
+      status: c.res.status,
+      durationMs: deps.now() - started,
+      ...(errorName === undefined ? {} : { errorName }),
+    };
+    if (c.res.status >= 500) {
+      deps.logger.error(fields);
+    } else {
+      deps.logger.info(fields);
+    }
+  });
+
+  internal.post("/jobs/:job", async (c) => {
+    const result = await runJob(
+      deps.db.jobs,
+      JOBS,
+      c.req.param("job"),
+      deps.now(),
+      parseRunKey(c.req.query("run_key")),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  internal.notFound((c) =>
+    problemResponse(404, "not_found", "Not found", c.get("requestId")),
+  );
+
+  const root = new Hono();
+  root.route("/", app);
+  root.route("/", internal);
+  root.notFound(() =>
+    problemResponse(404, "not_found", "Not found", deps.newRequestId()),
+  );
+  return root;
 };
