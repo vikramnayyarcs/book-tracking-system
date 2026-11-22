@@ -17,6 +17,7 @@
     "test": "vitest run",
     "contract:check": "npm run check -w packages/api-contract",
     "test:e2e": "playwright test",
+    "test:e2e:web": "playwright test --config playwright.web.config.ts",
     "prepare": "simple-git-hooks",
     "pr-video": "node scripts/pr-video/download.ts",
     "test:api": "vitest run --config vitest.api.config.ts"

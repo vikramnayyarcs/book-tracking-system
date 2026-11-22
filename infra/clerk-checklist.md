@@ -22,6 +22,8 @@ Clerk's API does not show these. Check them by hand after any change to the inst
 | --- | --- | --- |
 | Integrations → Supabase | Supabase integration | **Activated**, so session tokens carry `role: authenticated` |
 | Configure → Sessions | Session token | Includes the `role` claim after activation. Decode one token to confirm |
+| Configure → Developers → Paths | Sign-in URL | `/sign-in` (the app's own route, which shows Clerk's `<SignIn />`) |
+| Same page | After sign-in | `/` |
 
 ## Repo secrets and variables
 

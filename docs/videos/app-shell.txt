@@ -1,0 +1,5 @@
+This video shows the sign-in page.
+A visitor opens the settings page without a session.
+The app sends the visitor to the sign-in page.
+The page shows a heading and the sign-in form.
+The visitor cannot see the navigation or any book.
