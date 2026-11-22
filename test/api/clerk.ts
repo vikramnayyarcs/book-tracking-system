@@ -18,7 +18,7 @@ const request = async (path: string, init: RequestInit = {}) => {
   return (await response.json()) as unknown;
 };
 
-const ensureUser = async (externalId: string) => {
+export const ensureUser = async (externalId: string) => {
   const found = (await request(
     `/users?external_id=${encodeURIComponent(externalId)}`,
   )) as { id: string }[];
