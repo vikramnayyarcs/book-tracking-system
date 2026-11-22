@@ -11,6 +11,8 @@
   "dependencies": {
     "@book-tracking-system/api-contract": "*",
     "@book-tracking-system/core": "*",
+    "@clerk/react": "6.19.4",
+    "@grafana/faro-web-sdk": "2.14.0",
     "@tanstack/react-query": "5.108.2",
     "@tanstack/react-router": "1.170.46",
     "openapi-fetch": "0.17.0",
