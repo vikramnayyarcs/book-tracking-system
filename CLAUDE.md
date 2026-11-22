@@ -76,7 +76,7 @@ Kept by the `correct` skill. A rule with nothing in the right-hand column is a c
 | Lint and typecheck after edits | `lint-after-edit` hook, CI |
 | Claude never merges, runs workflows or pushes to `main` | `block-merges` and `block-github-tool-merges` hooks, `permissions.deny` |
 | Only green PRs merge without the owner | `PR risk` and `Merge green PRs` workflows (ADR 0005) |
-| Open PRs stay free of conflicts | nothing yet; sessions check by hand |
+| Open PRs stay free of conflicts | `Update PR branches` workflow merges the base in and labels `conflicts`; sessions fix those by hand |
 | No test doubles, fixed sleeps, retries, raised timeouts or prose comments | Oxlint with Landmines, CI |
 | Infrastructure only through Terraform | nightly `drift.yml` |
 | Every table has RLS and a cross-user test | pgTAP tests in CI (one per table); nothing yet fails a table without one |
