@@ -236,6 +236,7 @@ test("the finish form works with the keyboard alone", async ({ page }) => {
   await page.keyboard.type("Invented keyboard review.");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
+  await expect(page.getByText("Finished", { exact: true })).toBeVisible();
   await expect(page.getByText("Invented keyboard review.")).toBeVisible();
 });
 

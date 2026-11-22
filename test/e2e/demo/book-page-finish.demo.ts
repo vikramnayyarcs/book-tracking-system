@@ -12,7 +12,7 @@ test("demo: read a book page and finish the book", async ({ page }) => {
     await routeStack(page);
     await signInAs(page, "bt-test-alice");
     await page.goto("/");
-    await page.getByRole("link", { name: title }).click();
+    await page.getByRole("link", { name: title, exact: true }).click();
     await expect(page.getByText("Pages 10 to 24")).toBeVisible();
 
     await page.getByRole("button", { name: "Ask me 3 questions" }).click();
