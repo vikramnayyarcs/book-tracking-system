@@ -492,6 +492,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write the book summary again from the reader's own notes (Plus tier)
+         * @description Plus tier only; the free tier gets 403 with code `tier_feature_unavailable`. The summary uses only the reader's session notes and insights of this book, so a book with none returns 422. The summary is also written in the background when a Plus reader finishes a book. Returns 502 when the AI service fails; the old summary stays.
+         */
+        post: operations["regenerateBookSummary"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/{id}/finish-photo": {
         parameters: {
             query?: never;
@@ -1963,6 +1985,34 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    regenerateBookSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The review with the new summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
