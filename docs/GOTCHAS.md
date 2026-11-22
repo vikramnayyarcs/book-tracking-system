@@ -134,3 +134,5 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-22: `max-w-md` is 1rem when the theme names spacing tokens
 
 **In Tailwind v4, `max-w-md` resolves to `--spacing-md` when the theme defines a spacing token called `md`, so `max-w-md` became 1rem and `max-w-3xl` 4rem, and every page collapsed to one word per line.** Fix: width limits come from `--container-*` tokens in `apps/web/src/styles/tokens.css` (`max-w-narrow`, `max-w-page`); `test/e2e/web/sign-in.test.ts` checks the column is wider than 300px on a phone.
+
+**Clerk's development-instance footer ("Secured by Clerk" on an orange strip) fails axe colour-contrast and Clerk has no option to hide or restyle it, so every sign-in page axe check fails against a dev key.** The shared axe helper excludes Clerk's `.cl-footer`; the rest of the page is still checked.
