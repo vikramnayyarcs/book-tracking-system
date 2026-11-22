@@ -494,6 +494,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/quote-photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a signed URL to upload a photo of a page for quote OCR */
+        post: operations["createQuotePhotoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-photos/{id}/ocr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read the text lines of an uploaded page photo, then delete the photo
+         * @description The photo is deleted whether the reading succeeds or fails, so a failed reading needs a new photo.
+         */
+        post: operations["readQuotePhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -564,6 +605,16 @@ export interface components {
             uploadUrl: string;
             path: string;
             expiresInSeconds: number;
+        };
+        QuotePhotoUpload: {
+            /** Format: uuid */
+            id: string;
+            /** @description Send the image bytes (JPEG, PNG or WebP, at most 3 MB) to this URL with PUT */
+            uploadUrl: string;
+            expiresInSeconds: number;
+        };
+        QuotePhotoLines: {
+            lines: string[];
         };
         Export: {
             /** Format: date-time */
@@ -1865,6 +1916,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhotoUpload"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createQuotePhotoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo id and the signed upload URL */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotePhotoUpload"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    readQuotePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The lines of printed text, in reading order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotePhotoLines"];
                 };
             };
             400: components["responses"]["Problem"];

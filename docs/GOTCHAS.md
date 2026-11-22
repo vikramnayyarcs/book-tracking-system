@@ -2,6 +2,10 @@
 
 Log a trap the moment a debugging detour ends, so nobody (human or AI) hits it twice. Newest first.
 
+## 2026-11-21: Groq vision calls need `max_tokens` on the free tier
+**`qwen/qwen3.8-27b` counts a default of 2048 output tokens against a 1000 output-tokens-per-minute limit, so every vision call without `max_tokens` fails with 429 "Request too large", and input is capped at 7000 tokens a minute (about 5 page photos).**
+Fix: `groqVision` sends `max_tokens: 800`. The OCR eval script waits and retries on 429 because its three images together exceed the input limit. Also, Python `urllib` gets a Cloudflare 403 (code 1010) from `api.groq.com`; use Node `fetch` or curl.
+
 ## 2026-11-21: deploying a function needs `--yes` in CI
 **Supabase CLI 3.x asks for confirmation before deploying a function; in CI (no terminal) it prints "Nothing was changed" and exits 1, so every dev deploy after 18:19 failed without deploying the API.**
 Fix: pass `--yes`, as the migrations job's `db push` already does.
