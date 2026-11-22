@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTempRepo, git } from "../temp-repo.test-utils.ts";
-import { decide } from "./block-merges.ts";
+import { decide, isFirstFailedRerun } from "./block-merges.ts";
 
 const bash = (command: string) => ({
   tool_name: "Bash",
@@ -98,5 +98,32 @@ describe("as a hook", () => {
 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("Blocked");
+  });
+});
+
+const firstAttempt = () => 1;
+const secondAttempt = () => 2;
+
+describe("re-running failed jobs after an infrastructure failure", () => {
+  it("allows one failed-jobs re-run on a run's first attempt", () => {
+    expect(isFirstFailedRerun("gh run rerun 4512 --failed", firstAttempt)).toBe(
+      true,
+    );
+    expect(
+      isFirstFailedRerun("gh run rerun 4512 --failed -R o/r", firstAttempt),
+    ).toBe(true);
+  });
+
+  it.each([
+    ["a second attempt", "gh run rerun 4512 --failed", secondAttempt],
+    ["a whole-run re-run", "gh run rerun 4512", firstAttempt],
+    [
+      "a chained command",
+      "gh run rerun 4512 --failed && gh pr merge 3",
+      firstAttempt,
+    ],
+    ["a job re-run", "gh run rerun 4512 --job 9", firstAttempt],
+  ])("does not allow %s", (_name, command, attempt) => {
+    expect(isFirstFailedRerun(command, attempt)).toBe(false);
   });
 });
