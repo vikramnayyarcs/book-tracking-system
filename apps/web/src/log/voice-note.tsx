@@ -1,3 +1,4 @@
+import { meta } from "../ui/styles.ts";
 import { Button } from "../ui/button.tsx";
 import { formatClock, MAX_RECORDING_SECONDS } from "./form-logic.ts";
 import type { useRecorder } from "./use-recorder.ts";
@@ -12,16 +13,16 @@ export function VoiceNote({
 
   if (state.phase === "recording") {
     return (
-      <div className="flex flex-wrap items-center gap-md">
-        <Button variant="primary" onPress={stop}>
+      <div className="flex flex-col items-center gap-md">
+        <Button variant="record" onPress={stop}>
           Stop recording
         </Button>
-        <p className="text-base text-ink">
+        <p className="font-mono text-lg text-ink">
           <span className="sr-only">Recording time </span>
           <span data-testid="recording-timer">
             {formatClock(state.seconds)}
           </span>{" "}
-          of {cap}
+          <span className={meta}>of {cap}</span>
         </p>
       </div>
     );
@@ -37,11 +38,12 @@ export function VoiceNote({
     );
   }
   return (
-    <div className="flex flex-col items-start gap-sm">
-      <Button variant="primary" onPress={() => void start()}>
+    <div className="flex flex-col items-center gap-sm">
+      <Button variant="record" onPress={() => void start()}>
         Record
       </Button>
-      <p className="text-sm text-ink-muted">
+      <p className="font-mono text-lg text-ink-muted">{formatClock(0)}</p>
+      <p className="text-center text-sm text-ink-muted">
         The browser asks for the microphone when you tap Record. A note can be
         up to {cap} long.
       </p>

@@ -28,6 +28,11 @@ Rules: `CLAUDE.md` non-negotiables and ADR 0009. The API is the only data source
 - One accent colour, used for the primary action and the current place, not decoration.
 - Real seeded content in every screenshot and demo. Never lorem ipsum or invented brand names.
 - Mobile first at 390 px wide, then check 768 px and 1280 px. One primary action per screen, reachable with a thumb.
+- Insights, quotes, notes and answers sit on serif cards with a left accent rule (`noteCard`, `noteText`, `quoteText` in `apps/web/src/ui/styles.ts`); quotes are italic.
+- Recording uses the large round `record` button variant with a mono timer.
+- Metadata (dates, pages, kinds, eyebrows) is mono, uppercase and at least 12px (`meta` in `apps/web/src/ui/styles.ts`); never 9 to 11px.
+- List rows and settings sections use dashed dividers in light mode, not boxed cards.
+- At 1100px and wider (the `wide:` breakpoint) the main navigation is a side nav; below it, a bottom bar. Do not add a second navigation pattern.
 
 ## Check before pushing
 

@@ -215,7 +215,7 @@ export function LogSessionPage() {
   return (
     <div className="flex max-w-narrow flex-col gap-lg">
       <div className="flex flex-col gap-xs">
-        <h1 className="text-2xl font-medium">Log session</h1>
+        <h1 className="font-serif text-2xl font-semibold">Log session</h1>
         {book.isPending ? (
           <div
             aria-busy="true"

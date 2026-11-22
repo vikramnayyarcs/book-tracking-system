@@ -1,3 +1,4 @@
+import { noteCard } from "../ui/styles.ts";
 import type { components } from "@book-tracking-system/api-contract/types";
 import { useState } from "react";
 import {
@@ -26,7 +27,7 @@ function Question({
   const unchanged = draft === (reflection.answer ?? "");
 
   return (
-    <li className="flex flex-col gap-sm rounded-md border border-border bg-surface-raised p-md">
+    <li className={noteCard}>
       <TextField
         label={reflection.question}
         value={draft}

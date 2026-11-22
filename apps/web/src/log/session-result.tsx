@@ -1,3 +1,4 @@
+import { meta, noteCard, noteText, quoteText } from "../ui/styles.ts";
 import type { components } from "@book-tracking-system/api-contract/types";
 import { useState } from "react";
 import { ToggleButton } from "react-aria-components";
@@ -132,7 +133,7 @@ function InsightItem({
   const error = update.error ?? remove.error;
 
   return (
-    <li className="flex flex-col gap-sm rounded-md border border-border bg-surface-raised p-md">
+    <li className={noteCard}>
       {editing ? (
         <>
           <TextField
@@ -168,12 +169,12 @@ function InsightItem({
       ) : (
         <>
           <p
-            className={`text-base ${isQuote ? "font-serif italic" : ""}`}
+            className={isQuote ? quoteText : noteText}
             data-kind={insight.kind}
           >
             {insight.text}
           </p>
-          <p className="text-sm text-ink-muted">
+          <p className={meta}>
             {isQuote ? "Quote" : "Insight"}
             {insight.page ? `, page ${insight.page}` : ""}
             {insight.pinned ? ", pinned" : ""}
