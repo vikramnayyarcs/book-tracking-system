@@ -4,6 +4,11 @@ import type { Sql } from "./api/db.ts";
 import { mayTranscribe } from "./limits.ts";
 import { PLANS, type Tier } from "./plans.ts";
 import type { ObjectStore } from "./api/storage.ts";
+import {
+  embedOnWrite,
+  type Embeddings,
+  type PendingInsight,
+} from "./embeddings.ts";
 
 export type ProcessInfo = {
   id: string;
@@ -109,6 +114,7 @@ export const runProcessing = async (input: {
   objects: ObjectStore;
   speech: SpeechToText;
   text: TextModel;
+  embeddings: Embeddings;
   tier: Tier;
   info: ProcessInfo;
   transcribe: boolean;
@@ -146,18 +152,23 @@ export const runProcessing = async (input: {
       title: info.bookTitle,
       author: info.bookAuthor,
     });
+    const written: PendingInsight[] = [];
     await withUser(async (sql) => {
       for (const insight of result.insights) {
-        await sql`
+        const rows = await sql<PendingInsight[]>`
           insert into app.insights (book_id, session_id, kind, text, source)
           values (${info.bookId}, ${info.id}, 'insight', ${insight.text}, 'ai')
+          returning id, text
         `;
+        written.push(...rows);
       }
       for (const quote of result.quotes) {
-        await sql`
+        const rows = await sql<PendingInsight[]>`
           insert into app.insights (book_id, session_id, kind, text, source, page)
           values (${info.bookId}, ${info.id}, 'quote', ${quote.text}, 'ai', ${quote.page})
+          returning id, text
         `;
+        written.push(...rows);
       }
       await sql`
         select app.record_usage(
@@ -166,6 +177,7 @@ export const runProcessing = async (input: {
       `;
       await markStatus(sql, info.id, "ready");
     });
+    await embedOnWrite(input.embeddings, written);
     return "ready" as const;
   } catch (error) {
     const code = error instanceof AiError ? error.code : "processing_failed";
