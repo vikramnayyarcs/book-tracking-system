@@ -1,6 +1,6 @@
 # ADR 0005: PR risk traffic lights and automatic merging of green PRs
 
-- Status: Accepted
+- Status: Accepted; amended by ADR 0009 (yellow PRs merge automatically)
 - Date: 2026-11-21
 - Decider: Vikram Nayyar
 - Method: four questions in the main session, answered in chat
