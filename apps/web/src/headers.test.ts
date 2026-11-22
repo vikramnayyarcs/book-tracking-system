@@ -40,6 +40,7 @@ describe("_headers", () => {
     for (const source of directives["script-src"] ?? []) {
       expect([
         "'self'",
+        "'wasm-unsafe-eval'",
         "https://*.clerk.accounts.dev",
         "https://challenges.cloudflare.com",
       ]).toContain(source);
