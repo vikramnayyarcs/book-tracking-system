@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useBooks, useUpdateBookStatus } from "../api/hooks.ts";
 import { useOnline } from "../ui/online.ts";
 import { Button } from "../ui/button.tsx";
@@ -48,7 +49,15 @@ function BookCard({ book, online }: { book: Book; online: boolean }) {
     <li className="flex flex-col gap-sm">
       <Cover book={book} />
       <div className="flex flex-col gap-xs">
-        <h3 className="font-serif text-base font-medium">{book.title}</h3>
+        <h3 className="font-serif text-base font-medium">
+          <Link
+            to="/books/$bookId"
+            params={{ bookId: book.id }}
+            className="underline outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            {book.title}
+          </Link>
+        </h3>
         {book.author ? (
           <p className="text-sm text-ink-muted">{book.author}</p>
         ) : null}

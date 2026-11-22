@@ -1,0 +1,20 @@
+This video shows the book page and how to finish a book.
+All data in this test run is seeded test data.
+The test reader opens the shelf and taps the title of a book.
+The book page opens.
+The page shows the sessions for this book.
+Each session shows the date and the pages that the reader read.
+The page also shows the insights and the quotes.
+The page shows three reflection questions, but only after the reader asks for them.
+The reader taps Ask me 3 questions.
+The app writes the questions from the notes of the reader.
+The reader types an answer and saves it.
+Now the reader taps Finish book.
+The finish page opens.
+The reader chooses a rating from 1 to 5.
+The reader can add a photo and write a review.
+The reader can also answer the 3 questions for the end of the book.
+The reader taps Finish book again.
+The book page shows the status Finished.
+The page also shows the rating and the review.
+Finishing a book needs an internet connection.
