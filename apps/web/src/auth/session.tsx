@@ -80,6 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       signInFallbackRedirectUrl="/"
       afterSignOutUrl="/sign-in"
       telemetry={false}
+      appearance={{ options: { unsafe_disableDevelopmentModeWarnings: true } }}
     >
       <ClerkSession>{children}</ClerkSession>
     </ClerkProvider>
