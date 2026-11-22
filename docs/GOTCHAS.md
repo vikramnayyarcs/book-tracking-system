@@ -115,6 +115,12 @@ Fix: set the column from the bound parameter (`set x = ${value}`) instead of `ex
 
 **In a git worktree the hook may print "Plugin name landmines-structure is already registered" and block edits while `npm run lint` passes.** Run `npm run lint` from the worktree root and trust that result.
 
+## 2026-11-22: Node aborts on a WebCrypto AES decrypt of a body that came through MSW fetch
+
+**In a Vitest test, decrypting a Web Push body captured by an MSW handler with `crypto.subtle.decrypt` killed the worker (SIGABRT, "Assertion failed: errors->Empty()") even though the bytes were valid.**
+
+Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check headers, status codes and body length; see `packages/core/src/webpush.test.ts`.
+
 ## 2026-11-21: ask the vault retrieves with an OR query and a similarity floor
 
 **`websearch_to_tsquery` ANDs every word, so a natural question like "what have I read about leadership?" matches nothing, and a vector ranker with no floor always returns its nearest rows.** `packages/core/src/ask.ts` builds an OR `to_tsquery` from the question words, and the vector ranker keeps only insights with cosine similarity of at least 0.8 (`VECTOR_MIN_SIMILARITY`, untuned for gte-small; tune it with real data). When the Edge function cannot embed the question, retrieval falls back to full-text only.

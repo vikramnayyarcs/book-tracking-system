@@ -16,6 +16,7 @@ export type Db = {
     hash: string,
   ) => Promise<{ userId: string; scopes: TokenScope[] } | undefined>;
   jobs: JobStore;
+  system: <T>(work: (sql: Sql) => Promise<T>) => Promise<T>;
   embeddings: EmbeddingStore;
 };
 
@@ -45,6 +46,7 @@ export const createDb = (connectionString: string) => {
         ? undefined
         : { userId: row.user_id, scopes: row.scopes };
     },
+    system: (work) => pool.begin(work),
     embeddings: {
       save: async (id, text, vector) => {
         const rows = await pool`
