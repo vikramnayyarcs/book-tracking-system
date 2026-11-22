@@ -36,7 +36,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - **Logic lives in `packages/core`.** Edge Functions and the Worker are thin wrappers.
 - **Every table has RLS and an RLS test** proving user A cannot read user B's data.
 - **Never edit an applied migration.** Write a new one.
-- **No test doubles.** Tests run against the real local stack. Paid third parties (Groq, Claude, embeddings) are intercepted at the network level with MSW, replaying recorded responses. No fixed sleeps, no test retries, no raised timeouts to make CI green.
+- **No test doubles.** Tests run against the real local stack. Paid third parties (Groq, Claude, embeddings) are intercepted at the network level with MSW, replaying recorded responses. No fixed sleeps, no test retries, no raised timeouts to make CI green. The one exception is an infrastructure failure, below.
 - **Lint with Oxlint plus Landmines** (`@interfere/landmines`, recommended config). Any exception goes in the rule's per-file allowlist with a reason, and allowlist counts only go down.
 - **Never log note text, transcripts, audio or photos**, in any environment.
 - **Secrets never in the repo.** Reference them as `${VAR}`; values live in Windows user environment variables (prefixed `BT_`), cloud environment settings, GitHub repo secrets (prefixed `DEV_` or `PROD_`; no Environments on GitHub Free) or Supabase secrets.
@@ -50,9 +50,10 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - Prefer CLIs and scripts (gh, supabase, terraform, wrangler, npm) so work runs with or without MCP servers.
 - After a debugging detour caused by surprising behaviour, log it in `docs/GOTCHAS.md`: the trap in one bold sentence, then the fix.
 - Ponytail is for reviewing PRs, not always on. These non-negotiables win over its advice.
-- Claude never merges PRs, triggers workflows or pushes to `main`; it opens PRs; the owner merges red ones and the PR risk workflow merges green and yellow ones (ADR 0005, ADR 0009; yellow needs a `## Risk note` section) (enforced by the `block-merges` and `block-github-tool-merges` hooks). Work that depends on an unmerged PR goes on a branch stacked on it.
+- Claude never merges PRs, triggers workflows (except one infrastructure re-run, below) or pushes to `main`; it opens PRs; the owner merges red ones and the PR risk workflow merges green and yellow ones (ADR 0005, ADR 0009; yellow needs a `## Risk note` section) (enforced by the `block-merges` and `block-github-tool-merges` hooks). Work that depends on an unmerged PR goes on a branch stacked on it.
 - Small PRs, one concern each. Every PR passes lint, typecheck, tests and Terraform plan.
 - Keep open PRs free of conflicts. During a session, before starting each task and before ending, run `gh pr list --json number,mergeable --jq '.[]|select(.mergeable=="CONFLICTING")'`. For each conflicting PR, merge its base into the branch (merge, never rebase), keep both sides when both added something, regenerate generated files (`npm run generate -w packages/api-contract`) instead of hand-merging them, run lint and typecheck, and push. A conflicting PR is a blocked PR: fix it before you start new work.
+- Re-run a CI job once only when it failed for an infrastructure reason: a runner port or Docker clash, a network or registry timeout, a GitHub outage or rate limit, or a job that never started. Use `gh run rerun <id> --failed` (the `block-merges` hook allows it only on a run's first attempt). Before re-running, comment on the PR with the run link and the infra error line. Never re-run a failing test, lint, typecheck or eval: those are real failures to fix. If the same infra failure happens twice, fix its cause (for example, stop old containers before starting the local stack) and log it in `docs/GOTCHAS.md`.
 - Fix Dependabot alerts. The `Dependabot alerts to issues` workflow opens one `dependabot` issue per open alert. Sessions fix these after `bug` issues and before new tasks, one alert per PR: bump the direct dependency to a patched version, or, when only a transitive copy is vulnerable and its parent pins it, add an npm `overrides` entry scoped to that parent. Prove it with `npm ls <package>`, then build, lint, typecheck and tests. If no patched version works, comment why on the issue and leave it for the owner to dismiss.
 - Every PR with a feature change includes a Playwright video demoing what was done, and/or an explainer video with voice-over whose script is written in ASD-STE100 Simplified Technical English. Videos use seeded test data only (never real notes), and are attached to the PR, not committed.
 - Commit early and often: small commits, one logical change each, committed as soon as that change works. Don't batch unrelated changes into one commit.
@@ -76,6 +77,7 @@ Kept by the `correct` skill. A rule with nothing in the right-hand column is a c
 | Secrets scan before every commit, no skipping the git hook | `guard-commits` hook, git pre-commit hook, CI gitleaks |
 | Lint and typecheck after edits | `lint-after-edit` hook, CI |
 | Claude never merges, runs workflows or pushes to `main` | `block-merges` and `block-github-tool-merges` hooks, `permissions.deny` |
+| CI re-runs only once, only for infrastructure failures | `block-merges` hook (first attempt, `--failed` only); the infra-only part is by hand |
 | Only green and yellow PRs merge without the owner | `PR risk` and `Merge green PRs` workflows (ADR 0005, ADR 0009) |
 | Open PRs stay free of conflicts | `Update PR branches` workflow merges the base in and labels `conflicts`; sessions fix those by hand |
 | Dependabot alerts get fixed | `Dependabot alerts to issues` workflow; sessions fix `dependabot` issues |
