@@ -108,6 +108,20 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /push/public-key:
+    get:
+      operationId: getPushPublicKey
+      summary: Get the VAPID public key for Web Push subscriptions
+      description: The key is base64url, in the uncompressed point format that `applicationServerKey` expects.
+      responses:
+        "200":
+          description: The public key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushPublicKey"
+        "401":
+          $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
   /books:
@@ -1516,6 +1530,14 @@ components:
         createdAt:
           type: string
           format: date-time
+    PushPublicKey:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey:
+          type: string
+          pattern: "^[A-Za-z0-9_-]{87}$"
+          description: Base64url of the 65-byte uncompressed P-256 point.
     Problem:
       type: object
       required: [type, title, status, code]
