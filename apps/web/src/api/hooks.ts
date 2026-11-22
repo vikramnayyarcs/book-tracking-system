@@ -9,6 +9,15 @@ export function useMe() {
   });
 }
 
+export function useSearch(q: string) {
+  return useQuery({
+    queryKey: ["search", q],
+    enabled: q.length > 0,
+    queryFn: async () =>
+      unwrap(await api.GET("/search", { params: { query: { q } } })),
+  });
+}
+
 export function useReadingBooks() {
   return useQuery({
     queryKey: ["books", "reading"],

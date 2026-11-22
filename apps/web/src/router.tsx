@@ -6,7 +6,6 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { AppLayout } from "./layout/app-layout.tsx";
-import { SearchPage } from "./routes/placeholders.tsx";
 import { ShelfPage } from "./routes/shelf.tsx";
 import { SettingsPage } from "./routes/settings.tsx";
 import { SignInPage } from "./routes/sign-in.tsx";
@@ -41,7 +40,9 @@ const shelfRoute = createRoute({
 const searchRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/search",
-  component: SearchPage,
+  component: lazyRouteComponent(() =>
+    import("./routes/search.tsx").then((m) => ({ default: m.SearchPage })),
+  ),
 });
 
 const settingsRoute = createRoute({
