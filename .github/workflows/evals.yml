@@ -6,10 +6,13 @@ on:
       - "packages/core/prompts/**"
       - "packages/core/evals/**"
       - "packages/core/src/ai/**"
+      - "!packages/core/src/ai/**/*.test.ts"
+      - "!packages/core/src/ai/fixtures/**"
       - ".github/workflows/evals.yml"
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: evals-${{ github.ref }}
@@ -18,6 +21,9 @@ concurrency:
 jobs:
   deepeval:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     env:
       GROQ_API_KEY: ${{ secrets.DEV_GROQ_API_KEY }}
       DEEPEVAL_TELEMETRY_OPT_OUT: "YES"
@@ -28,24 +34,60 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - run: python3 -m pip install -r packages/core/evals/requirements.txt requests
+      - id: sets
+        name: Choose the eval sets this PR changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')"
+          sets=" "
+          add() { case "$sets" in *" $1 "*) ;; *) sets="$sets$1 " ;; esac; }
+          while read -r f; do
+            case "$f" in
+              packages/core/evals/run_evals.py|packages/core/evals/requirements.txt|.github/workflows/evals.yml|packages/core/src/ai/groq.ts|packages/core/src/ai/models.ts|packages/core/src/ai/types.ts|packages/core/src/ai/index.ts)
+                add insights; add reflection; add recall; add ocr ;;
+              packages/core/prompts/extract-insights*|packages/core/evals/generate.ts|packages/core/evals/samples.json|packages/core/src/ai/insights.ts)
+                add insights ;;
+              packages/core/prompts/reflection-questions*|packages/core/evals/reflection-samples.json)
+                add reflection ;;
+              packages/core/prompts/recall-prompts*|packages/core/evals/recall-samples.json)
+                add recall ;;
+              packages/core/evals/generate-questions.ts|packages/core/src/ai/questions.ts)
+                add reflection; add recall ;;
+              packages/core/prompts/read-quote-page*|packages/core/evals/generate-ocr.ts|packages/core/evals/ocr-samples.json|packages/core/evals/ocr/*|packages/core/src/ai/ocr.ts)
+                add ocr ;;
+            esac
+          done <<< "$files"
+          echo "Eval sets to run:$sets"
+          echo "list=$sets" >> "$GITHUB_OUTPUT"
+
+      - if: steps.sets.outputs.list != ' '
+        run: python3 -m pip install -r packages/core/evals/requirements.txt requests
 
       - name: Generate outputs with the prompt and model in the code
+        if: contains(steps.sets.outputs.list, ' insights ')
         run: node packages/core/evals/generate.ts "$RUNNER_TEMP/outputs.json"
 
       - name: Score with DeepEval
+        if: contains(steps.sets.outputs.list, ' insights ')
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/outputs.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/scores.json"
 
       - name: Generate reflection questions with the prompt and model in the code
+        if: contains(steps.sets.outputs.list, ' reflection ')
         run: node packages/core/evals/generate-questions.ts "$RUNNER_TEMP/questions.json"
 
       - name: Score reflection questions with DeepEval
+        if: contains(steps.sets.outputs.list, ' reflection ')
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/questions.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/question-scores.json"
 
       - name: Generate recall prompts with the prompt and model in the code
+        if: contains(steps.sets.outputs.list, ' recall ')
         run: node packages/core/evals/generate-questions.ts --recall "$RUNNER_TEMP/recall.json"
 
       - name: Score recall prompts with DeepEval
+        if: contains(steps.sets.outputs.list, ' recall ')
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/recall.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/recall-scores.json"
 
       - name: Generate vault answers with the prompt and model in the code
@@ -55,7 +97,9 @@ jobs:
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/ask.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/ask-scores.json"
 
       - name: Read invented page images with the vision prompt and model in the code
+        if: contains(steps.sets.outputs.list, ' ocr ')
         run: node packages/core/evals/generate-ocr.ts "$RUNNER_TEMP/ocr.json"
 
       - name: Score the page reading against the known text
+        if: contains(steps.sets.outputs.list, ' ocr ')
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/ocr.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/ocr-scores.json"

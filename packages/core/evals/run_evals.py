@@ -51,7 +51,10 @@ class GroqJudge(DeepEvalBaseLLM):
             )
             if res.status_code != 429:
                 break
-            time.sleep(float(res.headers.get("retry-after", "10")) + 1)
+            wait = float(res.headers.get("retry-after", "10"))
+            if wait > 60:
+                sys.exit(f"Groq rate limit: asked to wait {wait:.0f}s, so the free-tier daily limit is used up. Re-run the job later.")
+            time.sleep(wait + 1)
         res.raise_for_status()
         content = res.json()["choices"][0]["message"]["content"]
         return schema.model_validate_json(content) if schema is not None else content
