@@ -10,6 +10,7 @@ export default defineConfig({
   globalSetup: "./test/e2e/clerk-setup.ts",
   forbidOnly: Boolean(process.env["CI"]),
   retries: 0,
+  workers: 1,
   reporter: process.env["CI"]
     ? [["github"], ["html", { open: "never" }]]
     : "list",

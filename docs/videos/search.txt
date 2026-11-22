@@ -1,0 +1,13 @@
+This video shows how to search your notes.
+All data in this test run is seeded test data.
+The test reader opens the Search page.
+The page shows a box and a Search button.
+The reader types the word lanterns.
+The reader pushes the Search button.
+The page shows a list of matches.
+Each match shows what kind of note it is.
+The word the reader typed has a mark around it.
+Each match shows the title of the book.
+The reader can use the book title to open the book.
+If there is no match, the page tells the reader.
+If the device is offline, the Search button is off and the page tells the reader why.

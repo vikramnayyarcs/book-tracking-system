@@ -6,7 +6,6 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { AppLayout } from "./layout/app-layout.tsx";
-import { SearchPage } from "./routes/placeholders.tsx";
 import { ShelfPage } from "./routes/shelf.tsx";
 import { SettingsPage } from "./routes/settings.tsx";
 import { SignInPage } from "./routes/sign-in.tsx";
@@ -41,7 +40,9 @@ const shelfRoute = createRoute({
 const searchRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/search",
-  component: SearchPage,
+  component: lazyRouteComponent(() =>
+    import("./routes/search.tsx").then((m) => ({ default: m.SearchPage })),
+  ),
 });
 
 const settingsRoute = createRoute({
@@ -56,6 +57,24 @@ const logRoute = createRoute({
   component: lazyRouteComponent(() =>
     import("./routes/log-session.tsx").then((m) => ({
       default: m.LogSessionPage,
+    })),
+  ),
+});
+
+const bookRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/books/$bookId",
+  component: lazyRouteComponent(() =>
+    import("./routes/book-page.tsx").then((m) => ({ default: m.BookPage })),
+  ),
+});
+
+const finishRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/books/$bookId/finish",
+  component: lazyRouteComponent(() =>
+    import("./routes/finish-book.tsx").then((m) => ({
+      default: m.FinishBookPage,
     })),
   ),
 });
@@ -78,7 +97,14 @@ export const router = createRouter({
   routeTree: rootRoute.addChildren([
     signInRoute,
     signInStepRoute,
-    appRoute.addChildren([shelfRoute, searchRoute, settingsRoute, logRoute]),
+    appRoute.addChildren([
+      shelfRoute,
+      searchRoute,
+      settingsRoute,
+      logRoute,
+      bookRoute,
+      finishRoute,
+    ]),
     ...devRoutes,
   ]),
   defaultNotFoundComponent: () => <AppLayout />,
