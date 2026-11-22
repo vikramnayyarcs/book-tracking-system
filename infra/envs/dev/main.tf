@@ -18,6 +18,13 @@ module "site_dev" {
   name       = "site-dev"
 }
 
+module "web_dev" {
+  source = "../../modules/cloudflare-pages"
+
+  account_id = var.cloudflare_account_id
+  name       = "web-dev"
+}
+
 module "site_dev_domain" {
   count  = var.domain == "" ? 0 : 1
   source = "../../modules/cloudflare-site-domain"
@@ -60,6 +67,7 @@ module "grafana" {
   stack_slug        = var.grafana_stack_slug
   github_repository = var.github_repository
   site_url          = module.site_dev.url
+  web_url           = module.web_dev.url
   env               = "dev"
   api_health_url    = var.workers_subdomain == "" ? "" : "https://${module.api_gateway.script_name}.${var.workers_subdomain}.workers.dev/v1/health"
 }

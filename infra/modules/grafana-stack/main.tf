@@ -130,3 +130,20 @@ resource "grafana_synthetic_monitoring_check" "api" {
     }
   }
 }
+
+resource "grafana_frontend_o11y_app" "web" {
+  provider = grafana.cloud
+
+  stack_id        = grafana_cloud_stack.this.id
+  name            = "web-${var.env}"
+  allowed_origins = [var.web_url]
+
+  extra_log_attributes = {
+    env = var.env
+  }
+
+  settings = {
+    "combineLabData"      = "1"
+    "geolocation.enabled" = "0"
+  }
+}
