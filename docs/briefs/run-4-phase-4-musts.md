@@ -73,4 +73,4 @@ Do not start run 5 work (quote photo, book summary, ask the vault, export, activ
 
 ## Finish
 
-Comment on the progress issue with: the PRs in merge order, which merged automatically and which wait for the owner (red), what each deploys, open `needs-owner` issues, anything Playwright could not test in WebKit, and anything you would do differently. Then list the manual steps the owner still has to do (Clerk Paths, any Grafana scopes) in one checklist, and remind the owner to set up the QA and security specialist routines (ADR 0010) from a desk session; link the issue that tracks it.
+Comment on the progress issue with: the PRs in merge order, which merged automatically and which wait for the owner (red), what each deploys, open `needs-owner` issues, anything Playwright could not test in WebKit, and anything you would do differently. Then list the manual steps the owner still has to do (Clerk Paths, any Grafana scopes) in one checklist, and remind the owner to set up the QA and security specialist routines (ADR 0010) from a desk session; link issue #129, which tracks it.
