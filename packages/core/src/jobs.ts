@@ -1,3 +1,5 @@
+import { backfillEmbeddings, type Embeddings } from "./embeddings.ts";
+
 export const JOBS_HEADER = "x-jobs-secret";
 
 export type JobStore = {
@@ -22,9 +24,16 @@ export const bucketRunKey = (nowMs: number, bucketMinutes: number) => {
   return new Date(Math.floor(nowMs / size) * size).toISOString();
 };
 
-export const JOBS: Record<string, Job> = {
-  heartbeat: { bucketMinutes: 15, run: () => Promise.resolve() },
-};
+export const createJobs = (embeddings: Embeddings) =>
+  ({
+    heartbeat: { bucketMinutes: 15, run: () => Promise.resolve() },
+    "embed-backfill": {
+      bucketMinutes: 15,
+      run: async () => {
+        await backfillEmbeddings(embeddings);
+      },
+    },
+  }) satisfies Record<string, Job>;
 
 export const runJob = async (
   store: JobStore,

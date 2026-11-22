@@ -7,16 +7,51 @@ import {
 import {
   groqSpeech,
   groqText,
+  httpEmbedder,
   INSIGHT_MODEL,
 } from "../../../packages/core/src/ai/index.ts";
+import type { Embedder } from "../../../packages/core/src/ai/types.ts";
 import { parseTier } from "../../../packages/core/src/plans.ts";
 
 declare const EdgeRuntime: { waitUntil: (work: Promise<unknown>) => void };
+declare const Supabase: {
+  ai: {
+    Session: new (model: string) => {
+      run: (
+        input: string,
+        options: { mean_pool: boolean; normalize: boolean },
+      ) => Promise<unknown>;
+    };
+  };
+};
 
 const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
 const groqUrl = Deno.env.get("GROQ_URL") ?? undefined;
 
+const embeddingsUrl = Deno.env.get("EMBEDDINGS_URL");
+const gteSession =
+  embeddingsUrl === undefined
+    ? new Supabase.ai.Session("gte-small")
+    : undefined;
+
+const embedder: Embedder =
+  embeddingsUrl === undefined
+    ? {
+        embed: async (texts) =>
+          Promise.all(
+            texts.map(
+              async (text) =>
+                (await gteSession?.run(text, {
+                  mean_pool: true,
+                  normalize: true,
+                })) as number[],
+            ),
+          ),
+      }
+    : httpEmbedder({ url: embeddingsUrl });
+
 const app = createApp({
+  embedder,
   speech: groqSpeech({ apiKey: groqKey, baseUrl: groqUrl }),
   text: groqText({ apiKey: groqKey, model: INSIGHT_MODEL, baseUrl: groqUrl }),
   waitUntil: (work) => EdgeRuntime.waitUntil(work),

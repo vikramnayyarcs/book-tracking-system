@@ -62,7 +62,7 @@ import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
-import type { SpeechToText, TextModel } from "../ai/types.ts";
+import type { Embedder, SpeechToText, TextModel } from "../ai/types.ts";
 import {
   loadProcessInfo,
   markStatus,
@@ -80,7 +80,8 @@ import {
 } from "../reflections.ts";
 import { AiError } from "../ai/types.ts";
 import { problemResponse } from "./problem.ts";
-import { JOBS, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
+import { createJobs, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
+import { embedOnWrite } from "../embeddings.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
 export const REQUEST_ID_HEADER = "x-request-id";
@@ -99,6 +100,7 @@ export type ApiDeps = {
   openLibraryUrl: string;
   speech: SpeechToText;
   text: TextModel;
+  embedder: Embedder;
   waitUntil: (work: Promise<unknown>) => void;
   vapidPublicKey: string;
 };
@@ -139,6 +141,8 @@ const invalid = (detail: string, requestId: string) =>
 
 export const createApp = (deps: ApiDeps) => {
   const app = new Hono<Env>().basePath("/v1");
+  const embeddings = { embedder: deps.embedder, store: deps.db.embeddings };
+  const jobs = createJobs(embeddings);
 
   const auth = (scope?: TokenScope) =>
     createMiddleware<Env>(async (c, next) => {
@@ -480,6 +484,7 @@ export const createApp = (deps: ApiDeps) => {
         objects: deps.objects,
         speech: deps.speech,
         text: deps.text,
+        embeddings,
         tier,
         info,
         transcribe: plan.transcribe,
@@ -607,9 +612,11 @@ export const createApp = (deps: ApiDeps) => {
     const { result } = await c.var.withUser((sql) =>
       createInsight(sql, id, parsed.insight),
     );
-    return result === undefined
-      ? notFound(c.get("requestId"))
-      : c.json(result, 201);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    await embedOnWrite(embeddings, [{ id: result.id, text: result.text }]);
+    return c.json(result, 201);
   });
 
   app.get("/sessions/:id/insights", authenticated, async (c) => {
@@ -638,7 +645,13 @@ export const createApp = (deps: ApiDeps) => {
     const { result } = await c.var.withUser((sql) =>
       updateInsight(sql, id, parsed.fields),
     );
-    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (parsed.fields.text !== undefined) {
+      await embedOnWrite(embeddings, [{ id: result.id, text: result.text }]);
+    }
+    return c.json(result);
   });
 
   app.delete("/insights/:id", authenticated, async (c) => {
@@ -847,7 +860,7 @@ export const createApp = (deps: ApiDeps) => {
   internal.post("/jobs/:job", async (c) => {
     const result = await runJob(
       deps.db.jobs,
-      JOBS,
+      jobs,
       c.req.param("job"),
       deps.now(),
       parseRunKey(c.req.query("run_key")),

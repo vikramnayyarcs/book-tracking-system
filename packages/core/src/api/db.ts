@@ -2,6 +2,7 @@ import postgres from "postgres";
 import type { Tier } from "../plans.ts";
 import type { TokenScope } from "../tokens.ts";
 import type { JobStore } from "../jobs.ts";
+import type { EmbeddingStore } from "../embeddings.ts";
 
 export type Sql = postgres.TransactionSql;
 
@@ -15,6 +16,7 @@ export type Db = {
     hash: string,
   ) => Promise<{ userId: string; scopes: TokenScope[] } | undefined>;
   jobs: JobStore;
+  embeddings: EmbeddingStore;
 };
 
 export const createDb = (connectionString: string) => {
@@ -42,6 +44,23 @@ export const createDb = (connectionString: string) => {
       return row === undefined
         ? undefined
         : { userId: row.user_id, scopes: row.scopes };
+    },
+    embeddings: {
+      save: async (id, text, vector) => {
+        const rows = await pool`
+          update app.insights set embedding = ${vector}::extensions.vector
+          where id = ${id} and text = ${text}
+          returning id
+        `;
+        return rows.length === 1;
+      },
+      pending: (limit) =>
+        pool<{ id: string; text: string }[]>`
+          select id, text from app.insights
+          where embedding is null
+          order by created_at, id
+          limit ${limit}
+        `,
     },
     jobs: {
       claim: async (job, runKey) => {

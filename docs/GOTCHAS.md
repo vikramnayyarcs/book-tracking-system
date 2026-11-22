@@ -100,3 +100,7 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 **The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
 
 Fix: ignore the hook message and run `npm run lint` yourself; it is the real check that CI repeats.
+
+## 2026-11-22: the API role cannot write `insights.embedding`
+
+**`authenticated` has no update grant on `app.insights.embedding` (pgTAP proves it), so an embedding written inside `withUser` fails with 42501.** Embeddings are saved through the privileged pool (`db.embeddings.save`) after the user's transaction commits, guarded by `where text = ...` so a newer edit is never overwritten. A trigger clears `embedding` when `text` changes, so a failed re-embed leaves null for the backfill, never a stale vector.
