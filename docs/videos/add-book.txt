@@ -1,0 +1,16 @@
+This video shows how to add a book to your shelf.
+All data in this test run is seeded test data.
+The test reader opens the Add a book page.
+The page has three ways to find a book.
+The reader can push Scan barcode and point the camera at the barcode on the book.
+The browser asks for permission to use the camera.
+The reader can also type the ISBN.
+In this video, the reader types the ISBN and pushes Look up.
+The page shows the title, the author and the number of pages.
+The reader can change these details.
+The reader pushes Add to shelf.
+The page shows the new book.
+If the ISBN is not valid, the page tells the reader.
+If the camera does not work, the page tells the reader to type the ISBN.
+The reader can also search by title or author, or enter the details by hand.
+If the device is offline, the buttons that need a connection are off and the page tells the reader why.

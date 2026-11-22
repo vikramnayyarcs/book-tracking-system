@@ -14,6 +14,36 @@ const corsHeaders = {
   "access-control-allow-methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
 };
 
+export const fulfillJson = async (
+  route: Route,
+  status: number,
+  body: unknown,
+) => {
+  await route.fulfill({
+    status,
+    headers: {
+      ...corsHeaders,
+      "content-type":
+        status < 400 ? "application/json" : "application/problem+json",
+    },
+    body: JSON.stringify(body),
+  });
+};
+
+export const removeBooksTitled = async (externalId: string, title: string) => {
+  const headers = await seedHeaders(externalId);
+  const list = await fetch(`${apiBase}/v1/books`, { headers });
+  const { items } = (await list.json()) as {
+    items: { id: string; title: string }[];
+  };
+  for (const book of items.filter((item) => item.title === title)) {
+    await fetch(`${apiBase}/v1/books/${book.id}`, {
+      method: "DELETE",
+      headers,
+    });
+  }
+};
+
 export const seedHeaders = async (externalId: string) => {
   const { token } = await sessionTokenFor(externalId);
   return {
