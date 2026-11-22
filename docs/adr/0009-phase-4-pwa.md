@@ -1,6 +1,6 @@
 # ADR 0009: Phase 4, the PWA
 
-- Status: Accepted
+- Status: Accepted; amended by ADR 0010 (QA and security specialist agents)
 - Date: 2026-11-22
 - Decider: Vikram Nayyar
 - Method: `/grill-me` session at the desk (three rounds)

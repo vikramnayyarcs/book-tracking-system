@@ -1,0 +1,39 @@
+name: Local stack
+description: Start the local Supabase stack and serve the api function on it.
+
+inputs:
+  clerk-issuer:
+    description: Clerk frontend API URL the api function trusts.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Start the local Supabase stack
+      shell: bash
+      run: npx supabase start
+
+    - name: Serve the api function
+      shell: bash
+      env:
+        GATEWAY_SECRET: ci-gateway-secret
+        JOBS_SECRET: ci-jobs-secret
+        DEFAULT_TIER: plus
+        CLERK_ISSUER: ${{ inputs.clerk-issuer }}
+        API_BASE_URL: http://127.0.0.1:54321/functions/v1/api
+      run: |
+        {
+          echo "GATEWAY_SECRET=${GATEWAY_SECRET}"
+          echo "JOBS_SECRET=${JOBS_SECRET}"
+          echo "DEFAULT_TIER=${DEFAULT_TIER}"
+          echo "CLERK_ISSUER=${CLERK_ISSUER}"
+          echo "GROQ_API_KEY=unused-in-tests"
+          echo "GROQ_URL=http://host.docker.internal:54390/openai/v1"
+          echo "VAPID_PUBLIC_KEY=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkey -pubout | grep -v '^-----' | tr -d '\n')"
+        } > "$RUNNER_TEMP/functions.env"
+        npx supabase functions serve api --no-verify-jwt --env-file "$RUNNER_TEMP/functions.env" > "$RUNNER_TEMP/functions.log" 2>&1 &
+        if ! timeout 120 bash -c 'until curl -fsS -H "x-gateway-secret: ${GATEWAY_SECRET}" "${API_BASE_URL}/v1/health" > /dev/null; do sleep 2; done'; then
+          echo "The api function did not start. Last lines of its log:"
+          tail -n 40 "$RUNNER_TEMP/functions.log"
+          exit 1
+        fi
