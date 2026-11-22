@@ -2,7 +2,12 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { groqSpeech, groqText } from "../../packages/core/src/ai/index.ts";
+import {
+  groqSpeech,
+  groqText,
+  httpEmbedder,
+} from "../../packages/core/src/ai/index.ts";
+import { standInVector } from "./embed-stand-in.ts";
 import { createDb } from "../../packages/core/src/api/index.ts";
 import {
   loadProcessInfo,
@@ -139,8 +144,16 @@ describe("runProcessing with recorded Groq responses", () => {
 
   const speech = groqSpeech({ apiKey: "test" });
   const text = groqText({ apiKey: "test", model: "recorded" });
+  const embeddings = {
+    embedder: httpEmbedder({ url: "http://embed.test/embed" }),
+    store: db.embeddings,
+  };
   it("stores AI insights and quotes, counts usage, and marks the session ready", async () => {
     server.use(
+      http.post("http://embed.test/embed", async ({ request }) => {
+        const { input } = (await request.json()) as { input: string[] };
+        return HttpResponse.json({ embeddings: input.map(standInVector) });
+      }),
       http.post("https://api.groq.com/openai/v1/chat/completions", () =>
         HttpResponse.json(chat),
       ),
@@ -161,11 +174,19 @@ describe("runProcessing with recorded Groq responses", () => {
       objects,
       speech,
       text,
+      embeddings,
       tier,
       info,
       transcribe: false,
     });
     expect(outcome).toBe("ready");
+    const embedded = await withUser(
+      (sql) => sql<{ n: number }[]>`
+        select count(*)::int as n from app.insights
+        where session_id = ${id} and embedding is not null
+      `,
+    );
+    expect(embedded[0]?.n).toBe(4);
 
     const rows = await withUser(
       (sql) => sql<{ kind: string; source: string; page: number | null }[]>`
@@ -205,6 +226,7 @@ describe("runProcessing with recorded Groq responses", () => {
       objects,
       speech,
       text,
+      embeddings,
       tier: "plus",
       info,
       transcribe: false,

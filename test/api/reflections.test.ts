@@ -53,6 +53,7 @@ const inProcess = createApp({
   vapidPublicKey: "",
   vapidPrivateKey: "",
   vapidSubject: "",
+  embedder: { embed: unused },
   speech: groqSpeech({ apiKey: "test" }),
   text: groqText({ apiKey: "test", model: "recorded" }),
   vision: groqVision({ apiKey: "test", model: "recorded" }),

@@ -109,7 +109,8 @@ import { runSummary } from "../summary.ts";
 import { problemResponse } from "./problem.ts";
 import { nudgeJob } from "../nudge-sender.ts";
 import { sendWebPush, type VapidConfig } from "../webpush.ts";
-import { JOBS, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
+import { createJobs, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
+import { embedOnWrite } from "../embeddings.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
 export const REQUEST_ID_HEADER = "x-request-id";
@@ -128,7 +129,7 @@ export type ApiDeps = {
   openLibraryUrl: string;
   speech: SpeechToText;
   text: TextModel;
-  embedder?: Embedder;
+  embedder: Embedder;
   vision: VisionModel;
   waitUntil: (work: Promise<unknown>) => void;
   vapidPublicKey: string;
@@ -172,6 +173,8 @@ const invalid = (detail: string, requestId: string) =>
 
 export const createApp = (deps: ApiDeps) => {
   const app = new Hono<Env>().basePath("/v1");
+  const embeddings = { embedder: deps.embedder, store: deps.db.embeddings };
+  const jobs = createJobs(embeddings);
 
   const auth = (scope?: TokenScope) =>
     createMiddleware<Env>(async (c, next) => {
@@ -616,6 +619,7 @@ export const createApp = (deps: ApiDeps) => {
         objects: deps.objects,
         speech: deps.speech,
         text: deps.text,
+        embeddings,
         tier,
         info,
         transcribe: plan.transcribe,
@@ -743,9 +747,11 @@ export const createApp = (deps: ApiDeps) => {
     const { result } = await c.var.withUser((sql) =>
       createInsight(sql, id, parsed.insight),
     );
-    return result === undefined
-      ? notFound(c.get("requestId"))
-      : c.json(result, 201);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    await embedOnWrite(embeddings, [{ id: result.id, text: result.text }]);
+    return c.json(result, 201);
   });
 
   app.get("/sessions/:id/insights", authenticated, async (c) => {
@@ -774,7 +780,13 @@ export const createApp = (deps: ApiDeps) => {
     const { result } = await c.var.withUser((sql) =>
       updateInsight(sql, id, parsed.fields),
     );
-    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (parsed.fields.text !== undefined) {
+      await embedOnWrite(embeddings, [{ id: result.id, text: result.text }]);
+    }
+    return c.json(result);
   });
 
   app.delete("/insights/:id", authenticated, async (c) => {
@@ -1074,8 +1086,8 @@ export const createApp = (deps: ApiDeps) => {
     publicKey: deps.vapidPublicKey,
     privateKey: deps.vapidPrivateKey,
   };
-  const jobs = {
-    ...JOBS,
+  const allJobs = {
+    ...jobs,
     nudge: nudgeJob({
       system: deps.db.system,
       now: deps.now,
@@ -1137,7 +1149,7 @@ export const createApp = (deps: ApiDeps) => {
   internal.post("/jobs/:job", async (c) => {
     const result = await runJob(
       deps.db.jobs,
-      jobs,
+      allJobs,
       c.req.param("job"),
       deps.now(),
       parseRunKey(c.req.query("run_key")),
