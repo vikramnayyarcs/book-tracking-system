@@ -1,0 +1,59 @@
+name: Update PR branches
+
+on:
+  push:
+    branches: ["**"]
+
+permissions: {}
+
+concurrency:
+  group: update-pr-branches-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ vars.TF_GITHUB_APP_ID }}
+          private-key: ${{ secrets.TF_GITHUB_APP_PRIVATE_KEY }}
+
+      - name: Merge the pushed branch into each open PR based on it
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          REPO: ${{ github.repository }}
+          BASE: ${{ github.ref_name }}
+        run: |
+          gh label create conflicts --repo "$REPO" --color b60205 \
+            --description "Base branch cannot be merged in automatically" --force >/dev/null
+
+          prs="$(gh api --paginate "repos/$REPO/pulls?state=open&base=$BASE&per_page=100" \
+            --jq ".[] | select(.head.repo.full_name == \"$REPO\") | [.number, .head.sha, .head.ref] | @tsv")"
+          [ -n "$prs" ] || { echo "No open PRs based on $BASE."; exit 0; }
+
+          while IFS=$'\t' read -r pr sha head; do
+            behind="$(gh api "repos/$REPO/compare/$head...$BASE" --jq .ahead_by)"
+            if [ "$behind" = "0" ]; then
+              echo "#$pr is up to date with $BASE."
+              gh pr edit "$pr" --repo "$REPO" --remove-label conflicts >/dev/null 2>&1 || true
+              continue
+            fi
+            if gh api -X PUT "repos/$REPO/pulls/$pr/update-branch" -f expected_head_sha="$sha" >/dev/null 2>err.txt; then
+              echo "#$pr: merged $BASE in ($behind commits)."
+              gh pr edit "$pr" --repo "$REPO" --remove-label conflicts >/dev/null 2>&1 || true
+            elif grep -qi "conflict" err.txt; then
+              echo "#$pr has conflicts with $BASE."
+              labels="$(gh pr view "$pr" --repo "$REPO" --json labels --jq '[.labels[].name] | join(",")')"
+              case ",$labels," in
+                *,conflicts,*) ;;
+                *)
+                  gh pr edit "$pr" --repo "$REPO" --add-label conflicts >/dev/null
+                  gh pr comment "$pr" --repo "$REPO" --body "\`$BASE\` cannot be merged into this branch automatically: there are conflicts. A session must merge \`$BASE\` in by hand (see CLAUDE.md, \"Keep open PRs free of conflicts\")." >/dev/null
+                  ;;
+              esac
+            else
+              echo "#$pr: update failed: $(cat err.txt)"
+            fi
+          done <<< "$prs"
