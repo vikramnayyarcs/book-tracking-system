@@ -6,7 +6,7 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { AppLayout } from "./layout/app-layout.tsx";
-import { LogSessionPage, SearchPage } from "./routes/placeholders.tsx";
+import { SearchPage } from "./routes/placeholders.tsx";
 import { ShelfPage } from "./routes/shelf.tsx";
 import { SettingsPage } from "./routes/settings.tsx";
 import { SignInPage } from "./routes/sign-in.tsx";
@@ -53,7 +53,11 @@ const settingsRoute = createRoute({
 const logRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/books/$bookId/log",
-  component: LogSessionPage,
+  component: lazyRouteComponent(() =>
+    import("./routes/log-session.tsx").then((m) => ({
+      default: m.LogSessionPage,
+    })),
+  ),
 });
 
 const devRoutes = import.meta.env.DEV

@@ -137,10 +137,13 @@ export async function drainQueue() {
   if (running || !navigator.onLine) return;
   running = true;
   try {
-    const due = dueEntries(await listEntries(), Date.now());
-    for (const entry of due) {
-      const current = await getEntry(entry.id);
-      if (current) await runEntry(current);
+    for (;;) {
+      const due = dueEntries(await listEntries(), Date.now());
+      if (due.length === 0) break;
+      for (const entry of due) {
+        const current = await getEntry(entry.id);
+        if (current) await runEntry(current);
+      }
     }
   } finally {
     running = false;
