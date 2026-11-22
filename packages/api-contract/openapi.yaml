@@ -327,6 +327,38 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /lookup/books:
+    get:
+      operationId: searchLookupBooks
+      summary: Search Open Library by title or author
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 200
+      responses:
+        "200":
+          description: Up to 10 matches, best first
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    maxItems: 10
+                    items:
+                      $ref: "#/components/schemas/BookSearchResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /books/{id}/sessions:
     parameters:
       - name: id
@@ -1725,6 +1757,20 @@ components:
         title:
           type: string
         author:
+          type: [string, "null"]
+        coverUrl:
+          type: [string, "null"]
+        pageCount:
+          type: [integer, "null"]
+    BookSearchResult:
+      type: object
+      required: [title, author, isbn, coverUrl, pageCount]
+      properties:
+        title:
+          type: string
+        author:
+          type: [string, "null"]
+        isbn:
           type: [string, "null"]
         coverUrl:
           type: [string, "null"]
