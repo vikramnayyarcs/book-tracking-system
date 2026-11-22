@@ -37,19 +37,19 @@ jobs:
             behind="$(gh api "repos/$REPO/compare/$head...$BASE" --jq .ahead_by)"
             if [ "$behind" = "0" ]; then
               echo "#$pr is up to date with $BASE."
-              gh pr edit "$pr" --repo "$REPO" --remove-label conflicts >/dev/null 2>&1 || true
+              gh api -X DELETE "repos/$REPO/issues/$pr/labels/conflicts" >/dev/null 2>&1 || true
               continue
             fi
             if gh api -X PUT "repos/$REPO/pulls/$pr/update-branch" -f expected_head_sha="$sha" >/dev/null 2>err.txt; then
               echo "#$pr: merged $BASE in ($behind commits)."
-              gh pr edit "$pr" --repo "$REPO" --remove-label conflicts >/dev/null 2>&1 || true
+              gh api -X DELETE "repos/$REPO/issues/$pr/labels/conflicts" >/dev/null 2>&1 || true
             elif grep -qi "conflict" err.txt; then
               echo "#$pr has conflicts with $BASE."
-              labels="$(gh pr view "$pr" --repo "$REPO" --json labels --jq '[.labels[].name] | join(",")')"
+              labels="$(gh api "repos/$REPO/issues/$pr/labels" --jq '[.[].name] | join(",")')"
               case ",$labels," in
                 *,conflicts,*) ;;
                 *)
-                  gh pr edit "$pr" --repo "$REPO" --add-label conflicts >/dev/null
+                  gh api -X POST "repos/$REPO/issues/$pr/labels" -f "labels[]=conflicts" >/dev/null
                   gh pr comment "$pr" --repo "$REPO" --body "\`$BASE\` cannot be merged into this branch automatically: there are conflicts. A session must merge \`$BASE\` in by hand (see CLAUDE.md, \"Keep open PRs free of conflicts\")." >/dev/null
                   ;;
               esac
