@@ -26,6 +26,20 @@ USEFUL_MEAN_MIN = 0.5
 GROUNDING_MEAN_MIN = 0.6
 
 
+RATE_LIMIT_MARKER = os.path.join(os.environ.get("RUNNER_TEMP", "."), "groq-rate-limited")
+
+
+def rate_limited(reason):
+    message = f"Evals NOT run: Groq free-tier rate limit ({reason}). This is not a prompt failure. Re-run the job later before merging."
+    print(f"::warning title=Groq rate limit::{message}")
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a", encoding="utf-8") as f:
+            print(f"### :warning: {message}", file=f)
+    open(RATE_LIMIT_MARKER, "w").close()
+    sys.exit(0)
+
+
 class GroqJudge(DeepEvalBaseLLM):
     def __init__(self, model):
         self.model = model
@@ -53,8 +67,10 @@ class GroqJudge(DeepEvalBaseLLM):
                 break
             wait = float(res.headers.get("retry-after", "10"))
             if wait > 60:
-                sys.exit(f"Groq rate limit: asked to wait {wait:.0f}s, so the free-tier daily limit is used up. Re-run the job later.")
+                rate_limited(f"judge asked to wait {wait:.0f}s")
             time.sleep(wait + 1)
+        if res.status_code == 429:
+            rate_limited("judge still limited after 6 tries")
         res.raise_for_status()
         content = res.json()["choices"][0]["message"]["content"]
         return schema.model_validate_json(content) if schema is not None else content
@@ -243,7 +259,12 @@ def score_ask(data, judge_model, minimum):
 def main():
     path, judge_model = sys.argv[1], sys.argv[2]
     minimum = float(sys.argv[sys.argv.index("--min") + 1]) if "--min" in sys.argv else 0.8
+    if os.path.exists(RATE_LIMIT_MARKER):
+        print("Skipped: an earlier step hit the Groq rate limit.")
+        sys.exit(0)
     data = json.load(open(path))
+    if any("ai_rate_limited" in str(r.get("error") or "") for r in data.get("results", [])):
+        rate_limited("the model under test was limited while generating outputs")
     if data.get("task") == "ask":
         score_ask(data, judge_model, minimum)
     if data.get("task") == "ocr":
