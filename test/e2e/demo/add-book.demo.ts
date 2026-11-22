@@ -13,9 +13,11 @@ test("demo: add a book by ISBN", async ({ page }) => {
       page.getByRole("heading", { level: 1, name: "Add a book" }),
     ).toBeVisible();
 
-    await page.getByLabel("ISBN").fill("978-0-306-40615-7");
+    await page.getByLabel("ISBN", { exact: true }).fill("978-0-306-40615-7");
     await page.getByRole("button", { name: "Look up" }).click();
-    await expect(page.getByLabel("Title")).toHaveValue(recordedIsbnBook.title);
+    await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+      recordedIsbnBook.title,
+    );
 
     await page.getByRole("button", { name: "Add to shelf" }).click();
     await expect(
