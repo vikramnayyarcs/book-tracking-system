@@ -138,3 +138,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-22: Clerk's development-mode footer fails axe colour contrast
 
 **On a Clerk development instance, `<SignIn />` shows an orange "Development mode / Secured by" footer at 3.04:1 contrast, so every axe check on the sign-in page fails.** Fix: `appearance={{ options: { unsafe_disableDevelopmentModeWarnings: true } }}` on `ClerkProvider`. Production instances never show the footer. Do not exclude Clerk's elements from axe instead; that would hide real problems in the form.
+
+## 2026-11-22: Playwright cannot click a React Aria radio by its role
+
+**React Aria renders the radio input hidden under its `<label>`, so `getByRole("radio").click()` waits until the test times out with "label intercepts pointer events".** Click the visible label text instead: `page.getByText("Type a note", { exact: true }).click()`.

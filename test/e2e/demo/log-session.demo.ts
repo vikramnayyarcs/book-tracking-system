@@ -20,7 +20,7 @@ test("demo: log a session offline and see the insights", async ({
     await expect(page.getByText("You are offline.")).toBeVisible();
     await page.getByLabel("From page").fill("10");
     await page.getByLabel("To page").fill("24");
-    await page.getByRole("radio", { name: "Type a note" }).click();
+    await page.getByText("Type a note", { exact: true }).click();
     await page
       .getByLabel("Write your note")
       .fill(

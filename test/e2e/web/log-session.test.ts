@@ -32,7 +32,7 @@ const openLog = async (page: Page) => {
 };
 
 const typeNote = async (page: Page, text: string) => {
-  await page.getByRole("radio", { name: "Type a note" }).click();
+  await page.getByText("Type a note", { exact: true }).click();
   await page.getByLabel("From page").fill("10");
   await page.getByLabel("To page").fill("24");
   await page.getByLabel("Write your note").fill(text);
@@ -165,9 +165,9 @@ test("the form explains what is missing and keeps the page range in order", asyn
   ).toBeVisible();
   await expectNoAxeViolations(page);
 
-  await page.getByRole("radio", { name: "Chapter" }).click();
+  await page.getByText("Chapter", { exact: true }).click();
   await page.getByRole("textbox", { name: "Chapter" }).fill("Chapter 3");
-  await page.getByRole("radio", { name: "Type a note" }).click();
+  await page.getByText("Type a note", { exact: true }).click();
   await page.getByLabel("Write your note").fill(note);
   await page.getByRole("button", { name: "Save session" }).click();
   await expect(page.getByText("Session saved.")).toBeVisible();
@@ -197,7 +197,7 @@ test("a voice note records with a timer, uploads and shows the transcript", asyn
 
 test("the main action works with the keyboard alone", async ({ page }) => {
   await openLog(page);
-  await page.getByRole("radio", { name: "Type a note" }).click();
+  await page.getByText("Type a note", { exact: true }).click();
   await page.getByLabel("From page").focus();
   await page.keyboard.type("3");
   await page.keyboard.press("Tab");
