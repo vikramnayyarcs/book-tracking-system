@@ -17,7 +17,7 @@ const as = (user: TestUser) => ({ authorization: `Bearer ${user.token}` });
 
 const clean = async () => {
   await admin`delete from app.books where title like 'Invented summary test%'`;
-  await admin`delete from app.users where id = 'bt-test-summary-free'`;
+  await admin`delete from app.users where id = ${freeUser.userId}`;
 };
 
 beforeAll(async () => {
@@ -82,7 +82,8 @@ describe("POST /books/{id}/summary", () => {
   it("returns 502 and keeps the old summary when the AI service is unreachable", async () => {
     const id = await makeBook(alice, true);
     await admin`
-      insert into app.reviews (book_id, summary) values (${id}, 'An invented old summary.')
+      insert into app.reviews (book_id, user_id, summary)
+      values (${id}, ${alice.userId}, 'An invented old summary.')
     `;
     const response = await summarize(alice, id);
     expect(response.status).toBe(502);
