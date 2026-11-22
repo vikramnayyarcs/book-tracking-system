@@ -47,7 +47,7 @@ export function useBookReflections(id: string) {
 export function useAskReflections(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (stage: "mid" | "end") =>
+    mutationFn: async (stage: "mid" | "end" | "recall") =>
       unwrap(
         await api.POST("/books/{id}/reflections", {
           params: { path: { id } },
@@ -78,7 +78,7 @@ export function useAnswerReflection(bookId: string) {
   });
 }
 
-async function uploadFinishPhoto(bookId: string, file: File) {
+export async function uploadFinishPhoto(bookId: string, file: File) {
   const extension = photoExtension(file.type);
   if (extension === null) {
     throw new ApiError("Choose a JPEG, PNG or WebP photo.");

@@ -71,7 +71,8 @@ export const startGroqStandIn = async () => {
         });
         reply(
           res,
-          system.includes("write reflection questions")
+          system.includes("write reflection questions") ||
+            system.includes("remember a book")
             ? questions
             : extraction,
         );
