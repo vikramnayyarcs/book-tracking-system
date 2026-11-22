@@ -101,10 +101,10 @@ describe("as a hook", () => {
   });
 });
 
-describe("re-running failed jobs after an infrastructure failure", () => {
-  const firstAttempt = () => 1;
-  const secondAttempt = () => 2;
+const firstAttempt = () => 1;
+const secondAttempt = () => 2;
 
+describe("re-running failed jobs after an infrastructure failure", () => {
   it("allows one failed-jobs re-run on a run's first attempt", () => {
     expect(isFirstFailedRerun("gh run rerun 4512 --failed", firstAttempt)).toBe(
       true,
