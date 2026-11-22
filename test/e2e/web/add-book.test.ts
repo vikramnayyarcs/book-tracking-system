@@ -22,6 +22,10 @@ test.afterAll(async () => {
   await removeBooksTitled("bt-test-alice", "Invented Lantern Almanac");
 });
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 const openAddBook = async (page: Page, user = "bt-test-alice") => {
   await routeStack(page);
   await replayOpenLibrary(page);

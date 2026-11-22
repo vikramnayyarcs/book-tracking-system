@@ -23,6 +23,7 @@ test("demo: add a book by ISBN", async ({ page }) => {
     await expect(
       page.getByRole("heading", { level: 1, name: recordedIsbnBook.title }),
     ).toBeVisible();
+    await page.unrouteAll({ behavior: "ignoreErrors" });
   } finally {
     await removeBooksTitled("bt-test-alice", recordedIsbnBook.title);
   }
