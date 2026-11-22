@@ -51,3 +51,5 @@ export const mayAskVault = (input: { tier: Tier; usage: Usage }) => {
   }
   return allow(reaches(input.usage.vaultQuestions + 1, limit));
 };
+
+export const maySummarize = (tier: Tier) => PLANS[tier].bookSummary;

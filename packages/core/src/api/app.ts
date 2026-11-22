@@ -104,6 +104,8 @@ import {
   saveQuestions,
 } from "../reflections.ts";
 import { AiError } from "../ai/types.ts";
+import { maySummarize } from "../limits.ts";
+import { runSummary } from "../summary.ts";
 import { problemResponse } from "./problem.ts";
 import { JOBS, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
 
@@ -843,10 +845,78 @@ export const createApp = (deps: ApiDeps) => {
       return invalid(parsed.detail, c.get("requestId"));
     }
     const today = new Date(deps.now()).toISOString().slice(0, 10);
-    const { result } = await c.var.withUser((sql) =>
+    const { result, tier } = await c.var.withUser((sql) =>
       finishBook(sql, id, parsed.finish, today),
     );
-    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (maySummarize(tier) && result.review?.summary == null) {
+      const userId = c.var.userId;
+      deps.waitUntil(
+        runSummary({
+          withUser: async (work) =>
+            (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+          text: deps.text,
+          bookId: id,
+        }).catch(() => undefined),
+      );
+    }
+    return c.json(result);
+  });
+
+  app.post("/books/:id/summary", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: book, tier } = await c.var.withUser((sql) =>
+      getBook(sql, id),
+    );
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (!maySummarize(tier)) {
+      return problemResponse(
+        403,
+        "tier_feature_unavailable",
+        "Book summaries are part of the Plus plan",
+        c.get("requestId"),
+      );
+    }
+    const userId = c.var.userId;
+    let outcome;
+    try {
+      outcome = await runSummary({
+        withUser: async (work) =>
+          (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+        text: deps.text,
+        bookId: id,
+      });
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not write the summary. Try again later.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
+    if (outcome.kind === "missing") {
+      return notFound(c.get("requestId"));
+    }
+    if (outcome.kind === "nothing") {
+      return problemResponse(
+        422,
+        "nothing_to_process",
+        "The book has no notes or insights to summarize yet",
+        c.get("requestId"),
+      );
+    }
+    return c.json(outcome.review);
   });
 
   app.get("/books/:id/review", authenticated, async (c) => {
