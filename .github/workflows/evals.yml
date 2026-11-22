@@ -47,3 +47,9 @@ jobs:
 
       - name: Score recall prompts with DeepEval
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/recall.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/recall-scores.json"
+
+      - name: Generate book summaries with the prompt and model in the code
+        run: node packages/core/evals/generate-summary.ts "$RUNNER_TEMP/summary.json"
+
+      - name: Score book summaries with DeepEval
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/summary.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/summary-scores.json"
