@@ -98,3 +98,7 @@ Fix: ignore the hook message and run `npm run lint` yourself; it is the real che
 **`insert ... on conflict do update set x = excluded.x` fails (a 500 from the API) when the role has column-limited grants and no `select` on `x`, because reading `excluded.x` counts as reading the column.**
 
 Fix: set the column from the bound parameter (`set x = ${value}`) instead of `excluded.x`; see `savePushSubscription` in `packages/core/src/nudge.ts`.
+
+## 2026-11-21: the lint-after-edit hook can fail in a worktree with a duplicate Landmines plugin name
+
+**In a git worktree the hook may print "Plugin name landmines-structure is already registered" and block edits while `npm run lint` passes.** Run `npm run lint` from the worktree root and trust that result.

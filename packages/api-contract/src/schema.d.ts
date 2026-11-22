@@ -403,6 +403,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reading metrics for a visualisation screen, with days, weeks and months in the caller's time zone (no streaks or missed days) */
+        get: operations["getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/export": {
         parameters: {
             query?: never;
@@ -481,6 +498,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Stats: {
+            timeZone: string;
+            /** @description Sessions per week for the last 12 weeks, oldest first, zero-filled; weekStart is a Monday */
+            entriesPerWeek: {
+                /** Format: date */
+                weekStart: string;
+                count: number;
+            }[];
+            /** @description Books finished per month for the last 12 months, oldest first, zero-filled; books finished with year precision are left out */
+            booksFinishedPerMonth: {
+                month: string;
+                count: number;
+            }[];
+            /** @description Minutes of voice notes per month for the last 12 months, oldest first, zero-filled */
+            voiceMinutesPerMonth: {
+                month: string;
+                minutes: number;
+            }[];
+            /** @description Insight and quote counts for every book, most notes first */
+            perBook: {
+                /** Format: uuid */
+                bookId: string;
+                title: string;
+                insights: number;
+                quotes: number;
+            }[];
+            /** @description Finished-book ratings, one item for each of 1 to 5 */
+            ratings: {
+                rating: number;
+                count: number;
+            }[];
+            booksByStatus: {
+                reading: number;
+                finished: number;
+                abandoned: number;
+            };
+        };
         Review: {
             rating: number | null;
             text: string | null;
@@ -1682,6 +1736,28 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stats"];
+                };
+            };
             401: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
