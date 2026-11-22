@@ -1,7 +1,10 @@
 [
   {
     "id": "several-notes",
-    "book": { "title": "Orchard Economics", "author": "Invented Author One" },
+    "book": {
+      "title": "Orchard Economics",
+      "author": "Invented Author One"
+    },
     "notes": [
       "A pear orchard keeps paying after you stop working, like a savings account.",
       "Pear trees need years before the first harvest, so patience is the real skill.",
@@ -12,14 +15,20 @@
   },
   {
     "id": "one-short-note",
-    "book": { "title": "Paper Boats", "author": null },
+    "book": {
+      "title": "Paper Boats",
+      "author": null
+    },
     "notes": ["Small attempts beat big plans."],
     "mustMention": ["small attempts"],
     "forbidden": []
   },
   {
     "id": "known-book-no-outside-facts",
-    "book": { "title": "Moby-Dick", "author": "Herman Melville" },
+    "book": {
+      "title": "Moby-Dick",
+      "author": "Herman Melville"
+    },
     "notes": [
       "The long list of whale types slowed me down, but I started to enjoy the rhythm of it.",
       "I will read the chapter on the whiteness of the whale again with a pencil."
@@ -42,7 +51,10 @@
   },
   {
     "id": "off-topic-note",
-    "book": { "title": "The Slow Ledger", "author": "Invented Author Three" },
+    "book": {
+      "title": "The Slow Ledger",
+      "author": "Invented Author Three"
+    },
     "notes": [
       "Naming each expense category in advance helps me budget.",
       "Need to buy milk and call the dentist.",
@@ -76,5 +88,68 @@
     ],
     "mustMention": ["attention"],
     "forbidden": ["prize"]
+  },
+  {
+    "id": "single-word-note",
+    "book": {
+      "title": "Paper Boats",
+      "author": null
+    },
+    "notes": ["Patience."],
+    "mustMention": ["patience"],
+    "forbidden": []
+  },
+  {
+    "id": "quote-with-inner-quotes",
+    "book": {
+      "title": "The Glass Cartographer",
+      "author": "Invented Author Five"
+    },
+    "notes": [
+      "\"The map is not the 'territory', it is an argument about the territory.\" I read it twice.",
+      "I want to check who drew the maps I trust."
+    ],
+    "mustMention": ["map"],
+    "forbidden": []
+  },
+  {
+    "id": "mostly-off-topic",
+    "book": {
+      "title": "Harbour Lights",
+      "author": "Invented Author Five"
+    },
+    "notes": [
+      "The dishwasher broke and I called the repair shop all evening.",
+      "Communities survive on small unpaid jobs, like someone always holding the gate.",
+      "Need to buy milk."
+    ],
+    "mustMention": ["gate"],
+    "forbidden": ["dishwasher", "milk"]
+  },
+  {
+    "id": "mostly-german",
+    "book": {
+      "title": "Der Stille Garten",
+      "author": "Erfundene Autorin"
+    },
+    "notes": [
+      "Geduld ist keine Pause, sondern eine Arbeit.",
+      "Fernweh: Sehnsucht nach fernen Orten. Ich will eine kleine Reise planen."
+    ],
+    "mustMention": ["patience"],
+    "forbidden": []
+  },
+  {
+    "id": "symbols-and-emoji",
+    "book": {
+      "title": "Seven Small Rules",
+      "author": "Invented Author Five"
+    },
+    "notes": [
+      "Rule 4 -> deadlines!!! A decision without a date is just a wish :)",
+      "5/7 chapters done. Will try it at work (Mon-Fri) & report back."
+    ],
+    "mustMention": ["date"],
+    "forbidden": []
   }
 ]
