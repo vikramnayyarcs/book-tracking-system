@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(12);
 
 create function pg_temp.affected(statement text)
 returns bigint
@@ -58,6 +58,13 @@ select throws_ok(
   '42501',
   null,
   'alice cannot make herself a founding member'
+);
+
+select throws_ok(
+  $$update app.users set last_nudged_on = current_date where id = 'alice'$$,
+  '42501',
+  null,
+  'alice cannot change her own last nudged date'
 );
 
 select is(
