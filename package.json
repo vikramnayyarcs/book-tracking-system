@@ -40,5 +40,10 @@
   },
   "simple-git-hooks": {
     "pre-commit": "node scripts/git-hooks/pre-commit.ts"
+  },
+  "overrides": {
+    "glob@11.1.0": {
+      "minimatch": "11.0.5"
+    }
   }
 }
