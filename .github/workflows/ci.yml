@@ -248,7 +248,7 @@ jobs:
             echo "DEFAULT_TIER=${DEFAULT_TIER}"
             echo "CLERK_ISSUER=${CLERK_ISSUER}"
             echo "GROQ_API_KEY=unused-in-tests"
-            echo "GROQ_URL=http://127.0.0.1:9/openai/v1"
+            echo "GROQ_URL=http://host.docker.internal:54390/openai/v1"
           } > "$RUNNER_TEMP/functions.env"
           npx supabase functions serve api --no-verify-jwt --env-file "$RUNNER_TEMP/functions.env" > "$RUNNER_TEMP/functions.log" 2>&1 &
           if ! timeout 120 bash -c 'until curl -fsS -H "x-gateway-secret: ${GATEWAY_SECRET}" "${API_BASE_URL}/v1/health" > /dev/null; do sleep 2; done'; then
