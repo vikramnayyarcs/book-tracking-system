@@ -58,6 +58,7 @@ import {
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
 import { parseSearch, searchVault } from "../search.ts";
+import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -97,6 +98,7 @@ export type ApiDeps = {
   speech: SpeechToText;
   text: TextModel;
   waitUntil: (work: Promise<unknown>) => void;
+  vapidPublicKey: string;
 };
 
 type Env = {
@@ -225,6 +227,19 @@ export const createApp = (deps: ApiDeps) => {
   app.get("/me", authenticated, async (c) => {
     const { tier } = await c.var.withUser(async () => undefined);
     return c.json({ id: c.var.userId, tier });
+  });
+
+  app.get("/push/public-key", authenticated, (c) => {
+    const publicKey = vapidPublicKeyToApplicationServerKey(deps.vapidPublicKey);
+    if (publicKey === undefined) {
+      return problemResponse(
+        503,
+        "push_unavailable",
+        "Push is not configured",
+        c.get("requestId"),
+      );
+    }
+    return c.json({ publicKey });
   });
 
   app.get("/books", auth("books:read"), async (c) => {

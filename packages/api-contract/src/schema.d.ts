@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/push/public-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the VAPID public key for Web Push subscriptions
+         * @description The key is base64url, in the uncompressed point format that `applicationServerKey` expects.
+         */
+        get: operations["getPushPublicKey"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books": {
         parameters: {
             query?: never;
@@ -698,6 +718,10 @@ export interface components {
             /** @enum {string} */
             tier: "free" | "plus";
         };
+        PushPublicKey: {
+            /** @description Base64url of the 65-byte uncompressed P-256 point. */
+            publicKey: string;
+        };
         Problem: {
             type: string;
             title: string;
@@ -763,6 +787,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getPushPublicKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The public key */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushPublicKey"];
                 };
             };
             401: components["responses"]["Problem"];
