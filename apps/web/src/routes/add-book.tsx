@@ -14,7 +14,9 @@ import {
   parseIsbn,
 } from "../books/add-book-logic.ts";
 import { BarcodeScanner } from "../books/barcode-scanner.tsx";
+import { PastBookSection } from "../books/past-book-section.tsx";
 import { Button } from "../ui/button.tsx";
+import { ChoiceGroup } from "../ui/choice-group.tsx";
 import { useOnline } from "../ui/online.ts";
 import { TextField } from "../ui/text-field.tsx";
 
@@ -38,6 +40,11 @@ function Cover({ url, title }: { url: string; title: string }) {
   );
 }
 
+const whenChoices = [
+  { id: "now", label: "Reading it now" },
+  { id: "past", label: "Finished before" },
+];
+
 function ConfirmBook({
   initial,
   online,
@@ -50,6 +57,7 @@ function ConfirmBook({
   const navigate = useNavigate();
   const create = useCreateBook();
   const [draft, setDraft] = useState(initial);
+  const [when, setWhen] = useState("now");
   const [shownError, setShownError] = useState<string | null>(null);
   const set = (key: keyof Draft) => (value: string) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -90,31 +98,43 @@ function ConfirmBook({
           />
         </div>
       </div>
-      {shownError ? (
-        <p role="alert" className="text-base text-danger">
-          {shownError}
-        </p>
-      ) : null}
-      {create.isError ? (
-        <p role="alert" className="text-base text-danger">
-          {create.error.message}
-        </p>
-      ) : null}
-      {!online ? (
-        <p className="text-sm text-ink-muted">
-          Offline. Adding a book needs a connection.
-        </p>
-      ) : null}
-      <div className="flex gap-sm">
-        <Button
-          variant="primary"
-          isDisabled={!online || create.isPending}
-          onPress={submit}
-        >
-          Add to shelf
-        </Button>
-        <Button onPress={onCancel}>Start again</Button>
-      </div>
+      <ChoiceGroup
+        label="Where are you with this book?"
+        choices={whenChoices}
+        value={when}
+        onChange={setWhen}
+      />
+      {when === "past" ? (
+        <PastBookSection draft={draft} onCancel={onCancel} />
+      ) : (
+        <>
+          {shownError ? (
+            <p role="alert" className="text-base text-danger">
+              {shownError}
+            </p>
+          ) : null}
+          {create.isError ? (
+            <p role="alert" className="text-base text-danger">
+              {create.error.message}
+            </p>
+          ) : null}
+          {!online ? (
+            <p className="text-sm text-ink-muted">
+              Offline. Adding a book needs a connection.
+            </p>
+          ) : null}
+          <div className="flex gap-sm">
+            <Button
+              variant="primary"
+              isDisabled={!online || create.isPending}
+              onPress={submit}
+            >
+              Add to shelf
+            </Button>
+            <Button onPress={onCancel}>Start again</Button>
+          </div>
+        </>
+      )}
     </section>
   );
 }

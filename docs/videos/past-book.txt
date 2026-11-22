@@ -1,0 +1,20 @@
+This video shows how to add a book that you finished before you used the app.
+All data in this test run is seeded test data.
+The test reader opens the Add a book page.
+The reader enters the details of the book by hand.
+The reader pushes Finished before.
+The page asks for the finish date.
+The reader does not need the exact day.
+The reader can give the month and the year, or only the year.
+In this video, the reader gives March 2019.
+The reader gives the book a rating of 4.
+The reader can also add a photo.
+Then the reader writes what they remember about the book.
+The reader can record a voice note instead.
+The reader pushes Add past book.
+The page shows that the book is added.
+The app turns the note into insights, and the page shows them.
+The reader pushes Give me 3 recall prompts.
+The page shows 3 questions that help the reader to remember the book.
+The reader can write an answer to each question.
+If the device is offline, the button is off and the page tells the reader why.
