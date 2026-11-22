@@ -52,6 +52,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - Ponytail is for reviewing PRs, not always on. These non-negotiables win over its advice.
 - Claude never merges PRs, triggers workflows or pushes to `main`; it opens PRs; the owner merges yellow and red ones and the PR risk workflow merges green ones (ADR 0005) (enforced by the `block-merges` and `block-github-tool-merges` hooks). Work that depends on an unmerged PR goes on a branch stacked on it.
 - Small PRs, one concern each. Every PR passes lint, typecheck, tests and Terraform plan.
+- Keep open PRs free of conflicts. During a session, before starting each task and before ending, run `gh pr list --json number,mergeable --jq '.[]|select(.mergeable=="CONFLICTING")'`. For each conflicting PR, merge its base into the branch (merge, never rebase), keep both sides when both added something, regenerate generated files (`npm run generate -w packages/api-contract`) instead of hand-merging them, run lint and typecheck, and push. A conflicting PR is a blocked PR: fix it before you start new work.
 - Every PR with a feature change includes a Playwright video demoing what was done, and/or an explainer video with voice-over whose script is written in ASD-STE100 Simplified Technical English. Videos use seeded test data only (never real notes), and are attached to the PR, not committed.
 - Commit early and often: small commits, one logical change each, committed as soon as that change works. Don't batch unrelated changes into one commit.
 
@@ -75,6 +76,7 @@ Kept by the `correct` skill. A rule with nothing in the right-hand column is a c
 | Lint and typecheck after edits | `lint-after-edit` hook, CI |
 | Claude never merges, runs workflows or pushes to `main` | `block-merges` and `block-github-tool-merges` hooks, `permissions.deny` |
 | Only green PRs merge without the owner | `PR risk` and `Merge green PRs` workflows (ADR 0005) |
+| Open PRs stay free of conflicts | nothing yet; sessions check by hand |
 | No test doubles, fixed sleeps, retries, raised timeouts or prose comments | Oxlint with Landmines, CI |
 | Infrastructure only through Terraform | nightly `drift.yml` |
 | Every table has RLS and a cross-user test | pgTAP tests in CI (one per table); nothing yet fails a table without one |

@@ -135,6 +135,41 @@ def score_questions(data, judge_model, minimum):
     sys.exit(1 if failed else 0)
 
 
+OCR_CASE_MIN = 0.9
+
+
+def score_ocr(data):
+    """OCR has ground truth, so no judge model: text similarity per case."""
+    from difflib import SequenceMatcher
+
+    rows, failed, tin, tout = [], False, 0, 0
+    for r in data["results"]:
+        out = r["output"]
+        if out is None:
+            rows.append({"id": r["id"], "error": r["error"]})
+            failed = True
+            continue
+        tin += out["usage"]["inputTokens"]
+        tout += out["usage"]["outputTokens"]
+        got = "\n".join(out["lines"])
+        want = "\n".join(r["expected"])
+        similarity = round(SequenceMatcher(None, got, want).ratio(), 3)
+        rows.append({"id": r["id"], "similarity": similarity})
+        if similarity < OCR_CASE_MIN:
+            failed = True
+    n = max(len(rows), 1)
+    p_in, p_out = PRICES.get(data["model"], (0, 0))
+    summary = {
+        "task": "ocr",
+        "model": data["model"],
+        "mean_similarity": round(sum(r.get("similarity", 0) for r in rows) / n, 3),
+        "est_cost_per_call_usd": round((tin * p_in + tout * p_out) / 1_000_000 / n, 6),
+        "passed": not failed,
+    }
+    print(json.dumps({"summary": summary, "rows": rows}, indent=2))
+    sys.exit(1 if failed else 0)
+
+
 def score_ask(data, judge_model, minimum):
     judge = GroqJudge(judge_model)
     faithful = GEval(
@@ -208,6 +243,8 @@ def main():
     data = json.load(open(path))
     if data.get("task") == "ask":
         score_ask(data, judge_model, minimum)
+    if data.get("task") == "ocr":
+        score_ocr(data)
     if data.get("task") == "questions":
         score_questions(data, judge_model, minimum)
     judge = GroqJudge(judge_model)

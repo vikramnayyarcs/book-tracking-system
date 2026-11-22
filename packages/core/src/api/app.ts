@@ -58,6 +58,7 @@ import {
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
 import { getActivity, parseYear } from "../activity.ts";
+import { getStats } from "../stats.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import {
   answerQuestion,
@@ -80,7 +81,13 @@ import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
-import type { Embedder, SpeechToText, TextModel } from "../ai/types.ts";
+import type {
+  Embedder,
+  SpeechToText,
+  TextModel,
+  VisionModel,
+} from "../ai/types.ts";
+import { quotePhotoPath, readQuotePhoto } from "../quote-photos.ts";
 import {
   loadProcessInfo,
   markStatus,
@@ -116,6 +123,7 @@ export type ApiDeps = {
   speech: SpeechToText;
   text: TextModel;
   embedder?: Embedder;
+  vision: VisionModel;
   waitUntil: (work: Promise<unknown>) => void;
   vapidPublicKey: string;
 };
@@ -790,6 +798,13 @@ export const createApp = (deps: ApiDeps) => {
     return c.json(result);
   });
 
+  app.get("/stats", authenticated, async (c) => {
+    const { result } = await c.var.withUser((sql) =>
+      getStats(sql, new Date(deps.now())),
+    );
+    return c.json(result);
+  });
+
   app.get("/export", authenticated, async (c) => {
     const format = parseExportFormat(c.req.query("format"));
     if (format === undefined) {
@@ -869,6 +884,58 @@ export const createApp = (deps: ApiDeps) => {
       path,
       expiresInSeconds: upload.expiresInSeconds,
     });
+  });
+
+  app.post("/books/:id/quote-photos", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: book } = await c.var.withUser((sql) => getBook(sql, id));
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    const photoId = crypto.randomUUID();
+    const upload = await deps.objects.signedUploadUrl(
+      "photos",
+      quotePhotoPath(c.var.userId, photoId),
+    );
+    return c.json(
+      {
+        id: photoId,
+        uploadUrl: upload.url,
+        expiresInSeconds: upload.expiresInSeconds,
+      },
+      201,
+    );
+  });
+
+  app.post("/quote-photos/:id/ocr", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    try {
+      const result = await readQuotePhoto(deps, c.var.userId, id);
+      if (result.status === "not_found") {
+        return notFound(c.get("requestId"));
+      }
+      if (result.status === "invalid") {
+        return invalid(result.detail, c.get("requestId"));
+      }
+      return c.json({ lines: result.lines });
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not read the photo. Take a new photo and try again.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
   });
 
   app.get("/tokens", authenticated, async (c) => {

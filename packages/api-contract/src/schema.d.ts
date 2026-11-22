@@ -420,6 +420,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reading metrics for a visualisation screen, with days, weeks and months in the caller's time zone (no streaks or missed days) */
+        get: operations["getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/export": {
         parameters: {
             query?: never;
@@ -494,10 +511,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/books/{id}/quote-photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get a signed URL to upload a photo of a page for quote OCR */
+        post: operations["createQuotePhotoUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quote-photos/{id}/ocr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read the text lines of an uploaded page photo, then delete the photo
+         * @description The photo is deleted whether the reading succeeds or fails, so a failed reading needs a new photo.
+         */
+        post: operations["readQuotePhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Stats: {
+            timeZone: string;
+            /** @description Sessions per week for the last 12 weeks, oldest first, zero-filled; weekStart is a Monday */
+            entriesPerWeek: {
+                /** Format: date */
+                weekStart: string;
+                count: number;
+            }[];
+            /** @description Books finished per month for the last 12 months, oldest first, zero-filled; books finished with year precision are left out */
+            booksFinishedPerMonth: {
+                month: string;
+                count: number;
+            }[];
+            /** @description Minutes of voice notes per month for the last 12 months, oldest first, zero-filled */
+            voiceMinutesPerMonth: {
+                month: string;
+                minutes: number;
+            }[];
+            /** @description Insight and quote counts for every book, most notes first */
+            perBook: {
+                /** Format: uuid */
+                bookId: string;
+                title: string;
+                insights: number;
+                quotes: number;
+            }[];
+            /** @description Finished-book ratings, one item for each of 1 to 5 */
+            ratings: {
+                rating: number;
+                count: number;
+            }[];
+            booksByStatus: {
+                reading: number;
+                finished: number;
+                abandoned: number;
+            };
+        };
         Review: {
             rating: number | null;
             text: string | null;
@@ -527,6 +622,16 @@ export interface components {
             uploadUrl: string;
             path: string;
             expiresInSeconds: number;
+        };
+        QuotePhotoUpload: {
+            /** Format: uuid */
+            id: string;
+            /** @description Send the image bytes (JPEG, PNG or WebP, at most 3 MB) to this URL with PUT */
+            uploadUrl: string;
+            expiresInSeconds: number;
+        };
+        QuotePhotoLines: {
+            lines: string[];
         };
         Export: {
             /** Format: date-time */
@@ -1758,6 +1863,28 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    getStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Stats"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
     exportVault: {
         parameters: {
             query: {
@@ -1861,6 +1988,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhotoUpload"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createQuotePhotoUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo id and the signed upload URL */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotePhotoUpload"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    readQuotePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The lines of printed text, in reading order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuotePhotoLines"];
                 };
             };
             400: components["responses"]["Problem"];

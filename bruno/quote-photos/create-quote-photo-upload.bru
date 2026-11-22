@@ -1,0 +1,23 @@
+meta {
+  name: Create quote photo upload
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/books/{{bookId}}/quote-photos
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+docs {
+  operationId: createQuotePhotoUpload
+}
+
+script:post-response {
+  bru.setVar("quotePhotoId", res.body.id);
+}
