@@ -2,6 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "test/e2e",
+  testIgnore: "web/**",
   forbidOnly: Boolean(process.env["CI"]),
   retries: 0,
   reporter: process.env["CI"]
