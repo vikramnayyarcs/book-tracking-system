@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMe } from "../api/hooks.ts";
 import { useSession } from "../auth/session.tsx";
 import { clearDeviceData } from "../clear-device-data.ts";
+import { meta } from "../ui/styles.ts";
 import { Button } from "../ui/button.tsx";
 
 const tierLabel = { free: "Free", plus: "Plus" } as const;
@@ -38,17 +39,24 @@ export function SettingsPage() {
 
   return (
     <>
-      <h1 className="mb-lg text-2xl font-medium">Settings</h1>
+      <p className={`${meta} mb-xs`}>Your account</p>
+      <h1 className="mb-lg font-serif text-2xl font-semibold">Settings</h1>
 
-      <section aria-labelledby="plan-heading" className="mb-xl">
-        <h2 id="plan-heading" className="mb-sm text-lg font-medium">
+      <section
+        aria-labelledby="plan-heading"
+        className="mb-lg border-b border-dashed border-border pb-lg"
+      >
+        <h2 id="plan-heading" className="mb-sm text-lg font-semibold">
           Plan
         </h2>
         <Tier />
       </section>
 
-      <section aria-labelledby="device-heading" className="mb-xl">
-        <h2 id="device-heading" className="mb-sm text-lg font-medium">
+      <section
+        aria-labelledby="device-heading"
+        className="mb-lg border-b border-dashed border-border pb-lg"
+      >
+        <h2 id="device-heading" className="mb-sm text-lg font-semibold">
           This device
         </h2>
         <p className="mb-md text-ink-muted">
@@ -70,7 +78,7 @@ export function SettingsPage() {
       </section>
 
       <section aria-labelledby="account-heading">
-        <h2 id="account-heading" className="mb-sm text-lg font-medium">
+        <h2 id="account-heading" className="mb-sm text-lg font-semibold">
           Account
         </h2>
         <Button variant="primary" onPress={() => void session.signOut()}>

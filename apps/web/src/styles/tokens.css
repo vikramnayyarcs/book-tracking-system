@@ -108,9 +108,13 @@
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
+  --spacing-4xl: 6rem;
 
   --container-narrow: 28rem;
   --container-page: 48rem;
+  --container-nav: 14rem;
+
+  --breakpoint-wide: 68.75rem;
 
   --radius-sm: 0.25rem;
   --radius-md: 0.25rem;

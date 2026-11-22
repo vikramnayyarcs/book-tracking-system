@@ -11,9 +11,9 @@ import { useOnline } from "../ui/online.ts";
 const focus =
   "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-const navLink = `inline-flex min-h-11 items-center rounded-md px-md text-base ${focus} text-ink-muted`;
+const navLink = `flex min-h-11 items-center rounded-md px-md text-base wide:w-full ${focus} text-ink-muted`;
 const navActive =
-  "text-accent font-semibold underline decoration-2 underline-offset-8";
+  "text-accent font-semibold underline decoration-2 underline-offset-8 wide:bg-accent-subtle wide:text-accent-subtle-ink wide:no-underline";
 
 function LogSessionShortcut() {
   const reading = useReadingBooks();
@@ -96,36 +96,38 @@ export function AppLayout() {
       </header>
       <OfflineBanner />
       <UploadStatus />
-      <div className="flex-1 overflow-y-auto">
-        <main className="mx-auto w-full max-w-page px-md py-lg">
-          <Outlet />
-        </main>
+      <div className="flex min-h-0 flex-1 flex-col wide:flex-row">
+        <div className="flex-1 overflow-y-auto wide:order-2">
+          <main className="mx-auto w-full max-w-page px-md py-lg">
+            <Outlet />
+          </main>
+        </div>
+        <nav
+          aria-label="Main"
+          className="border-t border-border bg-surface-raised wide:order-1 wide:w-nav wide:shrink-0 wide:border-t-0 wide:border-r"
+        >
+          <ul className="mx-auto flex max-w-page justify-around gap-sm p-sm wide:flex-col wide:justify-start wide:p-md">
+            {(
+              [
+                ["/", "Shelf"],
+                ["/search", "Search"],
+                ["/settings", "Settings"],
+              ] as const
+            ).map(([to, label]) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className={navLink}
+                  activeProps={{ className: `${navLink} ${navActive}` }}
+                  activeOptions={{ exact: true }}
+                >
+                  {label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
-      <nav
-        aria-label="Main"
-        className="border-t border-border bg-surface-raised"
-      >
-        <ul className="mx-auto flex max-w-page justify-around gap-sm p-sm">
-          {(
-            [
-              ["/", "Shelf"],
-              ["/search", "Search"],
-              ["/settings", "Settings"],
-            ] as const
-          ).map(([to, label]) => (
-            <li key={to}>
-              <Link
-                to={to}
-                className={navLink}
-                activeProps={{ className: `${navLink} ${navActive}` }}
-                activeOptions={{ exact: true }}
-              >
-                {label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
     </div>
   );
 }
