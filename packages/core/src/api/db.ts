@@ -15,6 +15,7 @@ export type Db = {
     hash: string,
   ) => Promise<{ userId: string; scopes: TokenScope[] } | undefined>;
   jobs: JobStore;
+  system: <T>(work: (sql: Sql) => Promise<T>) => Promise<T>;
 };
 
 export const createDb = (connectionString: string) => {
@@ -43,6 +44,7 @@ export const createDb = (connectionString: string) => {
         ? undefined
         : { userId: row.user_id, scopes: row.scopes };
     },
+    system: (work) => pool.begin(work),
     jobs: {
       claim: async (job, runKey) => {
         const rows = await pool`

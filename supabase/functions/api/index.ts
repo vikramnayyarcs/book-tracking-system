@@ -11,6 +11,7 @@ import {
   INSIGHT_MODEL,
   VISION_MODEL,
 } from "../../../packages/core/src/ai/index.ts";
+import { brand } from "../../../packages/core/src/brand.ts";
 import { parseTier } from "../../../packages/core/src/plans.ts";
 
 declare const EdgeRuntime: { waitUntil: (work: Promise<unknown>) => void };
@@ -92,6 +93,8 @@ const app = createApp({
   fetch: (input, init) => fetch(input, init),
   openLibraryUrl: Deno.env.get("OPEN_LIBRARY_URL") ?? "https://openlibrary.org",
   vapidPublicKey: Deno.env.get("VAPID_PUBLIC_KEY") ?? "",
+  vapidPrivateKey: Deno.env.get("VAPID_PRIVATE_KEY") ?? "",
+  vapidSubject: Deno.env.get("VAPID_SUBJECT") ?? `https://${brand.domain}`,
   defaultTier: parseTier(Deno.env.get("DEFAULT_TIER")) ?? "free",
 });
 

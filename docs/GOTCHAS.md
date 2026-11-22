@@ -114,3 +114,9 @@ Fix: set the column from the bound parameter (`set x = ${value}`) instead of `ex
 ## 2026-11-21: the lint-after-edit hook can fail in a worktree with a duplicate Landmines plugin name
 
 **In a git worktree the hook may print "Plugin name landmines-structure is already registered" and block edits while `npm run lint` passes.** Run `npm run lint` from the worktree root and trust that result.
+
+## 2026-11-22: Node aborts on a WebCrypto AES decrypt of a body that came through MSW fetch
+
+**In a Vitest test, decrypting a Web Push body captured by an MSW handler with `crypto.subtle.decrypt` killed the worker (SIGABRT, "Assertion failed: errors->Empty()") even though the bytes were valid.**
+
+Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check headers, status codes and body length; see `packages/core/src/webpush.test.ts`.

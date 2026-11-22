@@ -92,6 +92,8 @@ import {
 } from "../reflections.ts";
 import { AiError } from "../ai/types.ts";
 import { problemResponse } from "./problem.ts";
+import { nudgeJob } from "../nudge-sender.ts";
+import { sendWebPush, type VapidConfig } from "../webpush.ts";
 import { JOBS, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
@@ -114,6 +116,8 @@ export type ApiDeps = {
   vision: VisionModel;
   waitUntil: (work: Promise<unknown>) => void;
   vapidPublicKey: string;
+  vapidPrivateKey: string;
+  vapidSubject: string;
 };
 
 type Env = {
@@ -913,6 +917,24 @@ export const createApp = (deps: ApiDeps) => {
   );
 
   const internal = new Hono<Env>().basePath("/internal");
+  const vapid: VapidConfig = {
+    subject: deps.vapidSubject,
+    publicKey: deps.vapidPublicKey,
+    privateKey: deps.vapidPrivateKey,
+  };
+  const jobs = {
+    ...JOBS,
+    nudge: nudgeJob({
+      system: deps.db.system,
+      now: deps.now,
+      send: (target, payload) =>
+        sendWebPush(
+          { fetch: deps.fetch, now: deps.now, vapid },
+          target,
+          payload,
+        ),
+    }),
+  };
 
   internal.use("*", async (c, next) => {
     const requestId = deps.newRequestId();
@@ -963,7 +985,7 @@ export const createApp = (deps: ApiDeps) => {
   internal.post("/jobs/:job", async (c) => {
     const result = await runJob(
       deps.db.jobs,
-      JOBS,
+      jobs,
       c.req.param("job"),
       deps.now(),
       parseRunKey(c.req.query("run_key")),
