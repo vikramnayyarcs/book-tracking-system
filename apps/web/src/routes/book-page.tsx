@@ -1,3 +1,4 @@
+import { meta, noteCard, noteText, quoteText } from "../ui/styles.ts";
 import type { components } from "@book-tracking-system/api-contract/types";
 import { Link, useParams } from "@tanstack/react-router";
 import {
@@ -56,12 +57,12 @@ function LoadError({
 
 function SessionItem({ session }: { session: Session }) {
   return (
-    <li className="flex flex-col gap-xs rounded-md border border-border bg-surface-raised p-md">
-      <p className="text-sm text-ink-muted">
+    <li className={noteCard}>
+      <p className={meta}>
         {session.date}, {sessionLocation(session)}
       </p>
       {session.noteText ? (
-        <p className="text-base">{session.noteText}</p>
+        <p className={noteText}>{session.noteText}</p>
       ) : (
         <p className="text-base text-ink-muted">
           {session.status === "failed"
@@ -109,11 +110,9 @@ function Sessions({ bookId }: { bookId: string }) {
 function InsightItem({ insight }: { insight: Insight }) {
   const isQuote = insight.kind === "quote";
   return (
-    <li className="flex flex-col gap-xs rounded-md border border-border bg-surface-raised p-md">
-      <p className={`text-base ${isQuote ? "font-serif italic" : ""}`}>
-        {insight.text}
-      </p>
-      <p className="text-sm text-ink-muted">
+    <li className={noteCard}>
+      <p className={isQuote ? quoteText : noteText}>{insight.text}</p>
+      <p className={meta}>
         {insight.page ? `Page ${insight.page}` : "No page noted"}
         {insight.pinned ? ", pinned" : ""}
       </p>

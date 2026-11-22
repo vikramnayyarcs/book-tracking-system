@@ -257,4 +257,5 @@ test("another reader cannot read the book's sessions or reflections", async ({
     });
     expect(response.status, path).toBe(404);
   }
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
