@@ -386,6 +386,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask a question and get an answer from the caller's own insights only, with citations (counts toward the monthly vault question limit; the question and answer are never stored or logged) */
+        post: operations["askVault"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/activity": {
         parameters: {
             query?: never;
@@ -638,6 +655,24 @@ export interface components {
             position: number;
             question: string;
             answer: string | null;
+        };
+        AskAnswer: {
+            answered: boolean;
+            answer: string;
+            citations: components["schemas"]["AskCitation"][];
+            /** @description True when the caller has used at least 80% of this month's vault questions */
+            warn: boolean;
+        };
+        AskCitation: {
+            /** Format: uuid */
+            insightId: string;
+            /** Format: uuid */
+            bookId: string;
+            bookTitle: string;
+            /** Format: uuid */
+            sessionId: string | null;
+            /** Format: date */
+            sessionDate: string | null;
         };
         SearchResult: {
             /** @enum {string} */
@@ -1759,6 +1794,43 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    askVault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    question: string;
+                    /**
+                     * Format: uuid
+                     * @description Limit the answer to one book
+                     */
+                    bookId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The answer. When nothing relevant is found, answered is false and no model is called. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskAnswer"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

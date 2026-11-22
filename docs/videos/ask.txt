@@ -1,0 +1,19 @@
+This video shows the ask endpoint.
+All data in this test run is seeded test data.
+First, a user has a book with two notes.
+One note is about zebrafinch songs.
+The other note is about orchard rows.
+Now ask a question about zebrafinch songs.
+The API looks only in the notes of this user.
+The response gives an answer.
+The answer shows which note supports each claim.
+Each citation shows the book and the session.
+Next, ask a question that the notes do not answer.
+The response says that this is not in your notes.
+The API does not call the AI service in this case.
+Now a second user asks about zebrafinch songs.
+The response says that this is not in your notes.
+This shows that users cannot see the notes of other users.
+Each question counts toward the limit of your plan.
+When the limit is used, the API refuses the question.
+The API never stores the question or the answer.
