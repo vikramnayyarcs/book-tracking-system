@@ -31,7 +31,7 @@ jobs:
           [ -n "$prs" ] || { echo "No open PRs based on $BASE."; exit 0; }
 
           gh label create conflicts --repo "$REPO" --color b60205 \
-            --description "Base branch cannot be merged in automatically" --force >/dev/null
+            --description "Base branch cannot be merged in automatically" --force >/dev/null || echo "Cannot create the conflicts label (the App needs Issues: write); continuing."
 
           while IFS=$'\t' read -r pr sha head; do
             behind="$(gh api "repos/$REPO/compare/$head...$BASE" --jq .ahead_by)"

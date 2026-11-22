@@ -81,7 +81,7 @@ Lets Terraform manage this repo's settings and secrets without a personal token 
    - **Administration: Read and write**
    - **Secrets: Read and write**
    - **Dependabot alerts: Read and write**
-   - **Contents: Read and write** and **Pull requests: Read and write** (for the `Update PR branches` workflow, which merges the base into open PRs; pushes made with the App's token start CI, but pushes made with `GITHUB_TOKEN` do not)
+   - **Contents**, **Pull requests** and **Issues: Read and write** (Issues covers labels; for the `Update PR branches` workflow, which merges the base into open PRs; pushes made with the App's token start CI, but pushes made with `GITHUB_TOKEN` do not)
    - Metadata: Read (set automatically)
 5. Where can this app be installed: **Only on this account**. Create.
 6. Note the **App ID** at the top of the page. `gh variable set TF_GITHUB_APP_ID`.
