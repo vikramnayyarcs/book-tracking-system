@@ -61,6 +61,14 @@ import { getActivity, parseYear } from "../activity.ts";
 import { getStats } from "../stats.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import {
+  answerQuestion,
+  bookExists,
+  loadVaultQuestionsUsed,
+  parseAsk,
+  retrieveNotes,
+} from "../ask.ts";
+import { mayAskVault } from "../limits.ts";
+import {
   deletePushSubscription,
   getNudgeSettings,
   parseEndpointQuery,
@@ -73,7 +81,12 @@ import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
-import type { SpeechToText, TextModel, VisionModel } from "../ai/types.ts";
+import type {
+  Embedder,
+  SpeechToText,
+  TextModel,
+  VisionModel,
+} from "../ai/types.ts";
 import { quotePhotoPath, readQuotePhoto } from "../quote-photos.ts";
 import {
   loadProcessInfo,
@@ -91,6 +104,8 @@ import {
   saveQuestions,
 } from "../reflections.ts";
 import { AiError } from "../ai/types.ts";
+import { maySummarize } from "../limits.ts";
+import { runSummary } from "../summary.ts";
 import { problemResponse } from "./problem.ts";
 import { nudgeJob } from "../nudge-sender.ts";
 import { sendWebPush, type VapidConfig } from "../webpush.ts";
@@ -113,6 +128,7 @@ export type ApiDeps = {
   openLibraryUrl: string;
   speech: SpeechToText;
   text: TextModel;
+  embedder?: Embedder;
   vision: VisionModel;
   waitUntil: (work: Promise<unknown>) => void;
   vapidPublicKey: string;
@@ -448,6 +464,74 @@ export const createApp = (deps: ApiDeps) => {
     return c.body(null, 204);
   });
 
+  app.post("/ask", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseAsk(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result: gate, tier } = await c.var.withUser(async (sql) => ({
+      bookFound:
+        parsed.bookId === undefined || (await bookExists(sql, parsed.bookId)),
+      used: await loadVaultQuestionsUsed(sql),
+    }));
+    if (!gate.bookFound) {
+      return notFound(c.get("requestId"));
+    }
+    const decision = mayAskVault({
+      tier,
+      usage: { voiceSeconds: 0, vaultQuestions: gate.used },
+    });
+    if (!decision.allowed) {
+      return problemResponse(
+        403,
+        "tier_limit_reached",
+        "You have used all vault questions your plan allows this month",
+        c.get("requestId"),
+        decision.reason,
+      );
+    }
+    let embedding: number[] | null = null;
+    if (deps.embedder !== undefined) {
+      try {
+        embedding = (await deps.embedder.embed([parsed.question]))[0] ?? null;
+      } catch {
+        embedding = null;
+      }
+    }
+    const { result: retrieved } = await c.var.withUser((sql) =>
+      retrieveNotes(sql, {
+        question: parsed.question,
+        embedding,
+        ...(parsed.bookId === undefined ? {} : { bookId: parsed.bookId }),
+      }),
+    );
+    let asked;
+    try {
+      asked = await answerQuestion(deps.text, parsed.question, retrieved);
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not answer. Try again later.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
+    await c.var.withUser(
+      (sql) =>
+        sql`
+        select app.record_usage(
+          0, 1, ${asked.usage.inputTokens}::bigint, ${asked.usage.outputTokens}::bigint
+        )
+      `,
+    );
+    return c.json({ ...asked.result, warn: decision.warn });
+  });
+
   app.post("/sessions/:id/audio-upload", auth("sessions:write"), async (c) => {
     const id = c.req.param("id");
     if (!uuid.test(id)) {
@@ -765,10 +849,78 @@ export const createApp = (deps: ApiDeps) => {
       return invalid(parsed.detail, c.get("requestId"));
     }
     const today = new Date(deps.now()).toISOString().slice(0, 10);
-    const { result } = await c.var.withUser((sql) =>
+    const { result, tier } = await c.var.withUser((sql) =>
       finishBook(sql, id, parsed.finish, today),
     );
-    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (maySummarize(tier) && result.review?.summary == null) {
+      const userId = c.var.userId;
+      deps.waitUntil(
+        runSummary({
+          withUser: async (work) =>
+            (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+          text: deps.text,
+          bookId: id,
+        }).catch(() => undefined),
+      );
+    }
+    return c.json(result);
+  });
+
+  app.post("/books/:id/summary", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: book, tier } = await c.var.withUser((sql) =>
+      getBook(sql, id),
+    );
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (!maySummarize(tier)) {
+      return problemResponse(
+        403,
+        "tier_feature_unavailable",
+        "Book summaries are part of the Plus plan",
+        c.get("requestId"),
+      );
+    }
+    const userId = c.var.userId;
+    let outcome;
+    try {
+      outcome = await runSummary({
+        withUser: async (work) =>
+          (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+        text: deps.text,
+        bookId: id,
+      });
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not write the summary. Try again later.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
+    if (outcome.kind === "missing") {
+      return notFound(c.get("requestId"));
+    }
+    if (outcome.kind === "nothing") {
+      return problemResponse(
+        422,
+        "nothing_to_process",
+        "The book has no notes or insights to summarize yet",
+        c.get("requestId"),
+      );
+    }
+    return c.json(outcome.review);
   });
 
   app.get("/books/:id/review", authenticated, async (c) => {

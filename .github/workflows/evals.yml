@@ -90,6 +90,18 @@ jobs:
         if: contains(steps.sets.outputs.list, ' recall ')
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/recall.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/recall-scores.json"
 
+      - name: Generate book summaries with the prompt and model in the code
+        run: node packages/core/evals/generate-summary.ts "$RUNNER_TEMP/summary.json"
+
+      - name: Score book summaries with DeepEval
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/summary.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/summary-scores.json"
+
+      - name: Generate vault answers with the prompt and model in the code
+        run: node packages/core/evals/generate-ask.ts "$RUNNER_TEMP/ask.json"
+
+      - name: Score vault answers with DeepEval
+        run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/ask.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/ask-scores.json"
+
       - name: Read invented page images with the vision prompt and model in the code
         if: contains(steps.sets.outputs.list, ' ocr ')
         run: node packages/core/evals/generate-ocr.ts "$RUNNER_TEMP/ocr.json"

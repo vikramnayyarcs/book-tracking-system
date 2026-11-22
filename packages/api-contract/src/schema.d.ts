@@ -386,6 +386,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask a question and get an answer from the caller's own insights only, with citations (counts toward the monthly vault question limit; the question and answer are never stored or logged) */
+        post: operations["askVault"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/activity": {
         parameters: {
             query?: never;
@@ -469,6 +486,28 @@ export interface paths {
         get: operations["getBookReview"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/books/{id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write the book summary again from the reader's own notes (Plus tier)
+         * @description Plus tier only; the free tier gets 403 with code `tier_feature_unavailable`. The summary uses only the reader's session notes and insights of this book, so a book with none returns 422. The summary is also written in the background when a Plus reader finishes a book. Returns 502 when the AI service fails; the old summary stays.
+         */
+        post: operations["regenerateBookSummary"];
         delete?: never;
         options?: never;
         head?: never;
@@ -638,6 +677,24 @@ export interface components {
             position: number;
             question: string;
             answer: string | null;
+        };
+        AskAnswer: {
+            answered: boolean;
+            answer: string;
+            citations: components["schemas"]["AskCitation"][];
+            /** @description True when the caller has used at least 80% of this month's vault questions */
+            warn: boolean;
+        };
+        AskCitation: {
+            /** Format: uuid */
+            insightId: string;
+            /** Format: uuid */
+            bookId: string;
+            bookTitle: string;
+            /** Format: uuid */
+            sessionId: string | null;
+            /** Format: date */
+            sessionDate: string | null;
         };
         SearchResult: {
             /** @enum {string} */
@@ -1762,6 +1819,43 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    askVault: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    question: string;
+                    /**
+                     * Format: uuid
+                     * @description Limit the answer to one book
+                     */
+                    bookId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The answer. When nothing relevant is found, answered is false and no model is called. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskAnswer"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
     getActivity: {
         parameters: {
             query: {
@@ -1891,6 +1985,34 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    regenerateBookSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The review with the new summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };
