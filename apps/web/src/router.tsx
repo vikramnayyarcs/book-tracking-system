@@ -3,6 +3,7 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   Outlet,
 } from "@tanstack/react-router";
 
@@ -18,8 +19,22 @@ const indexRoute = createRoute({
   ),
 });
 
+const devRoutes = import.meta.env.DEV
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/dev/tokens",
+        component: lazyRouteComponent(() =>
+          import("./routes/dev/tokens.tsx").then((m) => ({
+            default: m.TokensPage,
+          })),
+        ),
+      }),
+    ]
+  : [];
+
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([indexRoute]),
+  routeTree: rootRoute.addChildren([indexRoute, ...devRoutes]),
 });
 
 declare module "@tanstack/react-router" {
