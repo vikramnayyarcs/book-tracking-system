@@ -10,7 +10,8 @@ export type ProblemCode =
   | "tier_limit_reached"
   | "already_processed"
   | "nothing_to_process"
-  | "ai_unavailable";
+  | "ai_unavailable"
+  | "push_unavailable";
 
 export type Problem = {
   type: string;

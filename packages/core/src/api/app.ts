@@ -57,6 +57,7 @@ import {
   setFinishPhoto,
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
+import { getActivity, parseYear } from "../activity.ts";
 import { parseSearch, searchVault } from "../search.ts";
 import {
   answerQuestion,
@@ -66,6 +67,16 @@ import {
   retrieveNotes,
 } from "../ask.ts";
 import { mayAskVault } from "../limits.ts";
+import {
+  deletePushSubscription,
+  getNudgeSettings,
+  parseEndpointQuery,
+  parseMeUpdate,
+  parsePushSubscription,
+  savePushSubscription,
+  updateNudgeSettings,
+} from "../nudge.ts";
+import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -106,6 +117,7 @@ export type ApiDeps = {
   text: TextModel;
   embedder?: Embedder;
   waitUntil: (work: Promise<unknown>) => void;
+  vapidPublicKey: string;
 };
 
 type Env = {
@@ -232,8 +244,56 @@ export const createApp = (deps: ApiDeps) => {
   app.get("/health", (c) => c.json({ status: "ok" as const }));
 
   app.get("/me", authenticated, async (c) => {
-    const { tier } = await c.var.withUser(async () => undefined);
-    return c.json({ id: c.var.userId, tier });
+    const { result, tier } = await c.var.withUser(getNudgeSettings);
+    return c.json({ id: c.var.userId, tier, ...result });
+  });
+
+  app.patch("/me", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseMeUpdate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result, tier } = await c.var.withUser((sql) =>
+      updateNudgeSettings(sql, parsed.update, deps.now()),
+    );
+    return c.json({ id: c.var.userId, tier, ...result });
+  });
+
+  app.post("/push-subscriptions", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parsePushSubscription(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      savePushSubscription(sql, parsed.subscription),
+    );
+    return c.json(result, 201);
+  });
+
+  app.delete("/push-subscriptions", authenticated, async (c) => {
+    const endpoint = parseEndpointQuery(c.req.query("endpoint"));
+    if (endpoint === undefined) {
+      return invalid("endpoint must be an https URL", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      deletePushSubscription(sql, endpoint),
+    );
+    return result ? c.body(null, 204) : notFound(c.get("requestId"));
+  });
+
+  app.get("/push/public-key", authenticated, (c) => {
+    const publicKey = vapidPublicKeyToApplicationServerKey(deps.vapidPublicKey);
+    if (publicKey === undefined) {
+      return problemResponse(
+        503,
+        "push_unavailable",
+        "Push is not configured",
+        c.get("requestId"),
+      );
+    }
+    return c.json({ publicKey });
   });
 
   app.get("/books", auth("books:read"), async (c) => {
@@ -719,6 +779,15 @@ export const createApp = (deps: ApiDeps) => {
       searchVault(sql, parsed.query, parsed.limit),
     );
     return c.json({ items: result });
+  });
+
+  app.get("/activity", authenticated, async (c) => {
+    const year = parseYear(c.req.query("year"));
+    if (year === undefined) {
+      return invalid("year must be 1900 to 2200", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getActivity(sql, year));
+    return c.json(result);
   });
 
   app.get("/export", authenticated, async (c) => {

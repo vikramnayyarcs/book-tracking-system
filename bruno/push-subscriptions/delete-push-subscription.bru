@@ -1,0 +1,19 @@
+meta {
+  name: Delete push subscription
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{baseUrl}}/v1/push-subscriptions?endpoint=https%3A%2F%2Fpush.example.test%2Fsample-device
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+docs {
+  operationId: deletePushSubscription
+}

@@ -87,6 +87,18 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 
 **The `api` function runs in the Supabase Edge Runtime container, so MSW in the Vitest process never sees its Groq calls.** `test/api/groq-stand-in.ts` is a small HTTP server in the test process that replays the recorded Groq fixtures; CI points the function's `GROQ_URL` at it through `host.docker.internal:54390`. The stand-in is only up while `voice.test.ts` runs, and API test files run one at a time (`fileParallelism: false`), so the "provider unreachable" test in `processing.test.ts` still sees a refused connection.
 
+## 2026-11-21: lint-after-edit hook reports a plugin clash that `npm run lint` does not
+
+**The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
+
+Fix: ignore the hook message and run `npm run lint` yourself; it is the real check that CI repeats.
+
+## 2026-11-21: `excluded.col` in an upsert needs SELECT on that column
+
+**`insert ... on conflict do update set x = excluded.x` fails (a 500 from the API) when the role has column-limited grants and no `select` on `x`, because reading `excluded.x` counts as reading the column.**
+
+Fix: set the column from the bound parameter (`set x = ${value}`) instead of `excluded.x`; see `savePushSubscription` in `packages/core/src/nudge.ts`.
+
 ## 2026-11-21: ask the vault retrieves with an OR query and a similarity floor
 
 **`websearch_to_tsquery` ANDs every word, so a natural question like "what have I read about leadership?" matches nothing, and a vector ranker with no floor always returns its nearest rows.** `packages/core/src/ask.ts` builds an OR `to_tsquery` from the question words, and the vector ranker keeps only insights with cosine similarity of at least 0.8 (`VECTOR_MIN_SIMILARITY`, untuned for gte-small; tune it with real data). When the Edge function cannot embed the question, retrieval falls back to full-text only.
