@@ -4,7 +4,7 @@ import { routePattern, scrubItem } from "./scrub.ts";
 
 const seededNote = "Gandalf said the bridge of Khazad-dum falls at dawn";
 
-function item(type: string, payload: object, extraMeta = {}): TransportItem {
+function item(type: string, payload: object, extraMeta = {}) {
   return {
     type,
     payload,

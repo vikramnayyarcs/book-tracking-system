@@ -4,13 +4,11 @@ const numeric = /^-?\d+(\.\d+)?$/;
 const keptContextKeys = new Set(["rating", "navigation_type"]);
 const keptMeasurementTypes = new Set(["web-vitals"]);
 
-export function routePattern(fullPath: string): string {
+export function routePattern(fullPath: string) {
   return fullPath.replace(/\$(\w+)/g, ":$1");
 }
 
-function pickNumeric(
-  record: Record<string, string> | undefined,
-): Record<string, string> {
+function pickNumeric(record: Record<string, string> | undefined) {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(record ?? {})) {
     if (numeric.test(String(value))) out[key] = String(value);
@@ -18,9 +16,7 @@ function pickNumeric(
   return out;
 }
 
-function pickContext(
-  record: Record<string, string> | undefined,
-): Record<string, string> {
+function pickContext(record: Record<string, string> | undefined) {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(record ?? {})) {
     if (keptContextKeys.has(key) || numeric.test(String(value))) {
@@ -30,12 +26,7 @@ function pickContext(
   return out;
 }
 
-/**
- * Keeps only errors (type and stack frames, never the message), Web Vitals
- * and navigation timings (numbers), and the route pattern. Everything else
- * is dropped before it leaves the device.
- */
-export function scrubItem(item: TransportItem): TransportItem | null {
+export function scrubItem(item: TransportItem) {
   const pattern = item.meta.view?.name ?? "/";
   const meta: TransportItem["meta"] = {
     ...(item.meta.sdk ? { sdk: item.meta.sdk } : {}),

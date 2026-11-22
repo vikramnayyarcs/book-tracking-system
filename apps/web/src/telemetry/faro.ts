@@ -8,7 +8,7 @@ import { routePattern, scrubItem } from "./scrub.ts";
 
 let started = false;
 
-export function startTelemetry(): void {
+export function startTelemetry() {
   if (started || env.faroCollectorUrl === "") return;
   started = true;
   initializeFaro({
@@ -23,7 +23,7 @@ export function startTelemetry(): void {
   });
 }
 
-export function reportRoute(fullPath: string): void {
+export function reportRoute(fullPath: string) {
   if (!started) return;
   faro.api.setView({ name: routePattern(fullPath) });
 }
