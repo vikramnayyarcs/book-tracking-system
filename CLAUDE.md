@@ -53,6 +53,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 - Claude never merges PRs, triggers workflows or pushes to `main`; it opens PRs; the owner merges red ones and the PR risk workflow merges green and yellow ones (ADR 0005, ADR 0009; yellow needs a `## Risk note` section) (enforced by the `block-merges` and `block-github-tool-merges` hooks). Work that depends on an unmerged PR goes on a branch stacked on it.
 - Small PRs, one concern each. Every PR passes lint, typecheck, tests and Terraform plan.
 - Keep open PRs free of conflicts. During a session, before starting each task and before ending, run `gh pr list --json number,mergeable --jq '.[]|select(.mergeable=="CONFLICTING")'`. For each conflicting PR, merge its base into the branch (merge, never rebase), keep both sides when both added something, regenerate generated files (`npm run generate -w packages/api-contract`) instead of hand-merging them, run lint and typecheck, and push. A conflicting PR is a blocked PR: fix it before you start new work.
+- Fix Dependabot alerts. The `Dependabot alerts to issues` workflow opens one `dependabot` issue per open alert. Sessions fix these after `bug` issues and before new tasks, one alert per PR: bump the direct dependency to a patched version, or, when only a transitive copy is vulnerable and its parent pins it, add an npm `overrides` entry scoped to that parent. Prove it with `npm ls <package>`, then build, lint, typecheck and tests. If no patched version works, comment why on the issue and leave it for the owner to dismiss.
 - Every PR with a feature change includes a Playwright video demoing what was done, and/or an explainer video with voice-over whose script is written in ASD-STE100 Simplified Technical English. Videos use seeded test data only (never real notes), and are attached to the PR, not committed.
 - Commit early and often: small commits, one logical change each, committed as soon as that change works. Don't batch unrelated changes into one commit.
 
@@ -77,6 +78,7 @@ Kept by the `correct` skill. A rule with nothing in the right-hand column is a c
 | Claude never merges, runs workflows or pushes to `main` | `block-merges` and `block-github-tool-merges` hooks, `permissions.deny` |
 | Only green and yellow PRs merge without the owner | `PR risk` and `Merge green PRs` workflows (ADR 0005, ADR 0009) |
 | Open PRs stay free of conflicts | `Update PR branches` workflow merges the base in and labels `conflicts`; sessions fix those by hand |
+| Dependabot alerts get fixed | `Dependabot alerts to issues` workflow; sessions fix `dependabot` issues |
 | No test doubles, fixed sleeps, retries, raised timeouts or prose comments | Oxlint with Landmines, CI |
 | Infrastructure only through Terraform | nightly `drift.yml` |
 | Every table has RLS and a cross-user test | pgTAP tests in CI (one per table); nothing yet fails a table without one |
