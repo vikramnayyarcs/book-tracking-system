@@ -91,6 +91,14 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 
 **The `api` function runs in the Supabase Edge Runtime container, so MSW in the Vitest process never sees its Groq calls.** `test/api/groq-stand-in.ts` is a small HTTP server in the test process that replays the recorded Groq fixtures; CI points the function's `GROQ_URL` at it through `host.docker.internal:54390`. The stand-in is only up while `voice.test.ts` runs, and API test files run one at a time (`fileParallelism: false`), so the "provider unreachable" test in `processing.test.ts` still sees a refused connection.
 
+## 2026-11-22: a Vault upsert cannot be one `case` expression
+
+**`vault.create_secret` returns a uuid and `vault.update_secret` returns void, so `select case when ... then update_secret(...) else create_secret(...) end` fails with "CASE types uuid and void cannot be matched".** Use a `do` block with `perform` for each branch, as the "Upsert the jobs settings into Vault" step in `deploy-dev.yml` does.
+
+## 2026-11-22: the local Edge Runtime cannot start behind the sandbox proxy
+
+**In a cloud session, `supabase functions serve` fails with "invalid peer certificate: UnknownIssuer" because the container cannot trust the proxy's CA when it downloads npm packages.** CI is unaffected. To test route logic in a cloud session, run `createApp` in a small Node server against the local database and point `API_BASE_URL` at it.
+
 ## 2026-11-21: lint-after-edit hook reports a plugin clash that `npm run lint` does not
 
 **The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
@@ -112,3 +120,7 @@ Fix: set the column from the bound parameter (`set x = ${value}`) instead of `ex
 **`websearch_to_tsquery` ANDs every word, so a natural question like "what have I read about leadership?" matches nothing, and a vector ranker with no floor always returns its nearest rows.** `packages/core/src/ask.ts` builds an OR `to_tsquery` from the question words, and the vector ranker keeps only insights with cosine similarity of at least 0.8 (`VECTOR_MIN_SIMILARITY`, untuned for gte-small; tune it with real data). When the Edge function cannot embed the question, retrieval falls back to full-text only.
 
 **The model passed the faithfulness and citation evals only after the prompt asked for one claim per note with a verbatim `evidence` phrase.** Free-text answers with `[n]` markers dropped citations, and a note that shared one word with the question still produced an answer (gpt-oss-20b failed 3 of 7 cases). The server now checks each evidence phrase against its note, drops claims that fail, and builds the `[n]` markers itself.
+
+## 2026-11-22: the API role cannot write `insights.embedding`
+
+**`authenticated` has no update grant on `app.insights.embedding` (pgTAP proves it), so an embedding written inside `withUser` fails with 42501.** Embeddings are saved through the privileged pool (`db.embeddings.save`) after the user's transaction commits, guarded by `where text = ...` so a newer edit is never overwritten. A trigger clears `embedding` when `text` changes, so a failed re-embed leaves null for the backfill, never a stale vector.

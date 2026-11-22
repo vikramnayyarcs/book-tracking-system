@@ -8,6 +8,7 @@ export type ProblemCode =
   | "isbn_invalid"
   | "isbn_not_found"
   | "tier_limit_reached"
+  | "tier_feature_unavailable"
   | "already_processed"
   | "nothing_to_process"
   | "ai_unavailable"

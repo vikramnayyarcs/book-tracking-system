@@ -40,3 +40,7 @@ After changing a provider version, refresh the lock file for both platforms, or 
 ```sh
 terraform -chdir=infra/<root> providers lock -platform=windows_amd64 -platform=linux_amd64
 ```
+
+## What Terraform cannot reach
+
+**Vault secrets `jobs_url` and `jobs_secret` (dev).** `pg_cron` jobs read these from Supabase Vault to call the internal jobs route of the `api` function. No Terraform provider resource runs SQL or manages Vault, so Terraform cannot write them. One idempotent step in `deploy-dev.yml` ("Upsert the jobs settings into Vault") runs after the migrations, reads the `jobs_url` and `jobs_secret` Terraform outputs, masks the secret in logs and upserts both values. The same `random_password.jobs_secret` also feeds the Edge Function secret `JOBS_SECRET`, so there is one source for both. Never write these values by hand; to rotate, change the `random_password` and let the workflow run. Prod has no jobs yet; when it gets them, add the same outputs to `envs/prod` and the same step to `release-prod.yml`.

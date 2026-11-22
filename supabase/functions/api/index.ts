@@ -8,9 +8,11 @@ import {
   groqSpeech,
   groqText,
   groqVision,
+  httpEmbedder,
   INSIGHT_MODEL,
   VISION_MODEL,
 } from "../../../packages/core/src/ai/index.ts";
+import type { Embedder } from "../../../packages/core/src/ai/types.ts";
 import { parseTier } from "../../../packages/core/src/plans.ts";
 
 declare const EdgeRuntime: { waitUntil: (work: Promise<unknown>) => void };
@@ -20,30 +22,40 @@ declare const Supabase: {
       run: (
         input: string,
         options: { mean_pool: boolean; normalize: boolean },
-      ) => Promise<number[]>;
+      ) => Promise<unknown>;
     };
   };
 };
 
-let embeddingSession: InstanceType<typeof Supabase.ai.Session> | undefined;
-
 const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
 const groqUrl = Deno.env.get("GROQ_URL") ?? undefined;
 
+const embeddingsUrl = Deno.env.get("EMBEDDINGS_URL");
+const gteSession =
+  embeddingsUrl === undefined
+    ? new Supabase.ai.Session("gte-small")
+    : undefined;
+
+const embedder: Embedder =
+  embeddingsUrl === undefined
+    ? {
+        embed: async (texts) =>
+          Promise.all(
+            texts.map(
+              async (text) =>
+                (await gteSession?.run(text, {
+                  mean_pool: true,
+                  normalize: true,
+                })) as number[],
+            ),
+          ),
+      }
+    : httpEmbedder({ url: embeddingsUrl });
+
 const app = createApp({
+  embedder,
   speech: groqSpeech({ apiKey: groqKey, baseUrl: groqUrl }),
   text: groqText({ apiKey: groqKey, model: INSIGHT_MODEL, baseUrl: groqUrl }),
-  embedder: {
-    embed: (texts) =>
-      Promise.all(
-        texts.map((text) =>
-          (embeddingSession ??= new Supabase.ai.Session("gte-small")).run(
-            text,
-            { mean_pool: true, normalize: true },
-          ),
-        ),
-      ),
-  },
   vision: groqVision({
     apiKey: groqKey,
     model: VISION_MODEL,
@@ -51,6 +63,7 @@ const app = createApp({
   }),
   waitUntil: (work) => EdgeRuntime.waitUntil(work),
   gatewaySecret: Deno.env.get("GATEWAY_SECRET") ?? "",
+  jobsSecret: Deno.env.get("JOBS_SECRET") ?? "",
   logger: jsonLogger((line) => console.log(line)),
   newRequestId: () => crypto.randomUUID(),
   now: () => Date.now(),

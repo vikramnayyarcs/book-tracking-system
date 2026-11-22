@@ -104,13 +104,18 @@ import {
   saveQuestions,
 } from "../reflections.ts";
 import { AiError } from "../ai/types.ts";
+import { maySummarize } from "../limits.ts";
+import { runSummary } from "../summary.ts";
 import { problemResponse } from "./problem.ts";
+import { createJobs, JOBS_HEADER, parseRunKey, runJob } from "../jobs.ts";
+import { embedOnWrite } from "../embeddings.ts";
 
 export const GATEWAY_HEADER = "x-gateway-secret";
 export const REQUEST_ID_HEADER = "x-request-id";
 
 export type ApiDeps = {
   gatewaySecret: string;
+  jobsSecret: string;
   logger: Logger;
   newRequestId: () => string;
   now: () => number;
@@ -122,7 +127,7 @@ export type ApiDeps = {
   openLibraryUrl: string;
   speech: SpeechToText;
   text: TextModel;
-  embedder?: Embedder;
+  embedder: Embedder;
   vision: VisionModel;
   waitUntil: (work: Promise<unknown>) => void;
   vapidPublicKey: string;
@@ -164,6 +169,8 @@ const invalid = (detail: string, requestId: string) =>
 
 export const createApp = (deps: ApiDeps) => {
   const app = new Hono<Env>().basePath("/v1");
+  const embeddings = { embedder: deps.embedder, store: deps.db.embeddings };
+  const jobs = createJobs(embeddings);
 
   const auth = (scope?: TokenScope) =>
     createMiddleware<Env>(async (c, next) => {
@@ -608,6 +615,7 @@ export const createApp = (deps: ApiDeps) => {
         objects: deps.objects,
         speech: deps.speech,
         text: deps.text,
+        embeddings,
         tier,
         info,
         transcribe: plan.transcribe,
@@ -735,9 +743,11 @@ export const createApp = (deps: ApiDeps) => {
     const { result } = await c.var.withUser((sql) =>
       createInsight(sql, id, parsed.insight),
     );
-    return result === undefined
-      ? notFound(c.get("requestId"))
-      : c.json(result, 201);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    await embedOnWrite(embeddings, [{ id: result.id, text: result.text }]);
+    return c.json(result, 201);
   });
 
   app.get("/sessions/:id/insights", authenticated, async (c) => {
@@ -766,7 +776,13 @@ export const createApp = (deps: ApiDeps) => {
     const { result } = await c.var.withUser((sql) =>
       updateInsight(sql, id, parsed.fields),
     );
-    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (parsed.fields.text !== undefined) {
+      await embedOnWrite(embeddings, [{ id: result.id, text: result.text }]);
+    }
+    return c.json(result);
   });
 
   app.delete("/insights/:id", authenticated, async (c) => {
@@ -841,10 +857,78 @@ export const createApp = (deps: ApiDeps) => {
       return invalid(parsed.detail, c.get("requestId"));
     }
     const today = new Date(deps.now()).toISOString().slice(0, 10);
-    const { result } = await c.var.withUser((sql) =>
+    const { result, tier } = await c.var.withUser((sql) =>
       finishBook(sql, id, parsed.finish, today),
     );
-    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+    if (result === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (maySummarize(tier) && result.review?.summary == null) {
+      const userId = c.var.userId;
+      deps.waitUntil(
+        runSummary({
+          withUser: async (work) =>
+            (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+          text: deps.text,
+          bookId: id,
+        }).catch(() => undefined),
+      );
+    }
+    return c.json(result);
+  });
+
+  app.post("/books/:id/summary", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: book, tier } = await c.var.withUser((sql) =>
+      getBook(sql, id),
+    );
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    if (!maySummarize(tier)) {
+      return problemResponse(
+        403,
+        "tier_feature_unavailable",
+        "Book summaries are part of the Plus plan",
+        c.get("requestId"),
+      );
+    }
+    const userId = c.var.userId;
+    let outcome;
+    try {
+      outcome = await runSummary({
+        withUser: async (work) =>
+          (await deps.db.asUser(userId, deps.defaultTier, work)).result,
+        text: deps.text,
+        bookId: id,
+      });
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not write the summary. Try again later.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
+    if (outcome.kind === "missing") {
+      return notFound(c.get("requestId"));
+    }
+    if (outcome.kind === "nothing") {
+      return problemResponse(
+        422,
+        "nothing_to_process",
+        "The book has no notes or insights to summarize yet",
+        c.get("requestId"),
+      );
+    }
+    return c.json(outcome.review);
   });
 
   app.get("/books/:id/review", authenticated, async (c) => {
@@ -992,5 +1076,74 @@ export const createApp = (deps: ApiDeps) => {
     problemResponse(404, "not_found", "Not found", c.get("requestId")),
   );
 
-  return app;
+  const internal = new Hono<Env>().basePath("/internal");
+
+  internal.use("*", async (c, next) => {
+    const requestId = deps.newRequestId();
+    c.set("requestId", requestId);
+    const started = deps.now();
+    const supplied = c.req.header(JOBS_HEADER);
+    let errorName: string | undefined;
+    if (
+      deps.jobsSecret === "" ||
+      supplied === undefined ||
+      !sameSecret(supplied, deps.jobsSecret)
+    ) {
+      c.res = problemResponse(
+        401,
+        "unauthorized",
+        "Missing or invalid jobs secret",
+        requestId,
+      );
+    } else {
+      try {
+        await next();
+      } catch (error) {
+        errorName = error instanceof Error ? error.name : "UnknownError";
+        c.res = problemResponse(
+          500,
+          "internal_error",
+          "Internal error",
+          requestId,
+        );
+      }
+    }
+    c.res.headers.set(REQUEST_ID_HEADER, requestId);
+    const fields = {
+      requestId,
+      method: c.req.method,
+      path: new URL(c.req.url).pathname,
+      status: c.res.status,
+      durationMs: deps.now() - started,
+      ...(errorName === undefined ? {} : { errorName }),
+    };
+    if (c.res.status >= 500) {
+      deps.logger.error(fields);
+    } else {
+      deps.logger.info(fields);
+    }
+  });
+
+  internal.post("/jobs/:job", async (c) => {
+    const result = await runJob(
+      deps.db.jobs,
+      jobs,
+      c.req.param("job"),
+      deps.now(),
+      parseRunKey(c.req.query("run_key")),
+    );
+    return result === undefined ? notFound(c.get("requestId")) : c.json(result);
+  });
+
+  internal.notFound((c) =>
+    problemResponse(404, "not_found", "Not found", c.get("requestId")),
+  );
+
+  const root = new Hono();
+  root.route("/", app);
+  root.route("/", internal);
+  root.notFound(() =>
+    problemResponse(404, "not_found", "Not found", deps.newRequestId()),
+  );
+  return root;
 };

@@ -1,6 +1,8 @@
 import postgres from "postgres";
 import type { Tier } from "../plans.ts";
 import type { TokenScope } from "../tokens.ts";
+import type { JobStore } from "../jobs.ts";
+import type { EmbeddingStore } from "../embeddings.ts";
 
 export type Sql = postgres.TransactionSql;
 
@@ -13,6 +15,8 @@ export type Db = {
   lookupToken: (
     hash: string,
   ) => Promise<{ userId: string; scopes: TokenScope[] } | undefined>;
+  jobs: JobStore;
+  embeddings: EmbeddingStore;
 };
 
 export const createDb = (connectionString: string) => {
@@ -40,6 +44,38 @@ export const createDb = (connectionString: string) => {
       return row === undefined
         ? undefined
         : { userId: row.user_id, scopes: row.scopes };
+    },
+    embeddings: {
+      save: async (id, text, vector) => {
+        const rows = await pool`
+          update app.insights set embedding = ${vector}::extensions.vector
+          where id = ${id} and text = ${text}
+          returning id
+        `;
+        return rows.length === 1;
+      },
+      pending: (limit) =>
+        pool<{ id: string; text: string }[]>`
+          select id, text from app.insights
+          where embedding is null
+          order by created_at, id
+          limit ${limit}
+        `,
+    },
+    jobs: {
+      claim: async (job, runKey) => {
+        const rows = await pool`
+          insert into app.job_runs (job, run_key) values (${job}, ${runKey})
+          on conflict do nothing
+          returning job
+        `;
+        return rows.length === 1;
+      },
+      release: async (job, runKey) => {
+        await pool`
+          delete from app.job_runs where job = ${job} and run_key = ${runKey}
+        `;
+      },
     },
   } satisfies Db;
 };

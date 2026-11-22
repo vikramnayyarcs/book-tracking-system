@@ -207,6 +207,7 @@ jobs:
     if: github.event_name == 'pull_request'
     env:
       GATEWAY_SECRET: ci-gateway-secret
+      JOBS_SECRET: ci-jobs-secret
       DEFAULT_TIER: plus
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
       CLERK_ISSUER: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
@@ -245,6 +246,7 @@ jobs:
         run: |
           {
             echo "GATEWAY_SECRET=${GATEWAY_SECRET}"
+            echo "JOBS_SECRET=${JOBS_SECRET}"
             echo "DEFAULT_TIER=${DEFAULT_TIER}"
             echo "CLERK_ISSUER=${CLERK_ISSUER}"
             echo "GROQ_API_KEY=unused-in-tests"
