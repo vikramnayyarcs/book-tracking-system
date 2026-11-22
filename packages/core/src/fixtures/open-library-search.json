@@ -1,0 +1,24 @@
+{
+  "numFound": 3,
+  "start": 0,
+  "docs": [
+    {
+      "key": "/works/OL45804W",
+      "title": "Fantastic Mr. Fox",
+      "author_name": ["Roald Dahl"],
+      "cover_i": 15152634,
+      "number_of_pages_median": 96,
+      "isbn": ["9780140328721", "0140328726"]
+    },
+    {
+      "key": "/works/OL1W",
+      "title": "Untitled Field Notes",
+      "author_name": [],
+      "isbn": ["not-an-isbn"]
+    },
+    {
+      "key": "/works/OL2W",
+      "author_name": ["No Title"]
+    }
+  ]
+}
