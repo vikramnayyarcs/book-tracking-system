@@ -9,11 +9,12 @@ The reader can give the month and the year, or only the year.
 In this video, the reader gives March 2019.
 The reader gives the book a rating of 4.
 The reader can also add a photo.
-Then the reader writes what they remember about the book.
+The reader writes a note about the book.
 The reader can record a voice note instead.
 The reader pushes Add past book.
 The page shows that the book is added.
-The app turns the note into insights, and the page shows them.
+The app turns the note into insights.
+The page shows the insights.
 The reader pushes Give me 3 recall prompts.
 The page shows 3 questions that help the reader to remember the book.
 The reader can write an answer to each question.
