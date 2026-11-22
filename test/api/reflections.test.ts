@@ -40,6 +40,7 @@ const pending: Promise<unknown>[] = [];
 const unused = () => Promise.reject(new Error("not used by these routes"));
 const inProcess = createApp({
   gatewaySecret,
+  jobsSecret: "unused",
   logger: jsonLogger(() => undefined),
   newRequestId: () => crypto.randomUUID(),
   now: () => Date.now(),

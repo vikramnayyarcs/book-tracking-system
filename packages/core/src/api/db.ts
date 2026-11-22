@@ -1,6 +1,7 @@
 import postgres from "postgres";
 import type { Tier } from "../plans.ts";
 import type { TokenScope } from "../tokens.ts";
+import type { JobStore } from "../jobs.ts";
 
 export type Sql = postgres.TransactionSql;
 
@@ -13,6 +14,7 @@ export type Db = {
   lookupToken: (
     hash: string,
   ) => Promise<{ userId: string; scopes: TokenScope[] } | undefined>;
+  jobs: JobStore;
 };
 
 export const createDb = (connectionString: string) => {
@@ -40,6 +42,21 @@ export const createDb = (connectionString: string) => {
       return row === undefined
         ? undefined
         : { userId: row.user_id, scopes: row.scopes };
+    },
+    jobs: {
+      claim: async (job, runKey) => {
+        const rows = await pool`
+          insert into app.job_runs (job, run_key) values (${job}, ${runKey})
+          on conflict do nothing
+          returning job
+        `;
+        return rows.length === 1;
+      },
+      release: async (job, runKey) => {
+        await pool`
+          delete from app.job_runs where job = ${job} and run_key = ${runKey}
+        `;
+      },
     },
   } satisfies Db;
 };

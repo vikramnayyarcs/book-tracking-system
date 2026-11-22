@@ -51,6 +51,7 @@ const app = createApp({
   }),
   waitUntil: (work) => EdgeRuntime.waitUntil(work),
   gatewaySecret: Deno.env.get("GATEWAY_SECRET") ?? "",
+  jobsSecret: Deno.env.get("JOBS_SECRET") ?? "",
   logger: jsonLogger((line) => console.log(line)),
   newRequestId: () => crypto.randomUUID(),
   now: () => Date.now(),

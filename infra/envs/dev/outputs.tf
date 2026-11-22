@@ -17,3 +17,14 @@ output "grafana_stack_url" {
   description = "Address of the shared Grafana Cloud stack."
   value       = module.grafana.stack_url
 }
+
+output "jobs_url" {
+  description = "Base address of the api function. pg_cron jobs call it directly, not through the gateway. deploy-dev.yml writes it to Vault."
+  value       = "${module.supabase_dev.url}/functions/v1/api"
+}
+
+output "jobs_secret" {
+  description = "Secret for the internal jobs route. The same value is the Edge Function secret JOBS_SECRET; deploy-dev.yml writes it to Vault."
+  value       = random_password.jobs_secret.result
+  sensitive   = true
+}

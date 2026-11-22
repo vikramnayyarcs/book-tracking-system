@@ -91,6 +91,14 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 
 **The `api` function runs in the Supabase Edge Runtime container, so MSW in the Vitest process never sees its Groq calls.** `test/api/groq-stand-in.ts` is a small HTTP server in the test process that replays the recorded Groq fixtures; CI points the function's `GROQ_URL` at it through `host.docker.internal:54390`. The stand-in is only up while `voice.test.ts` runs, and API test files run one at a time (`fileParallelism: false`), so the "provider unreachable" test in `processing.test.ts` still sees a refused connection.
 
+## 2026-11-22: a Vault upsert cannot be one `case` expression
+
+**`vault.create_secret` returns a uuid and `vault.update_secret` returns void, so `select case when ... then update_secret(...) else create_secret(...) end` fails with "CASE types uuid and void cannot be matched".** Use a `do` block with `perform` for each branch, as the "Upsert the jobs settings into Vault" step in `deploy-dev.yml` does.
+
+## 2026-11-22: the local Edge Runtime cannot start behind the sandbox proxy
+
+**In a cloud session, `supabase functions serve` fails with "invalid peer certificate: UnknownIssuer" because the container cannot trust the proxy's CA when it downloads npm packages.** CI is unaffected. To test route logic in a cloud session, run `createApp` in a small Node server against the local database and point `API_BASE_URL` at it.
+
 ## 2026-11-21: lint-after-edit hook reports a plugin clash that `npm run lint` does not
 
 **The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
