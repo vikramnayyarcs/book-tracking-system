@@ -4,3 +4,4 @@ export * from "./types.ts";
 export * from "./models.ts";
 export * from "./questions.ts";
 export * from "./summary.ts";
+export * from "./ocr.ts";

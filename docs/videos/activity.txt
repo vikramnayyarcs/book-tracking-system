@@ -1,0 +1,11 @@
+This video shows the activity endpoint.
+All data in this test run is seeded test data.
+First, log two sessions on different days and finish a book.
+Next, ask the API for the activity of the year.
+The response lists each day with at least one entry.
+A day with two entries shows one time only.
+The days use the time zone of the user.
+The response has no streak count and no list of missed days.
+Next, a second user asks for the same year.
+The response shows an empty list.
+This shows that users cannot see the activity of other users.

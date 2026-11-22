@@ -11,7 +11,8 @@ export type ProblemCode =
   | "tier_feature_unavailable"
   | "already_processed"
   | "nothing_to_process"
-  | "ai_unavailable";
+  | "ai_unavailable"
+  | "push_unavailable";
 
 export type Problem = {
   type: string;

@@ -57,11 +57,24 @@ import {
   setFinishPhoto,
 } from "../finish.ts";
 import { collectExport, parseExportFormat, renderMarkdown } from "../export.ts";
+import { getActivity, parseYear } from "../activity.ts";
+import { getStats } from "../stats.ts";
 import { parseSearch, searchVault } from "../search.ts";
+import {
+  deletePushSubscription,
+  getNudgeSettings,
+  parseEndpointQuery,
+  parseMeUpdate,
+  parsePushSubscription,
+  savePushSubscription,
+  updateNudgeSettings,
+} from "../nudge.ts";
+import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
-import type { SpeechToText, TextModel } from "../ai/types.ts";
+import type { SpeechToText, TextModel, VisionModel } from "../ai/types.ts";
+import { quotePhotoPath, readQuotePhoto } from "../quote-photos.ts";
 import {
   loadProcessInfo,
   markStatus,
@@ -98,7 +111,9 @@ export type ApiDeps = {
   openLibraryUrl: string;
   speech: SpeechToText;
   text: TextModel;
+  vision: VisionModel;
   waitUntil: (work: Promise<unknown>) => void;
+  vapidPublicKey: string;
 };
 
 type Env = {
@@ -225,8 +240,56 @@ export const createApp = (deps: ApiDeps) => {
   app.get("/health", (c) => c.json({ status: "ok" as const }));
 
   app.get("/me", authenticated, async (c) => {
-    const { tier } = await c.var.withUser(async () => undefined);
-    return c.json({ id: c.var.userId, tier });
+    const { result, tier } = await c.var.withUser(getNudgeSettings);
+    return c.json({ id: c.var.userId, tier, ...result });
+  });
+
+  app.patch("/me", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseMeUpdate(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result, tier } = await c.var.withUser((sql) =>
+      updateNudgeSettings(sql, parsed.update, deps.now()),
+    );
+    return c.json({ id: c.var.userId, tier, ...result });
+  });
+
+  app.post("/push-subscriptions", authenticated, async (c) => {
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parsePushSubscription(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      savePushSubscription(sql, parsed.subscription),
+    );
+    return c.json(result, 201);
+  });
+
+  app.delete("/push-subscriptions", authenticated, async (c) => {
+    const endpoint = parseEndpointQuery(c.req.query("endpoint"));
+    if (endpoint === undefined) {
+      return invalid("endpoint must be an https URL", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) =>
+      deletePushSubscription(sql, endpoint),
+    );
+    return result ? c.body(null, 204) : notFound(c.get("requestId"));
+  });
+
+  app.get("/push/public-key", authenticated, (c) => {
+    const publicKey = vapidPublicKeyToApplicationServerKey(deps.vapidPublicKey);
+    if (publicKey === undefined) {
+      return problemResponse(
+        503,
+        "push_unavailable",
+        "Push is not configured",
+        c.get("requestId"),
+      );
+    }
+    return c.json({ publicKey });
   });
 
   app.get("/books", auth("books:read"), async (c) => {
@@ -646,6 +709,22 @@ export const createApp = (deps: ApiDeps) => {
     return c.json({ items: result });
   });
 
+  app.get("/activity", authenticated, async (c) => {
+    const year = parseYear(c.req.query("year"));
+    if (year === undefined) {
+      return invalid("year must be 1900 to 2200", c.get("requestId"));
+    }
+    const { result } = await c.var.withUser((sql) => getActivity(sql, year));
+    return c.json(result);
+  });
+
+  app.get("/stats", authenticated, async (c) => {
+    const { result } = await c.var.withUser((sql) =>
+      getStats(sql, new Date(deps.now())),
+    );
+    return c.json(result);
+  });
+
   app.get("/export", authenticated, async (c) => {
     const format = parseExportFormat(c.req.query("format"));
     if (format === undefined) {
@@ -793,6 +872,58 @@ export const createApp = (deps: ApiDeps) => {
       path,
       expiresInSeconds: upload.expiresInSeconds,
     });
+  });
+
+  app.post("/books/:id/quote-photos", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    const { result: book } = await c.var.withUser((sql) => getBook(sql, id));
+    if (book === undefined) {
+      return notFound(c.get("requestId"));
+    }
+    const photoId = crypto.randomUUID();
+    const upload = await deps.objects.signedUploadUrl(
+      "photos",
+      quotePhotoPath(c.var.userId, photoId),
+    );
+    return c.json(
+      {
+        id: photoId,
+        uploadUrl: upload.url,
+        expiresInSeconds: upload.expiresInSeconds,
+      },
+      201,
+    );
+  });
+
+  app.post("/quote-photos/:id/ocr", authenticated, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.test(id)) {
+      return notFound(c.get("requestId"));
+    }
+    try {
+      const result = await readQuotePhoto(deps, c.var.userId, id);
+      if (result.status === "not_found") {
+        return notFound(c.get("requestId"));
+      }
+      if (result.status === "invalid") {
+        return invalid(result.detail, c.get("requestId"));
+      }
+      return c.json({ lines: result.lines });
+    } catch (error) {
+      if (error instanceof AiError) {
+        return problemResponse(
+          502,
+          "ai_unavailable",
+          "The AI service could not read the photo. Take a new photo and try again.",
+          c.get("requestId"),
+          error.code,
+        );
+      }
+      throw error;
+    }
   });
 
   app.get("/tokens", authenticated, async (c) => {
