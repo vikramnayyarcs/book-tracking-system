@@ -130,3 +130,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-22: the API role cannot write `insights.embedding`
 
 **`authenticated` has no update grant on `app.insights.embedding` (pgTAP proves it), so an embedding written inside `withUser` fails with 42501.** Embeddings are saved through the privileged pool (`db.embeddings.save`) after the user's transaction commits, guarded by `where text = ...` so a newer edit is never overwritten. A trigger clears `embedding` when `text` changes, so a failed re-embed leaves null for the backfill, never a stale vector.
+
+## 2026-11-22: `max-w-md` is 1rem when the theme names spacing tokens
+
+**In Tailwind v4, `max-w-md` resolves to `--spacing-md` when the theme defines a spacing token called `md`, so `max-w-md` became 1rem and `max-w-3xl` 4rem, and every page collapsed to one word per line.** Fix: width limits come from `--container-*` tokens in `apps/web/src/styles/tokens.css` (`max-w-narrow`, `max-w-page`); `test/e2e/web/sign-in.test.ts` checks the column is wider than 300px on a phone.

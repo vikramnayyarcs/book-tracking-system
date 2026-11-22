@@ -33,3 +33,13 @@ test("the sign-in page works with the keyboard and has no accessibility violatio
   await page.keyboard.press("Tab");
   await expectNoAxeViolations(page);
 });
+
+test("the sign-in column uses the phone's width instead of collapsing", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/sign-in");
+
+  const main = await page.getByRole("main").boundingBox();
+  expect(main?.width ?? 0).toBeGreaterThan(300);
+});
