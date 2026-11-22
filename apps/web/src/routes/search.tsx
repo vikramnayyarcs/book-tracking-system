@@ -1,3 +1,4 @@
+import { meta, noteCard } from "../ui/styles.ts";
 import { useState } from "react";
 import { useSearch } from "../api/hooks.ts";
 import { Button } from "../ui/button.tsx";
@@ -97,11 +98,8 @@ export function SearchPage() {
         {search.data && search.data.items.length > 0 ? (
           <ul className="flex flex-col gap-md">
             {search.data.items.map((r) => (
-              <li
-                key={`${r.kind}-${r.id}`}
-                className="flex flex-col gap-xs rounded-md border border-border p-md"
-              >
-                <p className="text-sm text-ink-muted">{kindLabel[r.kind]}</p>
+              <li key={`${r.kind}-${r.id}`} className={noteCard}>
+                <p className={meta}>{kindLabel[r.kind]}</p>
                 <Snippet snippet={r.snippet} serif={r.kind === "quote"} />
                 <p className="text-sm">
                   <a

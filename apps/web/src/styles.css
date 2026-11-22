@@ -1,3 +1,8 @@
+@import "@fontsource-variable/inter/index.css";
+@import "@fontsource-variable/lora/wght.css";
+@import "@fontsource-variable/lora/wght-italic.css";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
 @import "tailwindcss";
 @import "./styles/tokens.css";
 
@@ -6,4 +11,13 @@ body {
   background-color: var(--surface);
   color: var(--ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
