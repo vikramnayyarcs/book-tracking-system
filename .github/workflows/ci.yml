@@ -126,6 +126,10 @@ jobs:
 
       - name: Playwright and axe
         if: steps.changed.outputs.web == 'true'
+        env:
+          DEV_CLERK_PUBLISHABLE_KEY: ${{ vars.DEV_CLERK_PUBLISHABLE_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ vars.DEV_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
         run: npx playwright test --config playwright.web.config.ts --trace off
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -190,6 +194,9 @@ jobs:
         env:
           PW_VIDEO: "on"
           PW_SUITE: demo
+          DEV_CLERK_PUBLISHABLE_KEY: ${{ vars.DEV_CLERK_PUBLISHABLE_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ vars.DEV_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
         run: |
           for file in test/e2e/demo/*.demo.ts; do
             name="$(basename "$file" .demo.ts)"
