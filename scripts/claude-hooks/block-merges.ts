@@ -13,6 +13,26 @@ const GH_OWNER_ONLY = commandPattern("gh", [
   String.raw`workflow\s+run`,
   String.raw`run\s+rerun`,
 ]);
+const RERUN_FAILED_ONCE =
+  /^\s*gh\s+run\s+rerun\s+(\d+)\s+--failed(?:\s+(?:-R|--repo)\s+\S+)?\s*$/;
+
+export const runAttempt = (runId: string, projectDir: string) => {
+  const result = spawnSync(
+    "gh",
+    ["run", "view", runId, "--json", "attempt", "--jq", ".attempt"],
+    { cwd: projectDir, encoding: "utf8" },
+  );
+  return result.status === 0 ? Number(result.stdout.trim()) : Number.NaN;
+};
+
+export const isFirstFailedRerun = (
+  visible: string,
+  attemptOf: (runId: string) => number,
+) => {
+  const match = RERUN_FAILED_ONCE.exec(visible.trim());
+  return match?.[1] !== undefined && attemptOf(match[1]) === 1;
+};
+
 const GH_MERGE_API =
   /(?:^|[;&|(\n])\s*gh\b[^;&|\n]*\bapi\b[^;&|\n]*\/(?:pulls\/\d+\/merge|merges)(?![\w/])/i;
 const GIT_PUSH = commandPattern("git", ["push"], "gi");
@@ -51,8 +71,11 @@ export const decide = (input: HookInput, projectDir: string) => {
     return undefined;
   }
   const visible = stripHeredocBodies(command);
+  if (isFirstFailedRerun(visible, (id) => runAttempt(id, projectDir))) {
+    return undefined;
+  }
   if (GH_OWNER_ONLY.test(visible) || GH_MERGE_API.test(visible)) {
-    return "Blocked: merging PRs and triggering workflows are for the owner. Open or update the PR and leave it for review; say which workflow should be run if one is needed.";
+    return "Blocked: merging PRs and triggering workflows are for the owner. The only exception is one `gh run rerun <id> --failed` on a run's first attempt, after an infrastructure failure (CLAUDE.md). Otherwise open or update the PR and leave it for review; say which workflow should be run if one is needed.";
   }
   const pushes = segmentsMatching(visible, GIT_PUSH);
   if (pushes.length > 0) {
