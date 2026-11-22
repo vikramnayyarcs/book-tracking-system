@@ -1,0 +1,22 @@
+This video shows the nudge settings in the API.
+Send a request to get your account.
+The response shows your time zone and your nudge time.
+The nudge time is empty when nudges are off.
+Send a request to change your nudge time to 20:30.
+The response shows the new time.
+Send a request that sets the nudge time to null.
+The response shows that nudges are off.
+Send a request to set not reading today.
+The API finds the date in your time zone.
+The response shows that nudges stop until the end of that day.
+Send a bad time, for example 25:00.
+The API gives an error and changes nothing.
+Now save a push subscription for this device.
+The response shows the subscription.
+Send the same endpoint again to update its keys.
+The API does not make a second row.
+Delete the subscription with its endpoint.
+The API gives status 204.
+Delete it again.
+The API gives status 404.
+Another user cannot see or delete your subscription.

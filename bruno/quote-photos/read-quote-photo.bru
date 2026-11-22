@@ -1,0 +1,19 @@
+meta {
+  name: Read quote photo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/quote-photos/{{quotePhotoId}}/ocr
+  body: none
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+docs {
+  operationId: readQuotePhoto
+}

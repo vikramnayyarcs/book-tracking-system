@@ -1,0 +1,29 @@
+meta {
+  name: Create push subscription
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/push-subscriptions
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "endpoint": "https://push.example.test/sample-device",
+    "keys": {
+      "p256dh": "invented-p256dh-key",
+      "auth": "invented-auth-secret"
+    }
+  }
+}
+
+docs {
+  operationId: createPushSubscription
+}

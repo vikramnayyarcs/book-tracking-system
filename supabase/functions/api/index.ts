@@ -7,11 +7,25 @@ import {
 import {
   groqSpeech,
   groqText,
+  groqVision,
   INSIGHT_MODEL,
+  VISION_MODEL,
 } from "../../../packages/core/src/ai/index.ts";
 import { parseTier } from "../../../packages/core/src/plans.ts";
 
 declare const EdgeRuntime: { waitUntil: (work: Promise<unknown>) => void };
+declare const Supabase: {
+  ai: {
+    Session: new (model: string) => {
+      run: (
+        input: string,
+        options: { mean_pool: boolean; normalize: boolean },
+      ) => Promise<number[]>;
+    };
+  };
+};
+
+let embeddingSession: InstanceType<typeof Supabase.ai.Session> | undefined;
 
 const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
 const groqUrl = Deno.env.get("GROQ_URL") ?? undefined;
@@ -19,6 +33,22 @@ const groqUrl = Deno.env.get("GROQ_URL") ?? undefined;
 const app = createApp({
   speech: groqSpeech({ apiKey: groqKey, baseUrl: groqUrl }),
   text: groqText({ apiKey: groqKey, model: INSIGHT_MODEL, baseUrl: groqUrl }),
+  embedder: {
+    embed: (texts) =>
+      Promise.all(
+        texts.map((text) =>
+          (embeddingSession ??= new Supabase.ai.Session("gte-small")).run(
+            text,
+            { mean_pool: true, normalize: true },
+          ),
+        ),
+      ),
+  },
+  vision: groqVision({
+    apiKey: groqKey,
+    model: VISION_MODEL,
+    baseUrl: groqUrl,
+  }),
   waitUntil: (work) => EdgeRuntime.waitUntil(work),
   gatewaySecret: Deno.env.get("GATEWAY_SECRET") ?? "",
   logger: jsonLogger((line) => console.log(line)),
@@ -83,6 +113,7 @@ const app = createApp({
   },
   fetch: (input, init) => fetch(input, init),
   openLibraryUrl: Deno.env.get("OPEN_LIBRARY_URL") ?? "https://openlibrary.org",
+  vapidPublicKey: Deno.env.get("VAPID_PUBLIC_KEY") ?? "",
   defaultTier: parseTier(Deno.env.get("DEFAULT_TIER")) ?? "free",
 });
 

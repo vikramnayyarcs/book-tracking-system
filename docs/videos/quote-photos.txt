@@ -1,0 +1,21 @@
+This video shows the quote photo endpoints.
+All data in this test run is seeded test data.
+The page in the photo is an invented page. It is not from a real book.
+First, ask for a signed upload address for a book.
+The response gives a photo identifier and an address.
+The address stops working after a short time.
+Send the sample page photo to that address.
+Now ask the API to read the photo.
+The reading service is a recorded response.
+The response shows the lines of text from the page.
+Ask again with the same photo identifier.
+The response says that the photo is not found.
+This shows that the API deleted the photo after the first read.
+The photo is deleted when the reading fails, too.
+Choose one passage from the lines.
+Save the passage as a quote with a page number.
+Open the book.
+The book shows the new quote with its page number.
+Next, a second user asks to read the first photo.
+The response says that the photo is not found.
+This shows that users cannot read the photos of other users.
