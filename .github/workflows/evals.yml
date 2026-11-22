@@ -68,7 +68,7 @@ jobs:
 
       - name: Generate outputs with the prompt and model in the code
         if: contains(steps.sets.outputs.list, ' insights ')
-        run: node packages/core/evals/generate.ts "$RUNNER_TEMP/outputs.json"
+        run: test -e "$RUNNER_TEMP/groq-rate-limited" || node packages/core/evals/generate.ts "$RUNNER_TEMP/outputs.json"
 
       - name: Score with DeepEval
         if: contains(steps.sets.outputs.list, ' insights ')
@@ -76,7 +76,7 @@ jobs:
 
       - name: Generate reflection questions with the prompt and model in the code
         if: contains(steps.sets.outputs.list, ' reflection ')
-        run: node packages/core/evals/generate-questions.ts "$RUNNER_TEMP/questions.json"
+        run: test -e "$RUNNER_TEMP/groq-rate-limited" || node packages/core/evals/generate-questions.ts "$RUNNER_TEMP/questions.json"
 
       - name: Score reflection questions with DeepEval
         if: contains(steps.sets.outputs.list, ' reflection ')
@@ -84,27 +84,27 @@ jobs:
 
       - name: Generate recall prompts with the prompt and model in the code
         if: contains(steps.sets.outputs.list, ' recall ')
-        run: node packages/core/evals/generate-questions.ts --recall "$RUNNER_TEMP/recall.json"
+        run: test -e "$RUNNER_TEMP/groq-rate-limited" || node packages/core/evals/generate-questions.ts --recall "$RUNNER_TEMP/recall.json"
 
       - name: Score recall prompts with DeepEval
         if: contains(steps.sets.outputs.list, ' recall ')
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/recall.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/recall-scores.json"
 
       - name: Generate book summaries with the prompt and model in the code
-        run: node packages/core/evals/generate-summary.ts "$RUNNER_TEMP/summary.json"
+        run: test -e "$RUNNER_TEMP/groq-rate-limited" || node packages/core/evals/generate-summary.ts "$RUNNER_TEMP/summary.json"
 
       - name: Score book summaries with DeepEval
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/summary.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/summary-scores.json"
 
       - name: Generate vault answers with the prompt and model in the code
-        run: node packages/core/evals/generate-ask.ts "$RUNNER_TEMP/ask.json"
+        run: test -e "$RUNNER_TEMP/groq-rate-limited" || node packages/core/evals/generate-ask.ts "$RUNNER_TEMP/ask.json"
 
       - name: Score vault answers with DeepEval
         run: python3 packages/core/evals/run_evals.py "$RUNNER_TEMP/ask.json" openai/gpt-oss-120b | tee "$RUNNER_TEMP/ask-scores.json"
 
       - name: Read invented page images with the vision prompt and model in the code
         if: contains(steps.sets.outputs.list, ' ocr ')
-        run: node packages/core/evals/generate-ocr.ts "$RUNNER_TEMP/ocr.json"
+        run: test -e "$RUNNER_TEMP/groq-rate-limited" || node packages/core/evals/generate-ocr.ts "$RUNNER_TEMP/ocr.json"
 
       - name: Score the page reading against the known text
         if: contains(steps.sets.outputs.list, ' ocr ')
