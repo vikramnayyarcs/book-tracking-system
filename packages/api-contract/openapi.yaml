@@ -949,6 +949,42 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/summary:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: regenerateBookSummary
+      summary: Write the book summary again from the reader's own notes (Plus tier)
+      description: >
+        Plus tier only; the free tier gets 403 with code
+        `tier_feature_unavailable`. The summary uses only the reader's session
+        notes and insights of this book, so a book with none returns 422. The
+        summary is also written in the background when a Plus reader finishes a
+        book. Returns 502 when the AI service fails; the old summary stays.
+      responses:
+        "200":
+          description: The review with the new summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /books/{id}/finish-photo:
     parameters:
       - name: id
