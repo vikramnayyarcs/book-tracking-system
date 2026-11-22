@@ -72,7 +72,7 @@ export function ReflectionQuestions({
   headingLevel = 2,
 }: {
   bookId: string;
-  stage: "mid" | "end";
+  stage: "mid" | "end" | "recall";
   heading: string;
   canAsk: boolean;
   cannotAskReason: string;
