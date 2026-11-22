@@ -170,6 +170,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lookup/books": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Open Library by title or author */
+        get: operations["searchLookupBooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/books/{id}/sessions": {
         parameters: {
             query?: never;
@@ -889,6 +906,13 @@ export interface components {
             coverUrl: string | null;
             pageCount: number | null;
         };
+        BookSearchResult: {
+            title: string;
+            author: string | null;
+            isbn: string | null;
+            coverUrl: string | null;
+            pageCount: number | null;
+        };
         /** @enum {string} */
         TokenScope: "sessions:write" | "books:read";
         Token: {
@@ -1356,6 +1380,33 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    searchLookupBooks: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to 10 matches, best first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["BookSearchResult"][];
+                    };
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
             default: components["responses"]["Problem"];
         };
     };

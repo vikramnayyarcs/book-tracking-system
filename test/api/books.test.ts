@@ -167,3 +167,22 @@ describe("GET /lookup/isbn/{isbn}", () => {
     expect(problem.code).toBe("isbn_invalid");
   });
 });
+
+describe("GET /lookup/books", () => {
+  it("rejects a short query with a problem", async () => {
+    const response = await call("/lookup/books?q=a", { headers: as(alice) });
+    expect(response.status).toBe(400);
+    const problem = (await expectMatchesContract(
+      response,
+      "GET",
+      "/lookup/books",
+    )) as { code: string };
+    expect(problem.code).toBe("validation_failed");
+  });
+
+  it("returns 401 without a token", async () => {
+    const response = await call("/lookup/books?q=fantastic fox");
+    expect(response.status).toBe(401);
+    await expectMatchesContract(response, "GET", "/lookup/books");
+  });
+});

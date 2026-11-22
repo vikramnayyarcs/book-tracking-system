@@ -78,6 +78,7 @@ import {
   updateNudgeSettings,
 } from "../nudge.ts";
 import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
+import { searchBooks } from "../book-search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
 import type { Logger } from "./logger.ts";
 import type { ObjectStore } from "./storage.ts";
@@ -1074,6 +1075,23 @@ export const createApp = (deps: ApiDeps) => {
           c.get("requestId"),
         )
       : c.json(found);
+  });
+
+  app.get("/lookup/books", authenticated, async (c) => {
+    const query = (c.req.query("q") ?? "").trim();
+    if (query.length < 2 || query.length > 200) {
+      return problemResponse(
+        400,
+        "validation_failed",
+        "q must be 2 to 200 characters",
+        c.get("requestId"),
+      );
+    }
+    const items = await searchBooks(query, {
+      fetch: deps.fetch,
+      baseUrl: deps.openLibraryUrl,
+    });
+    return c.json({ items });
   });
 
   app.notFound((c) =>
