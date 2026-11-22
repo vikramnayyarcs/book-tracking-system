@@ -92,3 +92,9 @@ Fix: the function's `deno.json` import map points `postgres` at the Deno build, 
 **The `lint-after-edit` hook can fail with "Plugin name 'landmines-structure' is already registered" on every edit, while `npm run lint` passes.**
 
 Fix: ignore the hook message and run `npm run lint` yourself; it is the real check that CI repeats.
+
+## 2026-11-21: `excluded.col` in an upsert needs SELECT on that column
+
+**`insert ... on conflict do update set x = excluded.x` fails (a 500 from the API) when the role has column-limited grants and no `select` on `x`, because reading `excluded.x` counts as reading the column.**
+
+Fix: set the column from the bound parameter (`set x = ${value}`) instead of `excluded.x`; see `savePushSubscription` in `packages/core/src/nudge.ts`.
