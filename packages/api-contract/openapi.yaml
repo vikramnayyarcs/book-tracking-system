@@ -25,7 +25,7 @@ paths:
   /me:
     get:
       operationId: getMe
-      summary: Get the signed-in user, creating the account on the first call
+      summary: Get the signed-in user and nudge settings, creating the account on the first call
       responses:
         "200":
           description: The signed-in user
@@ -36,6 +36,77 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         default:
+          $ref: "#/components/responses/Problem"
+    patch:
+      operationId: updateMe
+      summary: Change nudge settings; send only the fields to change
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeUpdate"
+      responses:
+        "200":
+          description: The user with the new settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /push-subscriptions:
+    post:
+      operationId: createPushSubscription
+      summary: Save this device's Web Push subscription; the same endpoint again updates its keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionCreate"
+      responses:
+        "201":
+          description: The saved subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSubscription"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deletePushSubscription
+      summary: Remove this device's Web Push subscription
+      parameters:
+        - name: endpoint
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+            maxLength: 2048
+      responses:
+        "204":
+          description: The subscription is removed
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
           $ref: "#/components/responses/Problem"
   /push/public-key:
     get:
@@ -704,6 +775,97 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /ask:
+    post:
+      operationId: askVault
+      summary: Ask a question and get an answer from the caller's own insights only, with citations (counts toward the monthly vault question limit; the question and answer are never stored or logged)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              additionalProperties: false
+              properties:
+                question:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                bookId:
+                  type: string
+                  format: uuid
+                  description: Limit the answer to one book
+      responses:
+        "200":
+          description: The answer. When nothing relevant is found, answered is false and no model is called.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AskAnswer"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /activity:
+    get:
+      operationId: getActivity
+      summary: The dates in a year with at least one entry (a session or a finished-book review), in the caller's time zone
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2200
+      responses:
+        "200":
+          description: The dates, oldest first
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [year, timeZone, dates]
+                properties:
+                  year:
+                    type: integer
+                  timeZone:
+                    type: string
+                  dates:
+                    type: array
+                    items:
+                      type: string
+                      format: date
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /stats:
+    get:
+      operationId: getStats
+      summary: Reading metrics for a visualisation screen, with days, weeks and months in the caller's time zone (no streaks or missed days)
+      responses:
+        "200":
+          description: The metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+        "401":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /export:
     get:
       operationId: exportVault
@@ -819,6 +981,57 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+  /books/{id}/quote-photos:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: createQuotePhotoUpload
+      summary: Get a signed URL to upload a photo of a page for quote OCR
+      responses:
+        "201":
+          description: The photo id and the signed upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotePhotoUpload"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
+  /quote-photos/{id}/ocr:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: readQuotePhoto
+      summary: Read the text lines of an uploaded page photo, then delete the photo
+      description: The photo is deleted whether the reading succeeds or fails, so a failed reading needs a new photo.
+      responses:
+        "200":
+          description: The lines of printed text, in reading order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotePhotoLines"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
 components:
   securitySchemes:
     bearerAuth:
@@ -826,6 +1039,94 @@ components:
       scheme: bearer
       description: A Clerk session token or a personal access token
   schemas:
+    Stats:
+      type: object
+      required:
+        - timeZone
+        - entriesPerWeek
+        - booksFinishedPerMonth
+        - voiceMinutesPerMonth
+        - perBook
+        - ratings
+        - booksByStatus
+      properties:
+        timeZone:
+          type: string
+        entriesPerWeek:
+          description: Sessions per week for the last 12 weeks, oldest first, zero-filled; weekStart is a Monday
+          type: array
+          items:
+            type: object
+            required: [weekStart, count]
+            properties:
+              weekStart:
+                type: string
+                format: date
+              count:
+                type: integer
+        booksFinishedPerMonth:
+          description: Books finished per month for the last 12 months, oldest first, zero-filled; books finished with year precision are left out
+          type: array
+          items:
+            type: object
+            required: [month, count]
+            properties:
+              month:
+                type: string
+                pattern: "^\\d{4}-\\d{2}$"
+              count:
+                type: integer
+        voiceMinutesPerMonth:
+          description: Minutes of voice notes per month for the last 12 months, oldest first, zero-filled
+          type: array
+          items:
+            type: object
+            required: [month, minutes]
+            properties:
+              month:
+                type: string
+                pattern: "^\\d{4}-\\d{2}$"
+              minutes:
+                type: number
+        perBook:
+          description: Insight and quote counts for every book, most notes first
+          type: array
+          items:
+            type: object
+            required: [bookId, title, insights, quotes]
+            properties:
+              bookId:
+                type: string
+                format: uuid
+              title:
+                type: string
+              insights:
+                type: integer
+              quotes:
+                type: integer
+        ratings:
+          description: Finished-book ratings, one item for each of 1 to 5
+          type: array
+          items:
+            type: object
+            required: [rating, count]
+            properties:
+              rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+              count:
+                type: integer
+        booksByStatus:
+          type: object
+          required: [reading, finished, abandoned]
+          properties:
+            reading:
+              type: integer
+            finished:
+              type: integer
+            abandoned:
+              type: integer
     Review:
       type: object
       required: [rating, text, summary, hasPhoto]
@@ -882,6 +1183,26 @@ components:
           type: string
         expiresInSeconds:
           type: integer
+    QuotePhotoUpload:
+      type: object
+      required: [id, uploadUrl, expiresInSeconds]
+      properties:
+        id:
+          type: string
+          format: uuid
+        uploadUrl:
+          type: string
+          description: Send the image bytes (JPEG, PNG or WebP, at most 3 MB) to this URL with PUT
+        expiresInSeconds:
+          type: integer
+    QuotePhotoLines:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items:
+            type: string
     Export:
       type: object
       required: [exportedAt, books]
@@ -938,6 +1259,39 @@ components:
           type: string
         answer:
           type: [string, "null"]
+    AskAnswer:
+      type: object
+      required: [answered, answer, citations, warn]
+      properties:
+        answered:
+          type: boolean
+        answer:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/AskCitation"
+        warn:
+          type: boolean
+          description: True when the caller has used at least 80% of this month's vault questions
+    AskCitation:
+      type: object
+      required: [insightId, bookId, bookTitle, sessionId, sessionDate]
+      properties:
+        insightId:
+          type: string
+          format: uuid
+        bookId:
+          type: string
+          format: uuid
+        bookTitle:
+          type: string
+        sessionId:
+          type: [string, "null"]
+          format: uuid
+        sessionDate:
+          type: [string, "null"]
+          format: date
     SearchResult:
       type: object
       required: [kind, id, bookId, bookTitle, snippet, rank]
@@ -1391,13 +1745,74 @@ components:
               description: The secret. It is shown once and cannot be read again.
     Me:
       type: object
-      required: [id, tier]
+      required: [id, tier, timeZone, nudgeTime, notReadingUntil]
       properties:
         id:
           type: string
         tier:
           type: string
           enum: [free, plus]
+        timeZone:
+          type: string
+          description: IANA time zone name, for example Europe/London
+        nudgeTime:
+          type: [string, "null"]
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          description: Local time of day for the daily nudge as HH:MM; null means nudges are off
+        notReadingUntil:
+          type: [string, "null"]
+          format: date
+          description: Nudges are silenced through this local date; null when not silenced
+    MeUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        timeZone:
+          type: string
+          description: IANA time zone name
+        nudgeTime:
+          type: [string, "null"]
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          description: HH:MM local time; null turns nudges off
+        notReadingToday:
+          type: boolean
+          description: true silences nudges through the end of today in the user's time zone; false clears it
+    PushSubscriptionCreate:
+      type: object
+      required: [endpoint, keys]
+      additionalProperties: false
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          pattern: "^https://"
+          maxLength: 2048
+        keys:
+          type: object
+          required: [p256dh, auth]
+          additionalProperties: false
+          properties:
+            p256dh:
+              type: string
+              minLength: 1
+              maxLength: 256
+            auth:
+              type: string
+              minLength: 1
+              maxLength: 256
+    PushSubscription:
+      type: object
+      required: [id, endpoint, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        endpoint:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     PushPublicKey:
       type: object
       required: [publicKey]

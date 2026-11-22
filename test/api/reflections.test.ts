@@ -2,7 +2,11 @@ import { http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { groqSpeech, groqText } from "../../packages/core/src/ai/index.ts";
+import {
+  groqSpeech,
+  groqText,
+  groqVision,
+} from "../../packages/core/src/ai/index.ts";
 import {
   clerkVerifier,
   createApp,
@@ -49,6 +53,7 @@ const inProcess = createApp({
   vapidPublicKey: "",
   speech: groqSpeech({ apiKey: "test" }),
   text: groqText({ apiKey: "test", model: "recorded" }),
+  vision: groqVision({ apiKey: "test", model: "recorded" }),
   waitUntil: (work) => {
     pending.push(work);
   },
