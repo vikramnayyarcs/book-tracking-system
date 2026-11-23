@@ -6,7 +6,12 @@ const baseURL = "http://localhost:4173";
 
 export default defineConfig({
   testDir: "test/e2e",
-  testMatch: demo ? "demo/*.demo.ts" : "web/*.test.ts",
+  testMatch:
+    process.env["PW_SUITE"] === "ui-diff"
+      ? "ui-diff/*.ui-diff.ts"
+      : demo
+        ? "demo/*.demo.ts"
+        : "web/*.test.ts",
   globalSetup: "./test/e2e/clerk-setup.ts",
   forbidOnly: Boolean(process.env["CI"]),
   retries: 0,
