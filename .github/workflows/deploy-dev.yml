@@ -134,6 +134,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       DEV_CLERK_PUBLISHABLE_KEY: ${{ vars.DEV_CLERK_PUBLISHABLE_KEY }}
+      DEV_CLERK_FRONTEND_API_URL: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -143,6 +144,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Check the Clerk key belongs to the dev instance
+        run: node scripts/clerk/publishable-key.ts
 
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
