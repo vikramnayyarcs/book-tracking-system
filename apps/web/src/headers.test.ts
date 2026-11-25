@@ -43,7 +43,16 @@ describe("_headers", () => {
         "'wasm-unsafe-eval'",
         "https://*.clerk.accounts.dev",
         "https://challenges.cloudflare.com",
+        "https://*.protect.clerk.com",
       ]).toContain(source);
     }
+  });
+
+  it("allows Clerk's abuse and fraud protection hosts", () => {
+    expect(directives["script-src"]).toContain("https://*.protect.clerk.com");
+    expect(directives["frame-src"]).toContain("https://*.protect.clerk.com");
+    expect(directives["connect-src"]).toContain(
+      "https://*.protect.clerk.com:*",
+    );
   });
 });
