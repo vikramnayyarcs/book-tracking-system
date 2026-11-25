@@ -54,6 +54,10 @@ const embedder: Embedder =
     : httpEmbedder({ url: embeddingsUrl });
 
 const app = createApp({
+  allowedOrigins: (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin !== ""),
   embedder,
   speech: groqSpeech({ apiKey: groqKey, baseUrl: groqUrl }),
   text: groqText({ apiKey: groqKey, model: INSIGHT_MODEL, baseUrl: groqUrl }),

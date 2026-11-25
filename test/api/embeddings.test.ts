@@ -28,6 +28,7 @@ const unused = () => Promise.reject(new Error("not used by these routes"));
 
 const makeApp = (embedUrl: string) =>
   createApp({
+    allowedOrigins: [],
     gatewaySecret,
     jobsSecret: JOBS_SECRET,
     logger: jsonLogger(() => undefined),

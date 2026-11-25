@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
 import type { Tier } from "../plans.ts";
 import { bearerToken, type TokenVerifier } from "./auth.ts";
@@ -117,6 +118,7 @@ export const GATEWAY_HEADER = "x-gateway-secret";
 export const REQUEST_ID_HEADER = "x-request-id";
 
 export type ApiDeps = {
+  allowedOrigins: readonly string[];
   gatewaySecret: string;
   jobsSecret: string;
   logger: Logger;
@@ -213,6 +215,18 @@ export const createApp = (deps: ApiDeps) => {
       await next();
     });
   const authenticated = auth();
+
+  app.use(
+    "*",
+    cors({
+      origin: (origin) =>
+        deps.allowedOrigins.includes(origin) ? origin : null,
+      allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+      allowHeaders: ["authorization", "content-type"],
+      exposeHeaders: [REQUEST_ID_HEADER],
+      maxAge: 600,
+    }),
+  );
 
   app.use("*", async (c, next) => {
     const requestId = deps.newRequestId();
