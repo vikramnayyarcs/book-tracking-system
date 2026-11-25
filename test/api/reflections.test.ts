@@ -39,6 +39,7 @@ const pending: Promise<unknown>[] = [];
 
 const unused = () => Promise.reject(new Error("not used by these routes"));
 const inProcess = createApp({
+  allowedOrigins: [],
   gatewaySecret,
   jobsSecret: "unused",
   logger: jsonLogger(() => undefined),
