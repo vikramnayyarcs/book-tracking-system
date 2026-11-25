@@ -104,6 +104,7 @@ resource "supabase_edge_function_secrets" "api" {
       { name = "GATEWAY_SECRET", value = random_password.gateway_secret.result },
       { name = "JOBS_SECRET", value = random_password.jobs_secret.result },
       { name = "DEFAULT_TIER", value = "plus" },
+      { name = "ALLOWED_ORIGINS", value = module.web_dev.url },
     ],
     var.clerk_frontend_api_url == "" ? [] : [{ name = "CLERK_ISSUER", value = var.clerk_frontend_api_url }],
     var.groq_api_key == "" ? [] : [{ name = "GROQ_API_KEY", value = var.groq_api_key }],
