@@ -8,6 +8,6 @@ A private, AI-powered memory for the physical books you read. Log a reading sess
 - Secrets to set by hand: [docs/secrets.md](docs/secrets.md)
 - Working with Claude Code: [CLAUDE.md](CLAUDE.md)
 
-Dev web app: https://web-dev.pages.dev (the final address is the `web_dev_url` Terraform output; Cloudflare may add a suffix if the name is taken).
+Dev web app: https://web-dev-5ya.pages.dev (the `web_dev_url` Terraform output; Cloudflare added the suffix because `web-dev.pages.dev` belongs to someone else).
 
 Dev site: the **Website** link in this repository's About box (set by Terraform from the Cloudflare Pages project).
