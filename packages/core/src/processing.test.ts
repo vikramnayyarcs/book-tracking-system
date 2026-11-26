@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { planProcessing, type ProcessInfo } from "./processing.ts";
+import {
+  audioFitsDuration,
+  MAX_AUDIO_BYTES_PER_SECOND,
+  planProcessing,
+  type ProcessInfo,
+} from "./processing.ts";
 
 const base = {
   id: "s",
@@ -59,5 +64,24 @@ describe("planProcessing", () => {
     expect(planProcessing({ ...base, voiceSecondsUsed: 3600 }, "free")).toEqual(
       { kind: "denied", reason: "voice_minutes_limit" },
     );
+  });
+});
+
+describe("audioFitsDuration", () => {
+  it("accepts a file that fits the declared length", () => {
+    expect(audioFitsDuration(2048, 30)).toBe(true);
+    expect(audioFitsDuration(MAX_AUDIO_BYTES_PER_SECOND * 60, 60)).toBe(true);
+  });
+
+  it("rejects a long recording declared as a short one", () => {
+    expect(audioFitsDuration(MAX_AUDIO_BYTES_PER_SECOND * 60 + 1, 60)).toBe(
+      false,
+    );
+    expect(audioFitsDuration(20 * 1024 * 1024, 1)).toBe(false);
+  });
+
+  it("rejects a missing or non-positive declared length", () => {
+    expect(audioFitsDuration(1, null)).toBe(false);
+    expect(audioFitsDuration(1, 0)).toBe(false);
   });
 });
