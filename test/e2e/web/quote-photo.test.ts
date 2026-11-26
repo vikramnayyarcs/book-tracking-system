@@ -118,7 +118,9 @@ test("a missing selection or page number is explained and nothing is saved", asy
   );
   await expectNoAxeViolations(page);
 
-  await page.getByRole("checkbox").first().check();
+  await page
+    .getByText("The lighthouse keeper of Marrowick counted tides")
+    .click();
   await page.getByLabel("Page number").fill("0");
   await page.getByRole("button", { name: "Save quote" }).click();
   await expect(page.getByRole("alert")).toContainText("whole number");
@@ -210,7 +212,9 @@ test("another reader cannot read the photo or see the quote", async ({
   );
   await page.locator("input[type=file]").setInputFiles(photo);
   const photoId = ((await (await upload).json()) as { id: string }).id;
-  await page.getByRole("checkbox").first().check();
+  await page
+    .getByText("The lighthouse keeper of Marrowick counted tides")
+    .click();
   await page.getByLabel("Page number").fill("3");
   await page.getByRole("button", { name: "Save quote" }).click();
   await expect(page.getByText("Quote saved.")).toBeVisible();

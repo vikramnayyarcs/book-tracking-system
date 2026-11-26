@@ -6,7 +6,7 @@ The Quotes section has a button, Add a quote from a photo.
 On a phone, the button opens the camera.
 The reader takes a photo of the page.
 The app reads the text on the photo.
-Then the app deletes the photo.
+The app deletes the photo after it reads the text.
 The page shows the lines of text, one line at a time.
 The reader selects the lines of the passage.
 The reader types the page number.
