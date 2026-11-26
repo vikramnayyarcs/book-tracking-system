@@ -49,7 +49,7 @@ describe("nudge settings", () => {
 
   it("parses push subscriptions", () => {
     const good = {
-      endpoint: "https://push.example.test/x",
+      endpoint: "https://fcm.googleapis.com/fcm/send/x",
       keys: { p256dh: "a", auth: "b" },
     };
     expect(parsePushSubscription(good)).toEqual({
@@ -57,15 +57,35 @@ describe("nudge settings", () => {
       subscription: { endpoint: good.endpoint, p256dh: "a", auth: "b" },
     });
     expect(
-      parsePushSubscription({ ...good, endpoint: "http://push.example.test" })
-        .ok,
+      parsePushSubscription({
+        ...good,
+        endpoint: "http://fcm.googleapis.com/fcm/send/x",
+      }).ok,
     ).toBe(false);
     expect(parsePushSubscription({ endpoint: good.endpoint }).ok).toBe(false);
+    for (const endpoint of [
+      "https://push.example.test/x",
+      "https://169.254.169.254/latest/meta-data",
+      "https://localhost/x",
+      "https://fcm.googleapis.com.evil.test/x",
+      "https://user:pass@fcm.googleapis.com/x",
+      "https://fcm.googleapis.com:8443/x",
+      "https://evilpush.apple.com/x",
+    ]) {
+      expect(parsePushSubscription({ ...good, endpoint }).ok).toBe(false);
+    }
+    for (const endpoint of [
+      "https://updates.push.services.mozilla.com/wpush/v2/x",
+      "https://web.push.apple.com/x",
+      "https://wns2-par02p.notify.windows.com/w/?token=x",
+    ]) {
+      expect(parsePushSubscription({ ...good, endpoint }).ok).toBe(true);
+    }
     expect(
       parsePushSubscription({ ...good, keys: { p256dh: "", auth: "b" } }).ok,
     ).toBe(false);
-    expect(parseEndpointQuery("https://push.example.test/x")).toBe(
-      "https://push.example.test/x",
+    expect(parseEndpointQuery("https://fcm.googleapis.com/fcm/send/x")).toBe(
+      "https://fcm.googleapis.com/fcm/send/x",
     );
     expect(parseEndpointQuery("nope")).toBeUndefined();
     expect(parseEndpointQuery(undefined)).toBeUndefined();
