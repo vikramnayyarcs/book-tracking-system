@@ -32,12 +32,17 @@ const newUser = async (label: string) => {
   return user;
 };
 
-const remove = (user: TestUser, confirmation = "delete") =>
-  call("/me", {
+const remove = async (user: TestUser, confirmation = "delete") => {
+  const response = await call("/me", {
     method: "DELETE",
     headers: as(user.token),
     json: { confirmation },
   });
+  if (response.status === 403) {
+    throw new Error(await response.clone().text());
+  }
+  return response;
+};
 
 const seed = async (user: TestUser, title: string) => {
   const book = await call("/books", {
