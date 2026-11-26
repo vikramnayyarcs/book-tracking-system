@@ -1,22 +1,15 @@
-This video shows the book summary endpoint.
+This video shows the book summary.
 All data in this test run is seeded test data.
-First, a Plus user has a book with two notes.
-Now the user finishes the book.
-The API starts to write the summary in the background.
-The finish request does not wait for it.
-Next, read the review of the book.
-The review now has a summary.
-The summary uses only the notes of this user.
+First, the reader opens a book that has two notes.
+Now the reader finishes the book.
+The app starts to write the summary in the background.
+The book page shows the heading Your summary.
+Soon the summary appears.
+The summary uses only the notes of the reader.
 It does not add facts from the real book.
-Now send a request to write the summary again.
-The response gives a new summary.
-Next, a user on the Free plan sends the same request.
-The response is an error with the code tier_feature_unavailable.
-The Free plan does not include book summaries.
-Now a book has no notes.
-The API does not call the AI service in this case.
-The response says that there is nothing to summarize.
-Last, a second user sends a request for the first book.
-The response says that the book is not found.
-This shows that users cannot see the books of other users.
-The API never logs the notes or the summary.
+Now the reader pushes the button Write again.
+The app writes a new summary.
+The old summary stays if the AI service fails.
+A reader on the Free plan sees a note that summaries are part of the Plus plan.
+A book with no notes shows a message and has no button.
+The app never logs the notes or the summary.

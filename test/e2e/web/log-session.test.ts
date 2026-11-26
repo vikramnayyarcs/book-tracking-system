@@ -193,6 +193,7 @@ test("a voice note records with a timer, uploads and shows the transcript", asyn
   await expect(page.getByLabel("Edit transcript")).toHaveValue(/\S/);
   expect(calls).toContain("PUT storage-upload");
   await expectNoAxeViolations(page);
+  await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
 test("the main action works with the keyboard alone", async ({ page }) => {
