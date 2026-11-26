@@ -1,6 +1,6 @@
 # ADR 0001: Stack and build order
 
-- Status: Accepted
+- Status: Accepted; amended by ADR 0012 (MCP server location, build order)
 - Date: 2026-11-20
 - Decider: Vikram Nayyar
 
