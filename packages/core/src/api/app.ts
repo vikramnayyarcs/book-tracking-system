@@ -91,8 +91,8 @@ import type {
 } from "../ai/types.ts";
 import { quotePhotoPath, readQuotePhoto } from "../quote-photos.ts";
 import {
+  claimSession,
   loadProcessInfo,
-  markStatus,
   planProcessing,
   runProcessing,
 } from "../processing.ts";
@@ -623,9 +623,17 @@ export const createApp = (deps: ApiDeps) => {
         plan.reason,
       );
     }
-    await c.var.withUser((sql) =>
-      markStatus(sql, id, plan.transcribe ? "transcribing" : "extracting"),
+    const { result: claimed } = await c.var.withUser((sql) =>
+      claimSession(sql, id, plan.transcribe ? "transcribing" : "extracting"),
     );
+    if (!claimed) {
+      return problemResponse(
+        409,
+        "already_processed",
+        "This session is already processed or being processed",
+        c.get("requestId"),
+      );
+    }
     const userId = c.var.userId;
     deps.waitUntil(
       runProcessing({
