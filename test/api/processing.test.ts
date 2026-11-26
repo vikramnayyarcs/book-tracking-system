@@ -10,7 +10,9 @@ import {
 import { standInVector } from "./embed-stand-in.ts";
 import { createDb } from "../../packages/core/src/api/index.ts";
 import {
+  claimSession,
   loadProcessInfo,
+  markStatus,
   planProcessing,
   runProcessing,
 } from "../../packages/core/src/processing.ts";
@@ -238,5 +240,31 @@ describe("runProcessing with recorded Groq responses", () => {
       `,
     );
     expect(state).toEqual({ status: "failed", error_code: "ai_rate_limited" });
+  });
+});
+
+describe("claimSession", () => {
+  it("lets exactly one of several simultaneous starts claim a session", async () => {
+    const id = await seed();
+    const claims = await Promise.all(
+      Array.from({ length: 6 }, () =>
+        withUser((sql) => claimSession(sql, id, "extracting")),
+      ),
+    );
+    expect(claims.filter(Boolean)).toHaveLength(1);
+    const [state] = await withUser(
+      (sql) => sql<{ status: string }[]>`
+        select status from app.sessions where id = ${id}
+      `,
+    );
+    expect(state?.status).toBe("extracting");
+  });
+
+  it("does not claim a session that is ready", async () => {
+    const id = await seed();
+    await withUser((sql) => markStatus(sql, id, "ready"));
+    expect(await withUser((sql) => claimSession(sql, id, "extracting"))).toBe(
+      false,
+    );
   });
 });
