@@ -1,9 +1,17 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { TokenScope } from "../tokens.ts";
+import { freshestVerification } from "../account.ts";
 
-export type Caller = { userId: string; scopes?: readonly TokenScope[] };
+export type Caller = {
+  userId: string;
+  scopes?: readonly TokenScope[];
+  verifiedMinutesAgo?: number;
+};
 
 export type TokenVerifier = (token: string) => Promise<Caller | undefined>;
+
+const optionalAge = (age: number | undefined) =>
+  age === undefined ? {} : { verifiedMinutesAgo: age };
 
 export const clerkVerifier = (issuer: string) => {
   let jwks: ReturnType<typeof createRemoteJWKSet> | undefined;
@@ -12,7 +20,10 @@ export const clerkVerifier = (issuer: string) => {
       jwks ??= createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
       const { payload } = await jwtVerify(token, jwks, { issuer });
       return typeof payload.sub === "string" && payload.sub !== ""
-        ? { userId: payload.sub }
+        ? {
+            userId: payload.sub,
+            ...optionalAge(freshestVerification(payload["fva"])),
+          }
         : undefined;
     } catch {
       return undefined;

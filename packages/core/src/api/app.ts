@@ -78,6 +78,16 @@ import {
   savePushSubscription,
   updateNudgeSettings,
 } from "../nudge.ts";
+import {
+  collectStoragePaths,
+  deleteUserRows,
+  isRecentlyVerified,
+  parseMeDelete,
+  recordDeletionAttempt,
+  removeUserObjects,
+  retryUntilDone,
+  type IdentityStore,
+} from "../account.ts";
 import { vapidPublicKeyToApplicationServerKey } from "../push.ts";
 import { searchBooks } from "../book-search.ts";
 import { lookupIsbn, normalizeIsbn } from "../isbn.ts";
@@ -128,6 +138,7 @@ export type ApiDeps = {
   db: Db;
   defaultTier: Tier;
   objects: ObjectStore;
+  identity: IdentityStore;
   fetch: typeof fetch;
   openLibraryUrl: string;
   speech: SpeechToText;
@@ -144,6 +155,7 @@ type Env = {
   Variables: {
     requestId: string;
     userId: string;
+    verifiedMinutesAgo: number | undefined;
     withUser: <T>(
       work: (sql: Sql) => Promise<T>,
     ) => Promise<{ result: T; tier: Tier }>;
@@ -209,6 +221,10 @@ export const createApp = (deps: ApiDeps) => {
         );
       }
       c.set("userId", caller.userId);
+      c.set(
+        "verifiedMinutesAgo",
+        "verifiedMinutesAgo" in caller ? caller.verifiedMinutesAgo : undefined,
+      );
       c.set("withUser", (work) =>
         deps.db.asUser(caller.userId, deps.defaultTier, work),
       );
@@ -292,6 +308,63 @@ export const createApp = (deps: ApiDeps) => {
       updateNudgeSettings(sql, parsed.update, deps.now()),
     );
     return c.json({ id: c.var.userId, tier, ...result });
+  });
+
+  app.delete("/me", authenticated, async (c) => {
+    const requestId = c.get("requestId");
+    if (!deps.identity.configured) {
+      return problemResponse(
+        500,
+        "internal_error",
+        "Account deletion is not configured",
+        requestId,
+      );
+    }
+    if (!isRecentlyVerified(c.var.verifiedMinutesAgo)) {
+      return problemResponse(
+        403,
+        "reverification_required",
+        "Sign in again to delete your account",
+        requestId,
+      );
+    }
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const parsed = parseMeDelete(body);
+    if (!parsed.ok) {
+      return invalid(parsed.detail, requestId);
+    }
+    const { result: allowed } = await c.var.withUser(recordDeletionAttempt);
+    if (!allowed) {
+      return problemResponse(
+        429,
+        "deletion_limit_reached",
+        "Too many deletion attempts today",
+        requestId,
+      );
+    }
+    const userId = c.var.userId;
+    try {
+      const { result: paths } = await c.var.withUser(async (sql) => {
+        const found = await collectStoragePaths(sql);
+        await deleteUserRows(sql);
+        return found;
+      });
+      await removeUserObjects(deps.objects, paths);
+      await retryUntilDone(() => deps.identity.deleteUser(userId));
+    } catch {
+      deps.logger.account({
+        event: "account_delete_failed",
+        userId,
+        at: new Date(deps.now()).toISOString(),
+      });
+      throw new Error("Account deletion did not finish");
+    }
+    deps.logger.account({
+      event: "account_deleted",
+      userId,
+      at: new Date(deps.now()).toISOString(),
+    });
+    return c.body(null, 204);
   });
 
   app.post("/push-subscriptions", authenticated, async (c) => {
