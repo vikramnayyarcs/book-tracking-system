@@ -115,6 +115,7 @@ export function AppLayout() {
               [
                 ["/", "Shelf"],
                 ["/search", "Search"],
+                ["/ask", "Ask"],
                 ["/activity", "Activity"],
                 ["/settings", "Settings"],
               ] as const
