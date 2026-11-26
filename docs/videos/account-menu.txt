@@ -1,0 +1,7 @@
+This video shows the account menu.
+The test reader signs in.
+The header shows the avatar of the reader.
+The reader pushes the avatar.
+A menu opens with the item Sign out.
+The reader chooses Sign out.
+The app shows the sign-in page.

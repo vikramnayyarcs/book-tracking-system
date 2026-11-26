@@ -1,4 +1,4 @@
-import { ClerkProvider, useAuth, useClerk } from "@clerk/react";
+import { ClerkProvider, useAuth, useClerk, useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
@@ -11,13 +11,20 @@ import { setTokenProvider } from "../api/client.ts";
 import { clearDeviceData } from "../clear-device-data.ts";
 import { env } from "../env.ts";
 
+interface SessionUser {
+  imageUrl: string;
+  label: string;
+}
+
 interface Session {
+  user: SessionUser | null;
   isLoaded: boolean;
   isSignedIn: boolean;
   signOut: () => Promise<void>;
 }
 
 const signedOut: Session = {
+  user: null,
   isLoaded: true,
   isSignedIn: false,
   signOut: () => Promise.resolve(),
@@ -34,6 +41,7 @@ export const signInConfigured = env.clerkPublishableKey !== "";
 function ClerkSession({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const clerk = useClerk();
+  const { user } = useUser();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -50,6 +58,16 @@ function ClerkSession({ children }: { children: ReactNode }) {
   }, [isLoaded, isSignedIn, queryClient]);
 
   const session: Session = {
+    user: user
+      ? {
+          imageUrl: user.hasImage ? user.imageUrl : "",
+          label:
+            user.fullName ??
+            user.primaryEmailAddress?.emailAddress ??
+            user.username ??
+            "",
+        }
+      : null,
     isLoaded,
     isSignedIn: isSignedIn === true,
     signOut: async () => {
