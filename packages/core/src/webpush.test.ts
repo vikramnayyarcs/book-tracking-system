@@ -161,7 +161,7 @@ describe("encryptPayload", () => {
   it("produces an RFC 8291 aes128gcm body only the subscriber can read", async () => {
     const ua = await subscriber();
     const body = await encryptPayload(
-      ua.target("https://push.example.test/x"),
+      ua.target("https://fcm.googleapis.com/x"),
       encoder.encode(JSON.stringify({ title: "Hello", url: "/log" })),
     );
     const { record, recordSize } = await decrypt(body, ua);
@@ -187,7 +187,7 @@ describe("sendWebPush", () => {
       const ua = await subscriber();
       let seen: { headers: Headers; length: number } | undefined;
       server.use(
-        http.post("https://push.example.test/send/1", async ({ request }) => {
+        http.post("https://fcm.googleapis.com/send/1", async ({ request }) => {
           seen = {
             headers: request.headers,
             length: (await request.arrayBuffer()).byteLength,
@@ -197,7 +197,7 @@ describe("sendWebPush", () => {
       );
       const outcome = await sendWebPush(
         { fetch, now: () => now, vapid },
-        ua.target("https://push.example.test/send/1"),
+        ua.target("https://fcm.googleapis.com/send/1"),
         { title: "Hello", url: "/log" },
       );
       expect(outcome).toBe("sent");
@@ -216,7 +216,7 @@ describe("sendWebPush", () => {
         alg: "ES256",
       });
       expect(JSON.parse(decoder.decode(fromBase64Url(claims)))).toEqual({
-        aud: "https://push.example.test",
+        aud: "https://fcm.googleapis.com",
         exp: now / 1000 + 43200,
         sub: "https://example.invalid",
       });
@@ -242,27 +242,83 @@ describe("sendWebPush", () => {
     const ua = await subscriber();
     server.use(
       http.post(
-        "https://push.example.test/404",
+        "https://fcm.googleapis.com/404",
         () => new HttpResponse(null, { status: 404 }),
       ),
       http.post(
-        "https://push.example.test/410",
+        "https://fcm.googleapis.com/410",
         () => new HttpResponse(null, { status: 410 }),
       ),
       http.post(
-        "https://push.example.test/500",
+        "https://fcm.googleapis.com/500",
         () => new HttpResponse(null, { status: 500 }),
       ),
     );
     const send = (path: string) =>
       sendWebPush(
         { fetch, now: () => now, vapid },
-        ua.target(`https://push.example.test/${path}`),
+        ua.target(`https://fcm.googleapis.com/${path}`),
         { title: "t", url: "/log" },
       );
     expect(await send("404")).toBe("gone");
     expect(await send("410")).toBe("gone");
     expect(await send("500")).toBe("failed");
+  });
+
+  it("does not call an endpoint that is not a push service, and reports it gone", async () => {
+    const keys = await vapidKeys("sec1");
+    const vapid = {
+      subject: "https://example.invalid",
+      publicKey: keys.publicKey,
+      privateKey: keys.privateKey,
+    };
+    const ua = await subscriber();
+    let called = false;
+    server.use(
+      http.post("https://internal.example.test/hook", () => {
+        called = true;
+        return new HttpResponse(null, { status: 201 });
+      }),
+    );
+    const outcome = await sendWebPush(
+      { fetch, now: () => now, vapid },
+      ua.target("https://internal.example.test/hook"),
+      { title: "t", url: "/log" },
+    );
+    expect(outcome).toBe("gone");
+    expect(called).toBe(false);
+  });
+
+  it("does not follow a redirect from a push service", async () => {
+    const keys = await vapidKeys("sec1");
+    const vapid = {
+      subject: "https://example.invalid",
+      publicKey: keys.publicKey,
+      privateKey: keys.privateKey,
+    };
+    const ua = await subscriber();
+    let followed = false;
+    server.use(
+      http.post(
+        "https://fcm.googleapis.com/redirect",
+        () =>
+          new HttpResponse(null, {
+            status: 307,
+            headers: { location: "https://internal.example.test/hook" },
+          }),
+      ),
+      http.post("https://internal.example.test/hook", () => {
+        followed = true;
+        return new HttpResponse(null, { status: 201 });
+      }),
+    );
+    const outcome = await sendWebPush(
+      { fetch, now: () => now, vapid },
+      ua.target("https://fcm.googleapis.com/redirect"),
+      { title: "t", url: "/log" },
+    );
+    expect(outcome).toBe("failed");
+    expect(followed).toBe(false);
   });
 
   it("refuses a public key that is not P-256", async () => {
@@ -273,7 +329,7 @@ describe("sendWebPush", () => {
           publicKey: "abc",
           privateKey: "",
         },
-        "https://push.example.test/x",
+        "https://fcm.googleapis.com/x",
         now,
       ),
     ).rejects.toThrow("not a P-256 key");

@@ -1,4 +1,5 @@
 import type { Sql } from "./api/db.ts";
+import { isPushServiceEndpoint } from "./push.ts";
 
 export type NudgeSettings = {
   timeZone: string;
@@ -116,12 +117,11 @@ export const parsePushSubscription = (body: unknown) => {
   if (
     typeof endpoint !== "string" ||
     endpoint.length > 2048 ||
-    !URL.canParse(endpoint) ||
-    new URL(endpoint).protocol !== "https:"
+    !isPushServiceEndpoint(endpoint)
   ) {
     return {
       ok: false,
-      detail: "endpoint must be an https URL",
+      detail: "endpoint must be a browser push service URL",
     } satisfies Failure;
   }
   if (!isObject(keys) || !hasOnly(keys, ["p256dh", "auth"])) {

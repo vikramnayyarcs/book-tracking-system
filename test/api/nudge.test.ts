@@ -14,7 +14,8 @@ let alice: TestUser;
 let bob: TestUser;
 
 const as = (user: TestUser) => ({ authorization: `Bearer ${user.token}` });
-const endpointOf = (name: string) => `https://push.example.test/nudge-${name}`;
+const endpointOf = (name: string) =>
+  `https://fcm.googleapis.com/fcm/send/nudge-${name}`;
 
 type MeBody = {
   timeZone: string;
@@ -33,7 +34,7 @@ const subscribe = (user: TestUser, name: string, p256dh = "invented-key") =>
   });
 
 const clean = () =>
-  admin`delete from app.push_subscriptions where endpoint like 'https://push.example.test/nudge-%'`;
+  admin`delete from app.push_subscriptions where endpoint like 'https://fcm.googleapis.com/fcm/send/nudge-%'`;
 
 beforeAll(async () => {
   alice = await sessionTokenFor("bt-test-alice");
@@ -182,10 +183,14 @@ describe("push subscriptions", () => {
     for (const json of [
       {},
       {
-        endpoint: "http://push.example.test/x",
+        endpoint: "http://fcm.googleapis.com/fcm/send/x",
         keys: { p256dh: "a", auth: "b" },
       },
       { endpoint: endpointOf("bad"), keys: { p256dh: "a" } },
+      {
+        endpoint: "https://169.254.169.254/latest/meta-data",
+        keys: { p256dh: "a", auth: "b" },
+      },
     ]) {
       const response = await call("/push-subscriptions", {
         method: "POST",
