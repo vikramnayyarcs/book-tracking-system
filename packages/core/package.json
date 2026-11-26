@@ -9,7 +9,8 @@
     "./api": "./src/api/index.ts",
     "./plans": "./src/plans.ts",
     "./limits": "./src/limits.ts",
-    "./ai": "./src/ai/index.ts"
+    "./ai": "./src/ai/index.ts",
+    "./export": "./src/export.ts"
   },
   "dependencies": {
     "hono": "4.13.19",

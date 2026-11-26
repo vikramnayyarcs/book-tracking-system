@@ -2,6 +2,7 @@ import type { Sql } from "./api/db.ts";
 import { listBooks, type Book } from "./books.ts";
 import { listAllInsights, type Insight } from "./insights.ts";
 import { listAllSessions, type Session } from "./sessions.ts";
+import { createZip } from "./zip.ts";
 
 export const EXPORT_FORMATS = ["json", "markdown"] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
@@ -156,3 +157,18 @@ export const renderMarkdown = (data: VaultExport) =>
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trimEnd() + "\n";
+
+export const exportZipName = (data: VaultExport) =>
+  `vault-${data.exportedAt.slice(0, 10)}.zip`;
+
+export const buildExportZip = (data: VaultExport) => {
+  const encoder = new TextEncoder();
+  const day = data.exportedAt.slice(0, 10);
+  return createZip([
+    {
+      name: `vault-${day}.json`,
+      data: encoder.encode(JSON.stringify(data, null, 2)),
+    },
+    { name: `vault-${day}.md`, data: encoder.encode(renderMarkdown(data)) },
+  ]);
+};
