@@ -48,6 +48,7 @@ The MCP server is a separate repo, built after launch. Do not start a later phas
 
 - Before a phase or a non-trivial feature, run `/grill-me` and record the outcome as an ADR.
 - Prefer CLIs and scripts (gh, supabase, terraform, wrangler, npm) so work runs with or without MCP servers.
+- Every document the owner must read (ADRs, briefs, drafts such as the privacy policy) gets the `owner-review` label and a checklist item in the pinned issue "Docs to review" (#163). Add the item in the same PR that adds the document.
 - After a debugging detour caused by surprising behaviour, log it in `docs/GOTCHAS.md`: the trap in one bold sentence, then the fix.
 - Ponytail is for reviewing PRs, not always on. These non-negotiables win over its advice.
 - Claude never merges PRs, triggers workflows (except one infrastructure re-run, below) or pushes to `main`; it opens PRs; the owner merges red ones and the PR risk workflow merges green and yellow ones (ADR 0005, ADR 0009; yellow needs a `## Risk note` section) (enforced by the `block-merges` and `block-github-tool-merges` hooks). Work that depends on an unmerged PR goes on a branch stacked on it.
