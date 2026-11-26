@@ -26,6 +26,13 @@ export function useActivity(year: number) {
   });
 }
 
+export function useStats() {
+  return useQuery({
+    queryKey: ["stats"],
+    queryFn: async () => unwrap(await api.GET("/stats")),
+  });
+}
+
 export function useReadingBooks() {
   return useQuery({
     queryKey: ["books", "reading"],

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { buildYear, daySummary, longDate } from "../activity/activity-logic.ts";
+import { ReadingStats } from "../activity/reading-stats.tsx";
 import { useActivity } from "../api/hooks.ts";
 import { Button } from "../ui/button.tsx";
 import { meta } from "../ui/styles.ts";
@@ -100,6 +101,7 @@ export function ActivityPage() {
           </>
         ) : null}
       </div>
+      <ReadingStats />
     </div>
   );
 }
