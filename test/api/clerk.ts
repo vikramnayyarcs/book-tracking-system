@@ -50,3 +50,17 @@ export const sessionTokenFor = async (externalId: string) => {
   })) as { jwt: string };
   return { userId, token: token.jwt };
 };
+
+export const clerkUserExists = async (userId: string) => {
+  const response = await fetch(`${clerk}/users/${userId}`, {
+    headers: { authorization: `Bearer ${secretKey}` },
+  });
+  return response.status === 200;
+};
+
+export const deleteClerkUser = async (userId: string) => {
+  await fetch(`${clerk}/users/${userId}`, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${secretKey}` },
+  });
+};

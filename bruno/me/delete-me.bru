@@ -1,0 +1,26 @@
+meta {
+  name: Delete me
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/v1/me
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-gateway-secret: {{process.env.BT_GATEWAY_SECRET}}
+}
+
+body:json {
+  {
+    "confirmation": "delete"
+  }
+}
+
+docs {
+  operationId: deleteMe
+  Deletes the whole account for good. Run it only against a throwaway test user, with a Clerk session token verified in the last 10 minutes.
+}
