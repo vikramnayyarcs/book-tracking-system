@@ -16,6 +16,15 @@ const spawned: string[] = [];
 
 const newUser = async (label: string) => {
   const user = await sessionTokenFor(`bt-test-${label}-${suffix}`);
+  const claims = JSON.parse(
+    atob(
+      user.token.split(".")[1]?.replaceAll("-", "+").replaceAll("_", "/") ?? "",
+    ),
+  ) as Record<string, unknown>;
+  expect(
+    { claimNames: Object.keys(claims).sort(), fva: claims["fva"] },
+    "the Clerk session token must carry fva (session token version 2)",
+  ).toMatchObject({ fva: expect.any(Array) });
   spawned.push(user.userId);
   return user;
 };
