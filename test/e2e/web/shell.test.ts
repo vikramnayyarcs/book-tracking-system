@@ -35,3 +35,29 @@ test("settings opens from the navigation", async ({ page }) => {
   ).toBeVisible();
   await expectNoAxeViolations(page);
 });
+
+test("the header shows the reader's avatar and a menu with Sign out", async ({
+  page,
+}) => {
+  await signInAs(page, "bt-test-alice");
+
+  const trigger = page
+    .getByRole("banner")
+    .getByRole("button", { name: "Account menu" });
+  await expect(trigger).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const signOut = page.getByRole("menuitem", { name: "Sign out" });
+  await expect(signOut).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  await page.keyboard.press("Escape");
+  await expect(signOut).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+});

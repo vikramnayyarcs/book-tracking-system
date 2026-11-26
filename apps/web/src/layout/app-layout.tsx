@@ -6,6 +6,7 @@ import { useSession } from "../auth/session.tsx";
 import { waitingSummary } from "../log/queue-logic.ts";
 import { startQueueRunner } from "../log/queue-runner.ts";
 import { useQueueEntries } from "../log/use-queue.ts";
+import { AccountMenu } from "../ui/account-menu.tsx";
 import { useOnline } from "../ui/online.ts";
 
 const focus =
@@ -91,7 +92,10 @@ export function AppLayout() {
             </span>
             {brand.name}
           </p>
-          <LogSessionShortcut />
+          <div className="flex items-center gap-sm">
+            <LogSessionShortcut />
+            <AccountMenu />
+          </div>
         </div>
       </header>
       <OfflineBanner />
