@@ -67,6 +67,16 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+const logReadingRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/log",
+  component: lazyRouteComponent(() =>
+    import("./routes/log-reading.tsx").then((m) => ({
+      default: m.LogReadingPage,
+    })),
+  ),
+});
+
 const logRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/books/$bookId/log",
@@ -127,6 +137,7 @@ export const router = createRouter({
       askRoute,
       activityRoute,
       settingsRoute,
+      logReadingRoute,
       logRoute,
       addBookRoute,
       bookRoute,
