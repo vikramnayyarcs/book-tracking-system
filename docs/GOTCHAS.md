@@ -154,3 +154,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-26: a piped `terraform plan` hides a state-lock failure
 
 **`terraform plan ... | tee plan.txt` without `set -o pipefail` exits with `tee`'s status, so a lock error passed the Plan step and Apply failed later with `stat dev.tfplan: no such file`.** Fix: `set -o pipefail` before any piped plan, and `-lock-timeout=5m` on every plan and apply so a run waits for the lock instead of failing. `scripts/workflow-checks/terraform-steps.test.ts` checks both.
+
+## 2026-11-26: `runner.temp` in job-level `env` makes the whole workflow invalid
+
+**The `runner` context exists only inside steps, so `KEY_CHECK_RESULTS: ${{ runner.temp }}/...` under `jobs.<id>.env` made GitHub reject `key-check.yml`; every PR showed a 0s red run named after the file path, with no jobs.** Set step-only contexts (`runner`, `steps`) in each step's `env`, not the job's.
