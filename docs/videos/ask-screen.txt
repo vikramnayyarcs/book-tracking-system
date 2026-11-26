@@ -1,0 +1,14 @@
+This video shows how to ask your vault a question.
+All data in this test run is seeded test data.
+The test reader opens the Ask page.
+The page shows a box and an Ask button.
+The page tells the reader that the answer uses only the notes of the reader.
+The reader types a question about songs.
+The reader pushes the Ask button.
+The page shows one answer.
+Below the answer, the page shows the notes that support it.
+Each note shows the book and the date of the session.
+The reader can use the link to open the book at that session.
+If the notes do not answer the question, the page says that there is nothing to answer from.
+The page does not save the question or the answer.
+If the device is offline, the Ask button is off and the page tells the reader why.
