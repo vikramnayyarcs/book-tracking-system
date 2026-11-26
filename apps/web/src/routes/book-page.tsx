@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { meta, noteCard, noteText, quoteText } from "../ui/styles.ts";
 import type { components } from "@book-tracking-system/api-contract/types";
 import { Link, useParams } from "@tanstack/react-router";
@@ -6,8 +7,11 @@ import {
   useBookReflections,
   useBookReview,
   useBookSessions,
+  useRegenerateSummary,
 } from "../api/book-hooks.ts";
+import { useMe } from "../api/hooks.ts";
 import { useBook } from "../api/session-hooks.ts";
+import { useOnline } from "../ui/online.ts";
 import {
   reflectionsFor,
   sessionLocation,
@@ -23,6 +27,8 @@ const focus =
   "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const primaryLink = `inline-flex min-h-11 items-center rounded-md bg-accent px-md text-base font-medium text-accent-ink ${focus}`;
 const secondaryLink = `inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-md text-base text-ink ${focus}`;
+
+const SUMMARY_WAIT_MS = 30_000;
 
 const statusLabel = {
   reading: "Reading",
@@ -175,6 +181,70 @@ function InsightsAndQuotes({ bookId }: { bookId: string }) {
   );
 }
 
+function Summary({ bookId, hasNotes }: { bookId: string; hasNotes: boolean }) {
+  const me = useMe();
+  const plus = me.data?.tier === "plus";
+  const review = useBookReview(bookId, true, plus && hasNotes);
+  const write = useRegenerateSummary(bookId);
+  const online = useOnline();
+  const [gaveUp, setGaveUp] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setGaveUp(true), SUMMARY_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  if (!me.data || !review.data) return null;
+  const summary = review.data.summary;
+  const waiting =
+    plus && hasNotes && summary === null && !write.isPending && !gaveUp;
+  return (
+    <section aria-labelledby="summary-heading" className="flex flex-col gap-sm">
+      <h2 id="summary-heading" className="text-lg font-medium">
+        Your summary
+      </h2>
+      {!plus ? (
+        <p className="text-base text-ink-muted">
+          Book summaries are part of the Plus plan.
+        </p>
+      ) : null}
+      {plus && !hasNotes ? (
+        <p className="text-base text-ink-muted">
+          Nothing to summarise yet. The summary comes from your own notes.
+        </p>
+      ) : null}
+      {summary !== null ? <p className={noteText}>{summary}</p> : null}
+      {waiting ? (
+        <p role="status" className="text-base text-ink-muted">
+          Writing your summary.
+        </p>
+      ) : null}
+      {plus && hasNotes ? (
+        <div className="flex flex-col items-start gap-sm">
+          <Button
+            isDisabled={!online || write.isPending}
+            onPress={() => write.mutate()}
+          >
+            {write.isPending
+              ? "Writing"
+              : summary === null
+                ? "Write summary"
+                : "Write again"}
+          </Button>
+          {!online ? (
+            <p className="text-sm text-ink-muted">
+              Offline. The summary needs a connection.
+            </p>
+          ) : null}
+          {write.isError ? (
+            <p role="alert" className="text-sm text-danger">
+              {write.error.message}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function Review({ bookId }: { bookId: string }) {
   const review = useBookReview(bookId, true);
   if (!review.data) return null;
@@ -260,6 +330,9 @@ export function BookPage() {
         </div>
       ) : null}
       {data.status === "finished" ? <Review bookId={id} /> : null}
+      {data.status === "finished" ? (
+        <Summary bookId={id} hasNotes={hasNotes} />
+      ) : null}
       {data.status === "reading" || hasMid ? (
         <ReflectionQuestions
           bookId={id}

@@ -25,12 +25,37 @@ export function useBookInsights(id: string) {
   });
 }
 
-export function useBookReview(id: string, enabled: boolean) {
+const SUMMARY_POLLS = 10;
+const SUMMARY_POLL_MS = 3000;
+
+export function useBookReview(
+  id: string,
+  enabled: boolean,
+  waitForSummary = false,
+) {
   return useQuery({
     queryKey: ["books", id, "review"],
     enabled,
     queryFn: async () =>
       unwrap(await api.GET("/books/{id}/review", { params: { path: { id } } })),
+    refetchInterval: (query) =>
+      waitForSummary &&
+      query.state.data?.summary == null &&
+      query.state.dataUpdateCount < SUMMARY_POLLS
+        ? SUMMARY_POLL_MS
+        : false,
+  });
+}
+
+export function useRegenerateSummary(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST("/books/{id}/summary", { params: { path: { id } } }),
+      ),
+    onSuccess: (review) =>
+      queryClient.setQueryData(["books", id, "review"], review),
   });
 }
 
