@@ -154,3 +154,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-26: a piped `terraform plan` hides a state-lock failure
 
 **`terraform plan ... | tee plan.txt` without `set -o pipefail` exits with `tee`'s status, so a lock error passed the Plan step and Apply failed later with `stat dev.tfplan: no such file`.** Fix: `set -o pipefail` before any piped plan, and `-lock-timeout=5m` on every plan and apply so a run waits for the lock instead of failing. `scripts/workflow-checks/terraform-steps.test.ts` checks both.
+
+## 2026-11-26: a cancelled CI run left the dev state locked
+
+**CI used `cancel-in-progress: true`, so a new push killed `plan-dev` mid-plan and the R2 state lock was never released; every later plan failed with `Error acquiring the state lock` (412 PreconditionFailed).** `plan-dev` now runs in its own `plan-dev.yml` with `cancel-in-progress: false`, and `scripts/workflow-checks/terraform-steps.test.ts` fails any Terraform workflow that cancels in progress. A lock left behind already needs `terraform force-unlock <ID>` with the dev backend credentials.
