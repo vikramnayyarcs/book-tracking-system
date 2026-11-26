@@ -1,4 +1,5 @@
 import {
+  clerkIdentity,
   clerkVerifier,
   createApp,
   createDb,
@@ -76,6 +77,9 @@ const app = createApp({
   db: createDb(
     Deno.env.get("DATABASE_URL") ?? Deno.env.get("SUPABASE_DB_URL") ?? "",
   ),
+  identity: clerkIdentity({
+    secretKey: Deno.env.get("CLERK_SECRET_KEY") ?? "",
+  }),
   objects: {
     signedUploadUrl: async (bucket, path) => {
       const response = await fetch(
