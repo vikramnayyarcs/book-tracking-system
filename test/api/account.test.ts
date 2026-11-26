@@ -22,9 +22,12 @@ const newUser = async (label: string) => {
     ),
   ) as Record<string, unknown>;
   expect(
-    { claimNames: Object.keys(claims).toSorted(), fva: claims["fva"] },
-    "the Clerk session token must carry fva (session token version 2)",
-  ).toMatchObject({ fva: expect.any(Array) });
+    JSON.stringify({
+      names: Object.keys(claims).toSorted(),
+      fva: claims["fva"],
+    }),
+    "the Clerk session token must carry a fresh fva (session token version 2)",
+  ).toMatch(/"fva":\[\d+,/);
   spawned.push(user.userId);
   return user;
 };
