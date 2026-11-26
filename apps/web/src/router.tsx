@@ -45,6 +45,14 @@ const searchRoute = createRoute({
   ),
 });
 
+const activityRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/activity",
+  component: lazyRouteComponent(() =>
+    import("./routes/activity.tsx").then((m) => ({ default: m.ActivityPage })),
+  ),
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: "/settings",
@@ -108,6 +116,7 @@ export const router = createRouter({
     appRoute.addChildren([
       shelfRoute,
       searchRoute,
+      activityRoute,
       settingsRoute,
       logRoute,
       addBookRoute,
