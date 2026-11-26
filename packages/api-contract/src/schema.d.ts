@@ -958,7 +958,10 @@ export interface components {
             notReadingToday?: boolean;
         };
         PushSubscriptionCreate: {
-            /** Format: uri */
+            /**
+             * Format: uri
+             * @description Must be the https URL of a browser push service (Firefox, Chrome, Safari or Edge). Any other host gets a 400.
+             */
             endpoint: string;
             keys: {
                 p256dh: string;

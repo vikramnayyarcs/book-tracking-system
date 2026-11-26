@@ -1870,6 +1870,9 @@ components:
           format: uri
           pattern: "^https://"
           maxLength: 2048
+          description: >-
+            Must be the https URL of a browser push service (Firefox, Chrome,
+            Safari or Edge). Any other host gets a 400.
         keys:
           type: object
           required: [p256dh, auth]
