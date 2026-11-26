@@ -24,6 +24,13 @@ export type ProcessInfo = {
   bookHasOtherVoice: boolean;
 };
 
+export const MAX_AUDIO_BYTES_PER_SECOND = 64 * 1024;
+
+export const audioFitsDuration = (bytes: number, seconds: number | null) =>
+  seconds !== null &&
+  seconds > 0 &&
+  bytes <= seconds * MAX_AUDIO_BYTES_PER_SECOND;
+
 const STARTABLE = ["draft", "uploaded", "failed"];
 
 export const planProcessing = (info: ProcessInfo, tier: Tier) => {
@@ -125,6 +132,10 @@ export const runProcessing = async (input: {
     if (input.transcribe && info.audioPath !== null) {
       await withUser((sql) => markStatus(sql, info.id, "transcribing"));
       const audio = await input.objects.download("audio", info.audioPath);
+      if (!audioFitsDuration(audio.size, info.audioSeconds)) {
+        await input.objects.remove("audio", [info.audioPath]);
+        throw new Error("audio_exceeds_declared_duration");
+      }
       const { text } = await input.speech.transcribe(
         audio,
         audioFilename(info.audioPath),

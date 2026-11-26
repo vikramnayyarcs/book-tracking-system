@@ -116,4 +116,67 @@ describe("voice path through the api function, with a recorded Groq stand-in", (
     `;
     expect(insights[0]?.n).toBeGreaterThan(0);
   });
+
+  it("rejects audio far larger than the declared length without calling Groq or counting minutes", async () => {
+    const book = await call("/books", {
+      method: "POST",
+      headers: as(),
+      json: { title: "Invented voice test oversize" },
+    });
+    const bookId = ((await book.json()) as { id: string }).id;
+    const id = crypto.randomUUID();
+    await call("/sessions", {
+      method: "POST",
+      headers: as(),
+      json: { id, bookId, date: "2026-03-05" },
+    });
+    const signed = await call(`/sessions/${id}/audio-upload`, {
+      method: "POST",
+      headers: as(),
+      json: { durationSeconds: 1, extension: "m4a" },
+    });
+    const { uploadUrl, path } = (await signed.json()) as {
+      uploadUrl: string;
+      path: string;
+    };
+    const target = new URL(uploadUrl);
+    const form = new FormData();
+    form.set("cacheControl", "3600");
+    form.set(
+      "",
+      new Blob([new Uint8Array(512 * 1024).fill(7)], { type: "audio/mp4" }),
+    );
+    const upload = await fetch(
+      `${storageUrl}${target.pathname}${target.search}`,
+      { method: "PUT", body: form },
+    );
+    expect(upload.ok).toBe(true);
+    const before = stand.seen.filter((r) => r.kind === "transcription").length;
+    const usedBefore = await admin<{ n: number }[]>`
+      select coalesce(sum(voice_seconds), 0)::int as n from app.usage
+      where user_id = ${user.userId}
+    `;
+
+    const started = await call(`/sessions/${id}/process`, {
+      method: "POST",
+      headers: as(),
+    });
+    expect(started.status).toBe(202);
+    await expect
+      .poll(async () => {
+        const response = await call(`/sessions/${id}`, { headers: as() });
+        return (await response.json()) as { status: string };
+      })
+      .toMatchObject({ status: "failed" });
+
+    expect(stand.seen.filter((r) => r.kind === "transcription").length).toBe(
+      before,
+    );
+    const usedAfter = await admin<{ n: number }[]>`
+      select coalesce(sum(voice_seconds), 0)::int as n from app.usage
+      where user_id = ${user.userId}
+    `;
+    expect(usedAfter[0]?.n).toBe(usedBefore[0]?.n);
+    expect(await audioObjects(path)).toBe(0);
+  });
 });
