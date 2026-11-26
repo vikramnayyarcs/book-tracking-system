@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import formatsModule from "ajv-formats";
 import { parse } from "yaml";
+import { writeCallLog } from "./call-log.ts";
 
 type Json = Record<string, unknown>;
 
@@ -19,16 +20,19 @@ ajv.addSchema({ $id: "spec", ...spec });
 export const baseUrl = process.env["API_BASE_URL"] ?? "";
 export const gatewaySecret = process.env["GATEWAY_SECRET"] ?? "";
 
-export const call = (
+const logDirectory = process.env["API_LOG_DIR"] ?? "";
+
+export const call = async (
   path: string,
   init: {
     method?: string;
     headers?: Record<string, string>;
     json?: unknown;
   } = {},
-) =>
-  fetch(`${baseUrl}/v1${path}`, {
-    method: init.method ?? "GET",
+) => {
+  const method = init.method ?? "GET";
+  const response = await fetch(`${baseUrl}/v1${path}`, {
+    method,
     headers: {
       "x-gateway-secret": gatewaySecret,
       ...(init.json === undefined
@@ -38,6 +42,16 @@ export const call = (
     },
     ...(init.json === undefined ? {} : { body: JSON.stringify(init.json) }),
   });
+  if (logDirectory !== "") {
+    await writeCallLog(logDirectory, {
+      method,
+      path,
+      request: init.json ?? null,
+      response,
+    });
+  }
+  return response;
+};
 
 const lookup = (method: string, path: string, status: number) => {
   const paths = spec["paths"] as Record<string, Record<string, Json>>;
