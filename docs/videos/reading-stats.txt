@@ -1,0 +1,15 @@
+This video shows the reading stats on the Activity page.
+All data in this test run is seeded test data.
+The test reader opens the Activity page.
+Below the calendar, the page shows the reading stats.
+The first chart shows the books finished in each of the last 12 months.
+A month with no finished book shows a zero.
+The page also shows the total number of books.
+The reader opens the table of the chart.
+The table gives the same numbers as text for screen readers.
+The second chart shows how many books have each rating, from 1 to 5 stars.
+Each bar has a number and a label.
+The page does not use color alone.
+The page has no streak count.
+The page does not show missed days.
+If the server has an error, the page shows a message and a Try again button.
