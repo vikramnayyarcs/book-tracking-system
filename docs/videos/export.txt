@@ -1,0 +1,16 @@
+This video shows how to export your data.
+All data in this test run is seeded test data.
+The test reader opens the Settings page.
+The page has a part named Export your data.
+The text tells the reader what the file holds.
+The file holds books, sessions, insights, reviews and reflections.
+The file does not hold audio or photos.
+The reader pushes the Download my data button.
+The app asks the server for all data of the reader.
+The browser saves one zip file.
+The zip file holds two files.
+One file is in JSON format.
+The other file is in Markdown format, and a person can read it.
+The page tells the reader that the file is saved.
+If the device is offline, the button is off and the page tells the reader why.
+If the server has an error, the page shows a message and the reader can try again.
