@@ -259,3 +259,39 @@ test("another reader cannot read the book's sessions or reflections", async ({
   }
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
+
+test("a finished book shows its summary and writes it again on request", async ({
+  page,
+}) => {
+  const book = await makeBook(true);
+  await openBook(page, book.id);
+  await page.getByRole("link", { name: "Finish book" }).click();
+  await page.getByRole("button", { name: "Finish book" }).click();
+
+  const summary = page.getByRole("region", { name: "Your summary" });
+  await expect(
+    summary.getByText(/You noted that a pear orchard/),
+  ).toBeVisible();
+  await expectNoAxeViolations(page);
+
+  await summary.getByRole("button", { name: "Write again" }).click();
+  await expect(
+    summary.getByText(/You noted that a pear orchard/),
+  ).toBeVisible();
+  await expect(summary.getByRole("alert")).toHaveCount(0);
+  await expectNoAxeViolations(page);
+});
+
+test("a finished book with no notes has no summary button", async ({
+  page,
+}) => {
+  const book = await makeBook(false);
+  await openBook(page, book.id);
+  await page.getByRole("link", { name: "Finish book" }).click();
+  await page.getByRole("button", { name: "Finish book" }).click();
+
+  const summary = page.getByRole("region", { name: "Your summary" });
+  await expect(summary.getByText(/Nothing to summarise yet/)).toBeVisible();
+  await expect(summary.getByRole("button")).toHaveCount(0);
+  await expectNoAxeViolations(page);
+});
