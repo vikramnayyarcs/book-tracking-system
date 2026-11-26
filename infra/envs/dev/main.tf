@@ -108,6 +108,7 @@ resource "supabase_edge_function_secrets" "api" {
     ],
     var.clerk_frontend_api_url == "" ? [] : [{ name = "CLERK_ISSUER", value = var.clerk_frontend_api_url }],
     var.groq_api_key == "" ? [] : [{ name = "GROQ_API_KEY", value = var.groq_api_key }],
+    var.clerk_secret_key == "" ? [] : [{ name = "CLERK_SECRET_KEY", value = var.clerk_secret_key }],
     [
       { name = "VAPID_PUBLIC_KEY", value = tls_private_key.vapid.public_key_pem },
       { name = "VAPID_PRIVATE_KEY", value = tls_private_key.vapid.private_key_pem },

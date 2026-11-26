@@ -329,6 +329,7 @@ jobs:
             echo "JOBS_SECRET=${JOBS_SECRET}"
             echo "DEFAULT_TIER=${DEFAULT_TIER}"
             echo "CLERK_ISSUER=${CLERK_ISSUER}"
+            echo "CLERK_SECRET_KEY=${CLERK_SECRET_KEY}"
             echo "GROQ_API_KEY=unused-in-tests"
             echo "GROQ_URL=http://host.docker.internal:54390/openai/v1"
             echo "VAPID_PUBLIC_KEY=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkey -pubout | grep -v '^-----' | tr -d '\n')"
@@ -397,6 +398,7 @@ jobs:
       TF_VAR_supabase_organization_id: ${{ vars.DEV_SUPABASE_ORG_ID }}
       TF_VAR_clerk_frontend_api_url: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
       TF_VAR_groq_api_key: ${{ secrets.DEV_GROQ_API_KEY }}
+      TF_VAR_clerk_secret_key: ${{ secrets.DEV_CLERK_SECRET_KEY }}
       TF_VAR_workers_subdomain: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
       TF_VAR_grafana_stack_slug: ${{ vars.GRAFANA_STACK_SLUG }}
       GRAFANA_CLOUD_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_CLOUD_ACCESS_POLICY_TOKEN }}

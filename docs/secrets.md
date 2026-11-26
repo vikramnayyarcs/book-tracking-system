@@ -26,7 +26,7 @@ On GitHub Free private repos there are no Environments, so everything is repo-le
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_REGION` | Variable | GitHub repo |
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_STACK_SLUG` | Variable | GitHub repo |
 | Before Phase 2 (ADR 0003) | `DEV_CLERK_FRONTEND_API_URL` | Variable | GitHub repo |
-| Before Phase 2 (ADR 0003) | `DEV_CLERK_SECRET_KEY` | Secret | GitHub repo |
+| Before Phase 2 (ADR 0003); also used by account deletion (ADR 0012) | `DEV_CLERK_SECRET_KEY` | Secret | GitHub repo; Terraform passes it to Supabase secrets as `CLERK_SECRET_KEY` |
 | Before Phase 2 (ADR 0003); used in Phase 4 | `DEV_CLERK_PUBLISHABLE_KEY` | Variable | GitHub repo |
 | Before Phase 3 (ADR 0007) | `DEV_GROQ_API_KEY` | Secret | GitHub repo; Terraform passes it to Supabase secrets |
 | Before the dev API synthetic check (task 5, run 2) | `CLOUDFLARE_WORKERS_SUBDOMAIN` | Variable | GitHub repo; the part before `.workers.dev`; leave unset to skip the check |

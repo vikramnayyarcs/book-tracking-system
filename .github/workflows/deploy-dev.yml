@@ -77,6 +77,7 @@ jobs:
       TF_VAR_supabase_organization_id: ${{ vars.DEV_SUPABASE_ORG_ID }}
       TF_VAR_clerk_frontend_api_url: ${{ vars.DEV_CLERK_FRONTEND_API_URL }}
       TF_VAR_groq_api_key: ${{ secrets.DEV_GROQ_API_KEY }}
+      TF_VAR_clerk_secret_key: ${{ secrets.DEV_CLERK_SECRET_KEY }}
       TF_VAR_workers_subdomain: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
       TF_VAR_grafana_stack_slug: ${{ vars.GRAFANA_STACK_SLUG }}
       GRAFANA_CLOUD_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_CLOUD_ACCESS_POLICY_TOKEN }}
