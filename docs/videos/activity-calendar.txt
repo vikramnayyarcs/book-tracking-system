@@ -1,0 +1,14 @@
+This video shows the Activity page.
+All data in this test run is seeded test data.
+The test reader opens the Activity page from the main navigation.
+The page shows the months of the year.
+Each day with at least one entry has a filled square.
+A filled square also has a number and a text label for screen readers.
+The page does not use color alone.
+The page tells the reader how many days have an entry.
+The reader pushes the button for the previous year.
+The page shows the days of that year.
+The page has no streak count.
+The page does not show missed days.
+If a year has no entries, the page tells the reader to log a session.
+If the server has an error, the page shows a message and a Try again button.
