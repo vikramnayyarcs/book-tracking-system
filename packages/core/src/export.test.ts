@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildExportZip,
+  exportZipName,
   parseExportFormat,
   renderMarkdown,
   type VaultExport,
 } from "./export.ts";
+import { crc32 } from "./zip.ts";
 
 const data: VaultExport = {
   exportedAt: "2026-03-01T10:00:00.000Z",
@@ -59,6 +62,44 @@ const data: VaultExport = {
     },
   ],
 };
+
+const readEntries = (zip: Uint8Array) => {
+  const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+  const count = view.getUint16(zip.length - 22 + 10, true);
+  let at = view.getUint32(zip.length - 22 + 16, true);
+  const decoder = new TextDecoder();
+  const entries: { name: string; text: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const size = view.getUint32(at + 20, true);
+    const nameLength = view.getUint16(at + 28, true);
+    const local = view.getUint32(at + 42, true);
+    const name = decoder.decode(zip.subarray(at + 46, at + 46 + nameLength));
+    const start = local + 30 + view.getUint16(local + 26, true);
+    entries.push({
+      name,
+      text: decoder.decode(zip.subarray(start, start + size)),
+    });
+    at += 46 + nameLength;
+  }
+  return entries;
+};
+
+describe("buildExportZip", () => {
+  it("holds the JSON and the Markdown, named by day", () => {
+    const entries = readEntries(buildExportZip(data));
+    expect(entries.map((entry) => entry.name)).toEqual([
+      "vault-2026-03-01.json",
+      "vault-2026-03-01.md",
+    ]);
+    expect(JSON.parse(entries[0]!.text)).toEqual(data);
+    expect(entries[1]!.text).toBe(renderMarkdown(data));
+    expect(exportZipName(data)).toBe("vault-2026-03-01.zip");
+  });
+
+  it("computes the standard CRC-32", () => {
+    expect(crc32(new TextEncoder().encode("123456789"))).toBe(0xcbf43926);
+  });
+});
 
 describe("export", () => {
   it("accepts only json and markdown", () => {
