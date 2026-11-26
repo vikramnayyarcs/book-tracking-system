@@ -40,3 +40,16 @@ variable "web_url" {
   description = "Origin of the web app; the only origin the Faro collector accepts telemetry from."
   type        = string
 }
+
+variable "alert_email" {
+  description = "Address that receives every alert (repo secret GRAFANA_ALERT_EMAIL). Empty skips the contact point, the alert rules and the dashboard."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ai_tokens_per_hour_limit" {
+  description = "AI tokens per hour across all users above which the cost-guard alert fires."
+  type        = number
+  default     = 500000
+}
