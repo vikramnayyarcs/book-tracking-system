@@ -29,7 +29,7 @@ export function TextField({
   multiline?: boolean;
   rows?: number;
   inputMode?: "numeric" | "text";
-  type?: "date" | "text";
+  type?: "date" | "text" | "time";
   description?: string | undefined;
   error?: string | null;
   isDisabled?: boolean | undefined;

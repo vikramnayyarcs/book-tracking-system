@@ -4,6 +4,7 @@ import { useExportVault } from "../api/export-hooks.ts";
 import { useMe } from "../api/hooks.ts";
 import { useSession } from "../auth/session.tsx";
 import { clearDeviceData } from "../clear-device-data.ts";
+import { NudgeSettings } from "../nudge/nudge-settings.tsx";
 import { useOnline } from "../ui/online.ts";
 import { meta } from "../ui/styles.ts";
 import { Button } from "../ui/button.tsx";
@@ -54,6 +55,16 @@ export function SettingsPage() {
           Plan
         </h2>
         <Tier />
+      </section>
+
+      <section
+        aria-labelledby="nudge-heading"
+        className="mb-lg border-b border-dashed border-border pb-lg"
+      >
+        <h2 id="nudge-heading" className="mb-sm text-lg font-semibold">
+          Daily reminder
+        </h2>
+        <NudgeSettings />
       </section>
 
       <section

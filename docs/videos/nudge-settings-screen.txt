@@ -1,0 +1,21 @@
+This video shows the daily reminder in Settings.
+All data in this test run is seeded test data.
+The test reader opens the Settings page.
+The page has a part named Daily reminder.
+The text tells the reader when the reminder is sent.
+The app sends it only if the reader has no entry that day.
+The app sends it only if a book is in Reading.
+The text also tells the reader about iPhone.
+On iPhone, push works only after the reader adds the app to the home screen.
+The switch is on, and the time is 20:30.
+The reader changes the time to 21:15.
+The reader pushes the Save time button.
+The page keeps the new time.
+Now the reader pushes the Not reading today button.
+The page tells the reader that no reminder is sent today.
+The reminder comes back tomorrow.
+The reader taps the link in a reminder.
+The app opens the Log session page for the book in Reading.
+If the device is offline, the controls are off and the page tells the reader why.
+If the server has an error, the page shows a message.
+If the browser does not allow notifications, the switch stays off and the page shows a message.
