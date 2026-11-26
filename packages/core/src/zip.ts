@@ -15,7 +15,7 @@ export const crc32 = (data: Uint8Array) => {
 const DOS_DATE = (1 << 5) | 1;
 const UTF8_FLAG = 0x0800;
 
-export const createZip = (files: ZipFile[]): Uint8Array => {
+export const createZip = (files: ZipFile[]) => {
   const encoder = new TextEncoder();
   const chunks: Uint8Array[] = [];
   const central: Uint8Array[] = [];
