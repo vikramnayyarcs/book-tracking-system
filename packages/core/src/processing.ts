@@ -95,6 +95,15 @@ export const loadProcessInfo = async (sql: Sql, id: string) => {
       } satisfies ProcessInfo);
 };
 
+export const claimSession = async (sql: Sql, id: string, status: string) => {
+  const rows = await sql`
+    update app.sessions set status = ${status}, error_code = null
+    where id = ${id} and status in ${sql(STARTABLE)}
+    returning id
+  `;
+  return rows.length === 1;
+};
+
 export const markStatus = async (
   sql: Sql,
   id: string,
