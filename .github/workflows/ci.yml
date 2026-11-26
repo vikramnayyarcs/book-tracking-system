@@ -207,6 +207,15 @@ jobs:
             npx playwright test --config playwright.web.config.ts --trace off --output "test-results/demo-${name}" "$file"
           done
 
+      - name: Record the API request logs
+        env:
+          API_LOG_DIR: ${{ runner.temp }}/api-logs
+          GATEWAY_SECRET: ci-gateway-secret
+          API_BASE_URL: http://127.0.0.1:54321/functions/v1/api
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          CLERK_SECRET_KEY: ${{ secrets.DEV_CLERK_SECRET_KEY }}
+        run: npx vitest run --config vitest.api.config.ts test/api/books.test.ts test/api/sessions.test.ts test/api/processing.test.ts
+
       - name: Build the explainer videos
         env:
           PIPER_BIN: ${{ runner.temp }}/piper/bin/piper
@@ -220,6 +229,8 @@ jobs:
             cp "$demo" "videos/${name}-demo.webm"
           }
           build site test-results/site
+          node scripts/video/build-api-video.ts docs/videos/books.txt "${{ steps.voice.outputs.model }}" videos/books-explainer.mp4 "$RUNNER_TEMP/api-logs/books.jsonl"
+          node scripts/video/build-api-video.ts docs/videos/sessions.txt "${{ steps.voice.outputs.model }}" videos/sessions-explainer.mp4 "$RUNNER_TEMP/api-logs/sessions.jsonl" "$RUNNER_TEMP/api-logs/processing.jsonl"
           for file in test/e2e/demo/*.demo.ts; do
             name="$(basename "$file" .demo.ts)"
             build "$name" "test-results/demo-${name}"
