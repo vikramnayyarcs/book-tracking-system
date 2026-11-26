@@ -53,8 +53,8 @@ AI works only on what the user said or captured. It never summarises the book's 
 
 These wait until the vault holds 20 or more books of real notes.
 
-- **MCP server (first after MVP):** lets users log and read their vault from AI assistants such as Claude, ChatGPT or Cursor without opening the app. Tools: add book, log session, list books, search the vault, designed around the reader's jobs rather than mirroring endpoints (for example, log session accepts a free-form reflection and the assistant fills in pages and insights). Includes MCP prompts such as "reflect on today's reading". Ask the vault is not exposed over MCP. Opt-in per user, OAuth login (check Clerk support), separate read and write scopes, rate limits, tool output treated as data. A separate project with its own hosting (possibly AWS), monitoring, security review and DeepEval testing; it calls the Book Vault API like any other client.
-- **AI chat:** a vault-wide chat and a conversational end-of-book reflection, answering from the user's own notes with sources, with "save as insight" (paid tier)
+- **MCP server (Phase 6, in this repo as `apps/mcp`):** lets users log and read their vault from AI assistants such as Claude, ChatGPT or Cursor without opening the app. Tools: add book, log session, list books, search the vault, designed around the reader's jobs rather than mirroring endpoints (for example, log session accepts a free-form reflection and the assistant fills in pages and insights). Includes MCP prompts such as "reflect on today's reading". Ask the vault is not exposed over MCP. Opt-in per user, OAuth login (check Clerk support), separate read and write scopes, rate limits, tool output treated as data. Lives in this repository as `apps/mcp` (ADR 0012) with its own hosting (possibly elsewhere), monitoring, security review and DeepEval testing; it calls the Book Vault API like any other client.
+- **AI chat and agents (Phase 7):** a vault-wide chat and a conversational end-of-book reflection, answering from the user's own notes with sources, with "save as insight" (paid tier). Phases 6 and 7 each start after their own grill.
 - **Resurfacing:** weekly "you wrote this 6 months ago" digest
 - **Analytics dashboard:** books per month, pages per session, ratings
 - **Book graph:** links between books by shared themes in the user's insights
@@ -191,7 +191,7 @@ The public site and the app are separate projects, deployed separately, so a mar
 
 - Plan names, prices and limits live in one shared config file, read by the marketing site at build time and enforced by the API
 - Monorepo: apps/site, apps/web, packages/core, packages/api-contract; each app has its own pipeline triggered only by its own changes
-- The MCP server lives in its own repo
+- The MCP server lives in this repo as `apps/mcp` (ADR 0012)
 
 ## Engineering practices
 
@@ -315,14 +315,18 @@ Every environment is created from code, Cloudflare included; nothing is set up b
 
 ## Implementation order
 
-Backend infrastructure first, then the API, then the frontend; the MCP server is a separate project after launch.
+Backend infrastructure first, then the API, then the frontend; the MCP server follows launch as Phase 6, in this repository (ADR 0012).
 
 1. **Foundations (IaC and CI/CD):** repo, Terraform bootstrap and state in R2, Cloudflare, Supabase, GitHub and Grafana modules, Clerk checklist, CLAUDE.md, hooks, MCP config and the infra-change and adr skills, pipeline that deploys to dev and production with no manual steps; a one-page marketing site with a waitlist goes live here.
 2. **Backend data layer:** schema, RLS, migrations and seed data, storage buckets, Clerk as third-party auth, usage table; RLS tests in CI.
 3. **API:** OpenAPI contract first, then endpoints: books (barcode lookup, past books), sessions with signed audio uploads, Groq transcription, AI insights, finish flow and reflections, search, export, usage limits; then ask the vault, book summary, quote photo OCR, nudge scheduling. API tests in CI; DeepEval evals on AI outputs. Vikram dogfoods through an iOS Shortcut that records a voice note and posts a session to the dev API.
 4. **Frontend PWA:** screens built on the finished API: shelf, add book, log session, finish flow, search, activity calendar, ask the vault, nudge settings; Playwright E2E with axe checks.
-5. **Launch readiness:** Clerk Billing tiers and founding members, full marketing site with pricing from the shared plan config, donation link, privacy policy, account deletion, Grafana dashboards and alerts, production review.
-6. **MCP server (separate project):** its own repo, hosting (possibly AWS), OAuth, monitoring, security review and DeepEval testing; calls the Book Vault API like any other client.
+5. **Launch readiness (ADR 0012):** launch is free and invite-only (about 10 people).
+   - **5a, needs no name or domain:** account deletion (`DELETE /v1/me`), privacy policy draft, Grafana dashboard and alerts, production review.
+   - **5b, later:** domain, production Clerk instance, WAF rules and rate limit, full marketing site with the public name, launch.
+   - Clerk Billing tiers, founding members and the donation link wait until the owner has logged two full books.
+6. **MCP server (`apps/mcp`, this repository):** OAuth, hosting, monitoring, security review and DeepEval testing; calls the Book Vault API like any other client. Starts when the vault holds 20 or more books of real notes.
+7. **AI chat and agents:** vault-wide chat, conversational reflection, save as insight; same gate as phase 6.
 
 ## Success criteria and open questions
 
@@ -343,7 +347,7 @@ The MVP works if Vikram logs every reading session of his next two books without
 - Logging: by page range or by chapter, whichever the user prefers
 - AI reflection questions offered mid-book as well as at the end
 - Observability: Grafana Cloud free tier
-- Build order: infrastructure as code, data layer, API, PWA; MCP server as a separate project after launch
+- Build order: infrastructure as code, data layer, API, PWA; MCP server (`apps/mcp`) after launch
 - All clients go through the Book Vault API, served behind Cloudflare WAF via a gateway Worker
 - Marketing site and web app are separate projects in one monorepo, sharing one plan config
 - Load testing with k6; AI evals with DeepEval; linting with Oxlint + Landmines; Node 24
