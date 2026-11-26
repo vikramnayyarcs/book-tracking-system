@@ -114,13 +114,14 @@ export async function uploadFinishPhoto(bookId: string, file: File) {
       body: { extension },
     }),
   );
+  await putSignedPhoto(signed.uploadUrl, file);
+}
+
+export async function putSignedPhoto(uploadUrl: string, file: File) {
   const form = new FormData();
   form.set("cacheControl", "3600");
   form.set("", file);
-  const response = await fetch(signed.uploadUrl, {
-    method: "PUT",
-    body: form,
-  });
+  const response = await fetch(uploadUrl, { method: "PUT", body: form });
   if (!response.ok) throw new ApiError("The photo did not upload. Try again.");
 }
 
