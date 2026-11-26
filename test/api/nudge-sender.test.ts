@@ -39,11 +39,14 @@ const hits: string[] = [];
 const statuses = new Map<string, number>();
 const server = setupServer(
   http.all(`${baseUrl}/*`, () => passthrough()),
-  http.post("https://push.example.test/:user/:index", ({ params }) => {
-    const key = `${String(params["user"])}/${String(params["index"])}`;
-    hits.push(key);
-    return new HttpResponse(null, { status: statuses.get(key) ?? 201 });
-  }),
+  http.post(
+    "https://fcm.googleapis.com/fcm/send/:user/:index",
+    ({ params }) => {
+      const key = `${String(params["user"])}/${String(params["index"])}`;
+      hits.push(key);
+      return new HttpResponse(null, { status: statuses.get(key) ?? 201 });
+    },
+  ),
 );
 
 type Seed = {
@@ -100,7 +103,7 @@ const seed = async (name: string, options: Seed = {}) => {
     await admin`
       insert into app.push_subscriptions (user_id, endpoint, p256dh, auth)
       values (
-        ${id}, ${`https://push.example.test/${name}/${index}`},
+        ${id}, ${`https://fcm.googleapis.com/fcm/send/${name}/${index}`},
         ${keys.p256dh}, ${keys.auth}
       )
     `;
