@@ -17,6 +17,7 @@ import {
   sessionLocation,
   splitInsights,
 } from "../books/book-logic.ts";
+import { QuotePhoto } from "../books/quote-photo.tsx";
 import { ReflectionQuestions } from "../books/reflections.tsx";
 import { Button } from "../ui/button.tsx";
 
@@ -165,6 +166,7 @@ function InsightsAndQuotes({ bookId }: { bookId: string }) {
         <h2 id="quotes-heading" className="text-lg font-medium">
           Quotes
         </h2>
+        <QuotePhoto bookId={bookId} />
         {insights.isPending ? <Skeleton testId="quotes-loading" /> : null}
         {split && split.quotes.length === 0 ? (
           <p className="text-base text-ink-muted">No quotes saved yet.</p>
