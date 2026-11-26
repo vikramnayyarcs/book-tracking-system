@@ -154,3 +154,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-26: a piped `terraform plan` hides a state-lock failure
 
 **`terraform plan ... | tee plan.txt` without `set -o pipefail` exits with `tee`'s status, so a lock error passed the Plan step and Apply failed later with `stat dev.tfplan: no such file`.** Fix: `set -o pipefail` before any piped plan, and `-lock-timeout=5m` on every plan and apply so a run waits for the lock instead of failing. `scripts/workflow-checks/terraform-steps.test.ts` checks both.
+
+## 2026-11-26: navigating away while routed API calls run fails the test
+
+**A test that loaded `/books/<id>` and then at once called `page.goto` to `/finish` cancelled the first page's API calls mid-flight, so the `routeStack` handler's `route.fulfill` threw "Fetch response has been disposed" and failed the test.** Go straight to the page under test (`openBook(page, id, "/finish")`) instead of loading one page and leaving it before its requests finish.
