@@ -430,6 +430,7 @@ jobs:
       - name: Plan dev
         if: steps.changed.outputs.infra == 'true'
         run: |
+          set -o pipefail
           terraform init -backend-config=../../r2.tfbackend -lockfile=readonly
           terraform plan -lock-timeout=5m -no-color | tee plan.txt
           { echo '## Plan for dev'; echo '```'; tail -n 80 plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
