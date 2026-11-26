@@ -1,0 +1,18 @@
+This video shows how to save a quote from a photo of a book page.
+All data in this test run is seeded test data.
+The page in the photo is an invented page. It is not from a real book.
+First, the reader opens a book.
+The Quotes section has a button, Add a quote from a photo.
+On a phone, the button opens the camera.
+The reader takes a photo of the page.
+The app reads the text on the photo.
+Then the app deletes the photo.
+The page shows the lines of text, one line at a time.
+The reader selects the lines of the passage.
+The reader types the page number.
+The reader pushes Save quote.
+The page shows the new quote with its page number.
+If the photo has no text, the page tells the reader to take a new photo.
+If the reading fails, the page shows a message. The reader takes a new photo.
+If the device is offline, the button is off and the page tells the reader why.
+The app never logs the photo or the text.

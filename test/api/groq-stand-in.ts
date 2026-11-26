@@ -15,6 +15,7 @@ const transcription = fixture("groq-transcription.json");
 const extraction = fixture("groq-chat-extraction.json");
 const questions = fixture("groq-chat-questions.json");
 const summary = fixture("groq-chat-summary.json");
+const ocr = fixture("groq-chat-ocr.json");
 
 export const STAND_IN_PORT = Number(
   process.env["GROQ_STAND_IN_PORT"] ?? "54390",
@@ -72,12 +73,14 @@ export const startGroqStandIn = async () => {
         });
         reply(
           res,
-          system.includes("write a short summary of a book")
-            ? summary
-            : system.includes("write reflection questions") ||
-                system.includes("remember a book")
-              ? questions
-              : extraction,
+          system.includes("read printed text from a photo")
+            ? ocr
+            : system.includes("write a short summary of a book")
+              ? summary
+              : system.includes("write reflection questions") ||
+                  system.includes("remember a book")
+                ? questions
+                : extraction,
         );
       } else {
         res.writeHead(404);
