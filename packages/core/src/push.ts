@@ -41,3 +41,29 @@ export const vapidPublicKeyToApplicationServerKey = (publicKey: string) => {
   }
   return point[0] === 0x04 ? toBase64Url(point) : undefined;
 };
+
+const PUSH_HOSTS = new Set([
+  "fcm.googleapis.com",
+  "updates.push.services.mozilla.com",
+  "web.push.apple.com",
+]);
+const PUSH_HOST_SUFFIXES = [
+  ".push.services.mozilla.com",
+  ".push.apple.com",
+  ".notify.windows.com",
+];
+
+export const isPushServiceEndpoint = (endpoint: string) => {
+  if (!URL.canParse(endpoint)) {
+    return false;
+  }
+  const url = new URL(endpoint);
+  return (
+    url.protocol === "https:" &&
+    url.port === "" &&
+    url.username === "" &&
+    url.password === "" &&
+    (PUSH_HOSTS.has(url.hostname) ||
+      PUSH_HOST_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix)))
+  );
+};
