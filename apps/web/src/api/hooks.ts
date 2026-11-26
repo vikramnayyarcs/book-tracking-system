@@ -18,6 +18,14 @@ export function useSearch(q: string) {
   });
 }
 
+export function useActivity(year: number) {
+  return useQuery({
+    queryKey: ["activity", year],
+    queryFn: async () =>
+      unwrap(await api.GET("/activity", { params: { query: { year } } })),
+  });
+}
+
 export function useReadingBooks() {
   return useQuery({
     queryKey: ["books", "reading"],

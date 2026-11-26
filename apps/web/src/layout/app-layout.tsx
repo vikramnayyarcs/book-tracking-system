@@ -115,6 +115,7 @@ export function AppLayout() {
               [
                 ["/", "Shelf"],
                 ["/search", "Search"],
+                ["/activity", "Activity"],
                 ["/settings", "Settings"],
               ] as const
             ).map(([to, label]) => (
