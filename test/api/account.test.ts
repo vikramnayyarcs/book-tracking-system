@@ -27,7 +27,7 @@ const newUser = async (label: string) => {
       fva: claims["fva"],
     }),
     "the Clerk session token must carry a fresh fva (session token version 2)",
-  ).toMatch(/"fva":\[\d+,/);
+  ).toMatch(/"fva":\[(\d|10),/);
   spawned.push(user.userId);
   return user;
 };
