@@ -150,3 +150,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-22: two web E2E files cannot start the Groq stand-in at once
 
 **Playwright ran two test files in parallel workers, and each `beforeAll` started the Groq stand-in on port 54390, so the second failed with EADDRINUSE.** The Edge function reaches the stand-in at one fixed port, so `playwright.web.config.ts` sets `workers: 1`.
+
+## 2026-11-26: a piped `terraform plan` hides a state-lock failure
+
+**`terraform plan ... | tee plan.txt` without `set -o pipefail` exits with `tee`'s status, so a lock error passed the Plan step and Apply failed later with `stat dev.tfplan: no such file`.** Fix: `set -o pipefail` before any piped plan, and `-lock-timeout=5m` on every plan and apply so a run waits for the lock instead of failing. `scripts/workflow-checks/terraform-steps.test.ts` checks both.
