@@ -39,6 +39,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html}"],
         navigateFallback: "index.html",
         runtimeCaching: [],
+        importScripts: ["push-sw.js"],
       },
     }),
   ],
