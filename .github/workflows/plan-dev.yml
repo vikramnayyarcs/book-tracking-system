@@ -32,6 +32,7 @@ jobs:
       TF_VAR_groq_api_key: ${{ secrets.DEV_GROQ_API_KEY }}
       TF_VAR_workers_subdomain: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
       TF_VAR_grafana_stack_slug: ${{ vars.GRAFANA_STACK_SLUG }}
+      TF_VAR_grafana_alert_email: ${{ secrets.GRAFANA_ALERT_EMAIL }}
       GRAFANA_CLOUD_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_CLOUD_ACCESS_POLICY_TOKEN }}
       GRAFANA_FRONTEND_O11Y_API_ACCESS_TOKEN: ${{ secrets.GRAFANA_CLOUD_ACCESS_POLICY_TOKEN }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.DEV_SUPABASE_ACCESS_TOKEN }}
