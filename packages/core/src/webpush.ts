@@ -1,4 +1,7 @@
-import { vapidPublicKeyToApplicationServerKey } from "./push.ts";
+import {
+  isPushServiceEndpoint,
+  vapidPublicKeyToApplicationServerKey,
+} from "./push.ts";
 
 export type VapidConfig = {
   subject: string;
@@ -193,12 +196,16 @@ export const sendWebPush = async (
   target: PushTarget,
   payload: unknown,
 ) => {
+  if (!isPushServiceEndpoint(target.endpoint)) {
+    return "gone" satisfies PushOutcome;
+  }
   const body = await encryptPayload(
     target,
     encoder.encode(JSON.stringify(payload)),
   );
   const response = await deps.fetch(target.endpoint, {
     method: "POST",
+    redirect: "manual",
     headers: {
       authorization: await vapidHeader(deps.vapid, target.endpoint, deps.now()),
       "content-encoding": "aes128gcm",
