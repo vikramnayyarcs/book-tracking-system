@@ -1,10 +1,22 @@
 import { expect, test } from "@playwright/test";
 import { signInAs } from "../sign-in-as.ts";
-import { apiBase, routeStack, seedHeaders } from "../web-stack.ts";
+import { apiBase, routeStack, seedBook, seedHeaders } from "../web-stack.ts";
 
 test("demo: set the daily reminder", async ({ page }) => {
   await routeStack(page);
   await signInAs(page, "bt-test-alice");
+  const headers = await seedHeaders("bt-test-alice");
+  const patch = (body: unknown) =>
+    fetch(`${apiBase}/v1/me`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(body),
+    });
+  const book = await seedBook(
+    "bt-test-alice",
+    `Invented Reminder Atlas ${Date.now()}`,
+  );
+  await patch({ nudgeTime: "20:30", notReadingToday: false });
   try {
     await page.goto("/settings");
     await expect(
@@ -29,11 +41,7 @@ test("demo: set the daily reminder", async ({ page }) => {
       page.getByRole("heading", { level: 1, name: "Log session" }),
     ).toBeVisible();
   } finally {
-    const headers = await seedHeaders("bt-test-alice");
-    await fetch(`${apiBase}/v1/me`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ nudgeTime: "20:30", notReadingToday: false }),
-    });
+    await patch({ nudgeTime: null, notReadingToday: false });
+    await book.remove();
   }
 });

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { expectNoAxeViolations } from "../axe.ts";
 import { signInAs } from "../sign-in-as.ts";
-import { apiBase, routeStack, seedHeaders } from "../web-stack.ts";
+import { apiBase, routeStack, seedBook, seedHeaders } from "../web-stack.ts";
 
 const restore = async (externalId: string, nudgeTime: string | null) => {
   const headers = await seedHeaders(externalId);
@@ -21,9 +21,26 @@ const readMe = async (externalId: string) => {
   };
 };
 
-test.afterEach(async () => {
+let book: Awaited<ReturnType<typeof seedBook>>;
+
+test.beforeAll(async () => {
+  book = await seedBook(
+    "bt-test-alice",
+    `Invented Reminder Atlas ${Date.now()}`,
+  );
+});
+
+test.afterAll(async () => {
+  await book.remove();
+});
+
+test.beforeEach(async () => {
   await restore("bt-test-alice", "20:30");
   await restore("bt-test-bob", null);
+});
+
+test.afterEach(async () => {
+  await restore("bt-test-alice", null);
 });
 
 const openSettings = async (page: Page, externalId: string) => {
@@ -107,15 +124,14 @@ test("another reader sees their own settings, which are off", async ({
   await expectNoAxeViolations(page);
 });
 
-test("turning on without permission shows a message and stays off", async ({
+test("without notification permission the switch is off and says why", async ({
   page,
 }) => {
   await openSettings(page, "bt-test-bob");
-  await reminderSwitch(page).click();
-  await expect(page.getByRole("alert")).toContainText(
-    "Notifications are blocked",
+  await expect(reminderSwitch(page)).toBeDisabled();
+  await expect(page.getByRole("note")).toContainText(
+    /blocked|cannot receive|Add to Home Screen/,
   );
-  await expect(reminderSwitch(page)).not.toBeChecked();
   expect((await readMe("bt-test-bob")).nudgeTime).toBeNull();
   await expectNoAxeViolations(page);
 });
