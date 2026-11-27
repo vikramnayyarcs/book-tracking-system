@@ -92,33 +92,53 @@ const preflight = async (route: Route) => {
   await withCors(route, response);
 };
 
+const endedMessage =
+  /Test ended|Target page, context or browser has been closed/;
+
+const ignoreEnded =
+  (handler: (route: Route) => Promise<void>) => async (route: Route) => {
+    try {
+      await handler(route);
+    } catch (error) {
+      if (!endedMessage.test(String(error))) {
+        throw error;
+      }
+    }
+  };
+
 export const routeStack = async (page: Page) => {
   const calls: string[] = [];
-  await page.route(`${apiBase}/**`, async (route) => {
-    const request = route.request();
-    if (request.method() === "OPTIONS") {
-      await preflight(route);
-      return;
-    }
-    calls.push(`${request.method()} ${new URL(request.url()).pathname}`);
-    const response = await route.fetch({
-      headers: { ...request.headers(), "x-gateway-secret": gatewaySecret },
-    });
-    await withCors(route, response);
-  });
-  await page.route("**/storage/v1/object/upload/sign/**", async (route) => {
-    const request = route.request();
-    if (request.method() === "OPTIONS") {
-      await preflight(route);
-      return;
-    }
-    const url = new URL(request.url());
-    calls.push(`${request.method()} storage-upload`);
-    const response = await route.fetch({
-      url: `${storageBase}${url.pathname}${url.search}`,
-    });
-    await withCors(route, response);
-  });
+  await page.route(
+    `${apiBase}/**`,
+    ignoreEnded(async (route) => {
+      const request = route.request();
+      if (request.method() === "OPTIONS") {
+        await preflight(route);
+        return;
+      }
+      calls.push(`${request.method()} ${new URL(request.url()).pathname}`);
+      const response = await route.fetch({
+        headers: { ...request.headers(), "x-gateway-secret": gatewaySecret },
+      });
+      await withCors(route, response);
+    }),
+  );
+  await page.route(
+    "**/storage/v1/object/upload/sign/**",
+    ignoreEnded(async (route) => {
+      const request = route.request();
+      if (request.method() === "OPTIONS") {
+        await preflight(route);
+        return;
+      }
+      const url = new URL(request.url());
+      calls.push(`${request.method()} storage-upload`);
+      const response = await route.fetch({
+        url: `${storageBase}${url.pathname}${url.search}`,
+      });
+      await withCors(route, response);
+    }),
+  );
   return calls;
 };
 
