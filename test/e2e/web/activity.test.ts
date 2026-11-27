@@ -3,6 +3,10 @@ import { expectNoAxeViolations } from "../axe.ts";
 import { signInAs } from "../sign-in-as.ts";
 import { apiBase, routeStack, seedBook, seedHeaders } from "../web-stack.ts";
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 const year = new Date().getFullYear() - 1;
 let book: Awaited<ReturnType<typeof seedBook>>;
 

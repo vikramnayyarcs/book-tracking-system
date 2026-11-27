@@ -3,6 +3,10 @@ import { expectNoAxeViolations } from "../axe.ts";
 import { signInAs } from "../sign-in-as.ts";
 import { apiBase, fulfillJson, routeStack } from "../web-stack.ts";
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 const askUrl = `${apiBase}/v1/ask`;
 const bookId = "11111111-1111-4111-8111-111111111111";
 const sessionId = "22222222-2222-4222-8222-222222222222";
