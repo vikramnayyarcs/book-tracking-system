@@ -38,6 +38,7 @@ const makeApp = (embedUrl: string) =>
     db: createDb(databaseUrl),
     defaultTier: "plus",
     objects: { download: unused, remove: unused, signedUploadUrl: unused },
+    identity: { configured: false, deleteUser: unused },
     fetch: (input, init) => fetch(input, init),
     openLibraryUrl: "http://127.0.0.1:9",
     vapidPublicKey: "",

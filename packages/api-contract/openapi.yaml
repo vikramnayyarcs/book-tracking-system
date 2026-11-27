@@ -61,6 +61,36 @@ paths:
           $ref: "#/components/responses/Problem"
         default:
           $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteMe
+      summary: Delete the account and all its data for good. Needs a Clerk session token (a personal access token gets 403), a sign-in or reverification in the last 10 minutes, and the confirmation word; at most 3 attempts per day
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MeDelete"
+      responses:
+        "204":
+          description: The account, its rows, its stored files and its sign-in are gone
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          description: A personal access token was used (insufficient_scope), or the session was not verified in the last 10 minutes (reverification_required)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "429":
+          description: Three deletion attempts in the last 24 hours (deletion_limit_reached)
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /push-subscriptions:
     post:
       operationId: createPushSubscription
@@ -1845,6 +1875,15 @@ components:
           type: [string, "null"]
           format: date
           description: Nudges are silenced through this local date; null when not silenced
+    MeDelete:
+      type: object
+      additionalProperties: false
+      required: [confirmation]
+      properties:
+        confirmation:
+          type: string
+          enum: [delete]
+          description: The word the user typed to confirm
     MeUpdate:
       type: object
       additionalProperties: false

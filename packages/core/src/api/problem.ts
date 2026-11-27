@@ -4,6 +4,8 @@ export type ProblemCode =
   | "gateway_rejected"
   | "unauthorized"
   | "insufficient_scope"
+  | "reverification_required"
+  | "deletion_limit_reached"
   | "validation_failed"
   | "isbn_invalid"
   | "isbn_not_found"

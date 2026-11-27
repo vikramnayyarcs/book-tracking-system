@@ -58,6 +58,13 @@ variable "groq_api_key" {
   sensitive   = true
 }
 
+variable "clerk_secret_key" {
+  description = "Clerk secret key for the api function, which deletes the Clerk user on account deletion (repo secret DEV_CLERK_SECRET_KEY). Empty skips the secret."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "workers_subdomain" {
   description = "The account's workers.dev subdomain (repo variable CLOUDFLARE_WORKERS_SUBDOMAIN). Empty skips the API synthetic check."
   type        = string

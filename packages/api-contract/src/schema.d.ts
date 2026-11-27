@@ -32,7 +32,8 @@ export interface paths {
         get: operations["getMe"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete the account and all its data for good. Needs a Clerk session token (a personal access token gets 403), a sign-in or reverification in the last 10 minutes, and the confirmation word; at most 3 attempts per day */
+        delete: operations["deleteMe"];
         options?: never;
         head?: never;
         /** Change nudge settings; send only the fields to change */
@@ -949,6 +950,13 @@ export interface components {
              */
             notReadingUntil: string | null;
         };
+        MeDelete: {
+            /**
+             * @description The word the user typed to confirm
+             * @enum {string}
+             */
+            confirmation: "delete";
+        };
         MeUpdate: {
             /** @description IANA time zone name */
             timeZone?: string;
@@ -1047,6 +1055,49 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeDelete"];
+            };
+        };
+        responses: {
+            /** @description The account, its rows, its stored files and its sign-in are gone */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            /** @description A personal access token was used (insufficient_scope), or the session was not verified in the last 10 minutes (reverification_required) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Three deletion attempts in the last 24 hours (deletion_limit_reached) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };
