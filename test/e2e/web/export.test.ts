@@ -4,6 +4,10 @@ import { expectNoAxeViolations } from "../axe.ts";
 import { signInAs } from "../sign-in-as.ts";
 import { apiBase, routeStack, seedBook } from "../web-stack.ts";
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 let book: Awaited<ReturnType<typeof seedBook>>;
 const title = `Invented Export Atlas ${Date.now()}`;
 

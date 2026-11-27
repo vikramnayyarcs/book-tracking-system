@@ -10,6 +10,10 @@ import {
   seedNotes,
 } from "../web-stack.ts";
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 let stand: Awaited<ReturnType<typeof startGroqStandIn>>;
 const books: Awaited<ReturnType<typeof seedBook>>[] = [];
 
