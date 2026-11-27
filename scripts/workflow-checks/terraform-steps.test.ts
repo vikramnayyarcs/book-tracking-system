@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const workflows = ["ci.yml", "deploy-dev.yml", "drift.yml"];
+const workflows = ["plan-dev.yml", "deploy-dev.yml", "drift.yml"];
 
 const runBlocks = (name: string) => {
   const lines = readFileSync(
@@ -50,6 +50,18 @@ describe("terraform steps in workflows", () => {
         if (!/terraform (plan|apply)\b/.test(line)) continue;
         expect(line).toContain("-lock-timeout=5m");
       }
+    },
+  );
+
+  it.each(workflows)(
+    "%s: a new push never cancels a run that may hold the state lock",
+    (name) => {
+      const text = readFileSync(
+        new URL(`../../.github/workflows/${name}`, import.meta.url),
+        "utf8",
+      );
+      expect(text).toMatch(/cancel-in-progress: false/);
+      expect(text).not.toMatch(/cancel-in-progress: true/);
     },
   );
 });
