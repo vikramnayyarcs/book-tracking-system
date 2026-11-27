@@ -48,6 +48,12 @@ provider "grafana" {
   sm_url          = module.grafana.sm_url
 }
 
+provider "grafana" {
+  alias = "stack"
+  url   = module.grafana.stack_url
+  auth  = module.grafana.stack_service_account_token
+}
+
 provider "github" {
   owner = var.github_owner
   app_auth {

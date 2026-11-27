@@ -5,7 +5,7 @@ terraform {
     grafana = {
       source                = "grafana/grafana"
       version               = "~> 4.55"
-      configuration_aliases = [grafana.cloud, grafana.sm]
+      configuration_aliases = [grafana.cloud, grafana.sm, grafana.stack]
     }
     github = {
       source  = "integrations/github"

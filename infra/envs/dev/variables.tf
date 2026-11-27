@@ -63,3 +63,10 @@ variable "workers_subdomain" {
   type        = string
   default     = ""
 }
+
+variable "grafana_alert_email" {
+  description = "Address that receives Grafana alerts (repo secret GRAFANA_ALERT_EMAIL). Empty skips alerts and the dashboard."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

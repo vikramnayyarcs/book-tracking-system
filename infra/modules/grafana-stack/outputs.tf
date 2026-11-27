@@ -18,3 +18,9 @@ output "faro_collector_url" {
   description = "Grafana Faro collector address the web app sends telemetry to."
   value       = grafana_frontend_o11y_app.web.collector_endpoint
 }
+
+output "stack_service_account_token" {
+  description = "Token for the stack own Grafana API, used to configure the stack provider."
+  value       = grafana_cloud_stack_service_account_token.terraform.key
+  sensitive   = true
+}

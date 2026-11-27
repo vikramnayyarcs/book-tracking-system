@@ -25,6 +25,7 @@ On GitHub Free private repos there are no Environments, so everything is repo-le
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` | Secret | GitHub repo |
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_REGION` | Variable | GitHub repo |
 | When you have a Grafana Cloud account (PR 14) | `GRAFANA_STACK_SLUG` | Variable | GitHub repo |
+| Before the Grafana alerts apply (run 6, task 4) | `GRAFANA_ALERT_EMAIL` | Secret | GitHub repo; the address that receives alerts; leave unset to skip alerts and the dashboard |
 | Before Phase 2 (ADR 0003) | `DEV_CLERK_FRONTEND_API_URL` | Variable | GitHub repo |
 | Before Phase 2 (ADR 0003) | `DEV_CLERK_SECRET_KEY` | Secret | GitHub repo |
 | Before Phase 2 (ADR 0003); used in Phase 4 | `DEV_CLERK_PUBLISHABLE_KEY` | Variable | GitHub repo |

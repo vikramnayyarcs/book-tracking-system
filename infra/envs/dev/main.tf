@@ -62,6 +62,7 @@ module "grafana" {
   providers = {
     grafana.cloud = grafana.cloud
     grafana.sm    = grafana.sm
+    grafana.stack = grafana.stack
   }
 
   stack_slug        = var.grafana_stack_slug
@@ -69,6 +70,7 @@ module "grafana" {
   site_url          = module.site_dev.url
   web_url           = module.web_dev.url
   env               = "dev"
+  alert_email       = var.grafana_alert_email
   api_health_url    = var.workers_subdomain == "" ? "" : "https://${module.api_gateway.script_name}.${var.workers_subdomain}.workers.dev/v1/health"
 }
 
