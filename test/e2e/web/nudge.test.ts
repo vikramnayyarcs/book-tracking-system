@@ -39,7 +39,8 @@ test.beforeEach(async () => {
   await restore("bt-test-bob", null);
 });
 
-test.afterEach(async () => {
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
   await restore("bt-test-alice", null);
 });
 
