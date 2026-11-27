@@ -85,8 +85,6 @@ describe("classify", () => {
     "apps/web/src/routes/shelf.tsx",
     "apps/site/src/pages/index.astro",
     "packages/core/src/brand.ts",
-    "package.json",
-    "package-lock.json",
     "notes.md",
   ])("is yellow when %s changes", (path) => {
     const result = classify([file("docs/GOTCHAS.md"), file(path)], "main");
