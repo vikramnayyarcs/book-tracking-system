@@ -28,6 +28,18 @@ describe("classify", () => {
     "docs/requirements.md",
     "packages/core/src/api/auth.ts",
     "apps/web/public/_headers",
+    "packages/core/src/api/app.ts",
+    "supabase/functions/api/index.ts",
+    "supabase/functions/api/deno.json",
+    "supabase/config.toml",
+    "package.json",
+    "package-lock.json",
+    ".npmrc",
+    ".oxlintrc.json",
+    "apps/web/package.json",
+    "apps/site/package.json",
+    "packages/core/package.json",
+    "packages/api-contract/package.json",
   ])("is red when %s changes, even beside docs", (path) => {
     const result = classify([file("docs/GOTCHAS.md"), file(path)], "main");
     expect(result.colour).toBe("red");
