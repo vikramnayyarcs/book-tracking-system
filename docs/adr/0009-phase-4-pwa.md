@@ -75,7 +75,7 @@ Each feature PR adds one `demo` Playwright test on seeded data. CI records it, a
 
 ### Merging (amends ADR 0005)
 
-Yellow PRs now merge automatically, like green ones, when every check on the latest commit passes, the PR targets `main`, it was opened from this repository by the owner's account, and its body has a `## Risk note` section. Red stays owner-only. Red now also covers `docs/adr/`, `docs/briefs/`, `docs/requirements.md`, `packages/core/src/api/auth.ts` and `apps/web/public/_headers`, so decisions, auth and the security headers always reach the owner.
+Yellow PRs now merge automatically, like green ones, when every check on the latest commit passes, the PR targets `main`, it was opened from this repository by the owner's account, and its body has a `## Risk note` section. Red stays owner-only. Red now also covers `docs/adr/`, `docs/briefs/`, `docs/requirements.md`, `packages/core/src/api/auth.ts` and `apps/web/public/_headers`, so decisions, auth and the security headers always reach the owner. Issue #188 added the auth wiring (`packages/core/src/api/app.ts`, `supabase/functions/api/index.ts`, `supabase/config.toml`, the Edge Function `deno.json` and import map) and the dependency and lint files (every `package.json`, `package-lock.json`, `.npmrc`, `.oxlintrc.json`), so a small PR cannot weaken an auth check or add an install script without owner review.
 
 ### Runs
 

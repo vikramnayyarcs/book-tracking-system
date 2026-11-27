@@ -28,6 +28,14 @@ const RED = [
   /^docs\/requirements\.md$/,
   /^packages\/core\/src\/api\/auth\.ts$/,
   /^apps\/web\/public\/_headers$/,
+  /^packages\/core\/src\/api\/app\.ts$/,
+  /^supabase\/functions\/api\/index\.ts$/,
+  /^supabase\/functions\/(?:.*\/)?(?:deno\.jsonc?|import_map\.json)$/,
+  /^supabase\/config\.toml$/,
+  /^(?:(?:apps|packages)\/[^/]+\/)?package\.json$/,
+  /^package-lock\.json$/,
+  /^\.npmrc$/,
+  /^\.oxlintrc\.json$/,
 ];
 
 const DEPLOYS = [/^infra\//, /^\.github\//, /^supabase\/migrations\//];
