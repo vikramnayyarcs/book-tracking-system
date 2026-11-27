@@ -3,6 +3,10 @@ import { expectNoAxeViolations } from "../axe.ts";
 import { signInAs } from "../sign-in-as.ts";
 import { apiBase, routeStack, seedBook, seedHeaders } from "../web-stack.ts";
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 let book: Awaited<ReturnType<typeof seedBook>>;
 const title = `Invented Tidewater Atlas ${Date.now()}`;
 const word = `zephyrine${Date.now()}`;
