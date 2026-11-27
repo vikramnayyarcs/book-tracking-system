@@ -10,6 +10,10 @@ import {
   seedNotes,
 } from "../web-stack.ts";
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
 let stand: Awaited<ReturnType<typeof startGroqStandIn>>;
 const books: Awaited<ReturnType<typeof seedBook>>[] = [];
 
@@ -32,10 +36,10 @@ test.afterAll(async () => {
   await stand.stop();
 });
 
-const openBook = async (page: Page, id: string) => {
+const openBook = async (page: Page, id: string, subpath = "") => {
   const calls = await routeStack(page);
   await signInAs(page, "bt-test-alice");
-  await page.goto(`/books/${id}`);
+  await page.goto(`/books/${id}${subpath}`);
   return calls;
 };
 
@@ -213,8 +217,7 @@ test("finishing a book saves the rating, photo, review and end questions", async
 
 test("a photo of the wrong type is refused with a reason", async ({ page }) => {
   const book = await makeBook(false);
-  await openBook(page, book.id);
-  await page.goto(`/books/${book.id}/finish`);
+  await openBook(page, book.id, "/finish");
 
   await page.locator("input[type=file]").setInputFiles({
     name: "notes.txt",
@@ -229,8 +232,7 @@ test("a photo of the wrong type is refused with a reason", async ({ page }) => {
 
 test("the finish form works with the keyboard alone", async ({ page }) => {
   const book = await makeBook(false);
-  await openBook(page, book.id);
-  await page.goto(`/books/${book.id}/finish`);
+  await openBook(page, book.id, "/finish");
 
   await page.getByLabel("Your review").focus();
   await page.keyboard.type("Invented keyboard review.");

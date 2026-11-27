@@ -158,3 +158,7 @@ Fix: round-trip `encryptPayload` directly in the test, and use MSW only to check
 ## 2026-11-26: a cancelled CI run left the dev state locked
 
 **CI used `cancel-in-progress: true`, so a new push killed `plan-dev` mid-plan and the R2 state lock was never released; every later plan failed with `Error acquiring the state lock` (412 PreconditionFailed).** `plan-dev` now runs in its own `plan-dev.yml` with `cancel-in-progress: false`, and `scripts/workflow-checks/terraform-steps.test.ts` fails any Terraform workflow that cancels in progress. A lock left behind already needs `terraform force-unlock <ID>` with the dev backend credentials.
+
+## 2026-11-26: navigating away while routed API calls run fails the test
+
+**A test that loaded `/books/<id>` and then at once called `page.goto` to `/finish` cancelled the first page's API calls mid-flight, so the `routeStack` handler's `route.fulfill` threw "Fetch response has been disposed" and failed the test.** Go straight to the page under test (`openBook(page, id, "/finish")`) instead of loading one page and leaving it before its requests finish. The same handler also throws `route.fetch: Test ended.` when a test finishes while the app still has a request in flight, so every web test file that calls `routeStack` runs `page.unrouteAll({ behavior: "ignoreErrors" })` in `afterEach`.
